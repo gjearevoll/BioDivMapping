@@ -46,5 +46,9 @@ if (level == "municipality") {
     rm('res')
 }
 
+if (runBuffer == TRUE) {
+  regionGeometry <- st_buffer(regionGeometry, dist = 1)
+}
+
 # Align project coordinates with the rest of our polygons.
 st_crs(regionGeometry) <- "+proj=longlat +ellps=WGS84"

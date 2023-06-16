@@ -14,8 +14,9 @@ library(sf)
 ###-----------------###
 
 # Run script to define geographical region and resolution we are working with 
-level <- "municipality"  # level can be country, county, municipality, or points (examples of points given below)
-region <- "5001"
+level <- "county"  # level can be country, county, municipality, or points (examples of points given below)
+region <- "50"
+runBuffer <- TRUE
 #points <- c(4.641979, 57.97976, 31.05787, 71.18488)
 #names(points) <- c("north", "south", "east", "west")
 source("utils/defineRegion.R")
@@ -61,5 +62,5 @@ attr(speciesDataList, "level") <- level
 attr(speciesDataList, "region") <- region
 dataList <- list(species = speciesDataList, geometry = regionGeometry)
 saveRDS(dataList, "data/temp/speciesDataImported.RDS")
-saveRDS(dataList, "visualisation/hotspotMap/speciesDataList.RDS")
+saveRDS(dataList, "visualisation/hotspotMaps/speciesDataList.RDS")
 

@@ -38,36 +38,41 @@ shinyUI(
       tabItems(
         tabItem(tabName = "outputs",
                 fluidRow(
-                  box(title = "Species Map",
-                      plotOutput("speciesMap")
+                  column( width = 3, offset = 0,
+                          fluidRow(
+                            box(width = 12,title = "Map type",
+                                selectInput(inputId = "mapType", label = "Map type:",
+                                            selected = "Species diversity",
+                                            choices = c("Species intensities" = "speciesIntensities",
+                                                        "Species diversity" = "biodiversity"))
+                            )
+                          ),
+                          fluidRow(
+                            box(width = 12,title = "Species specs",
+                                sliderInput("range", "Range:",
+                                            min = -100, max = 100,
+                                            value = c(-50,50)),
+                                selectInput(inputId = "taxa", label = "Taxa:",
+                                            selected = "Vascular plants",
+                                            choices = c("Vascular plants" = "vascularPlants")),
+                                selectInput(inputId = "species", label = "Species:",
+                                            selected = "Arnica montana",
+                                            choices = c("Arnica montana" = "Arnica_montana",
+                                                        "Fraxinus excelsior" = "Fraxinus_excelsior",
+                                                        "Ulmus glabra" = "Ulmus_glabra"))
+                            )
+                          )
+                  ),
+                  column(
+                    width = 5, offset = 0,
+                    box(width = 12,title = "Species Map",
+                        status = "primary",
+                        plotOutput("speciesMap")
+                    )
                   )
-                ),
-                fluidRow(
                   
-                  box(title = "Map type",
-                      br(),
-                      status = "primary",
-                      selectInput(inputId = "mapType", label = "Map type:",
-                                  selected = "Species diversity",
-                                  choices = c("Species intensities" = "speciesIntensities",
-                                              "Species diversity" = "biodiversity"))
-                  ),
-                  box(title = "Taxa",
-                      br(),
-                      status = "primary",
-                      selectInput(inputId = "taxa", label = "Taxa:",
-                                  selected = "Vascular plants",
-                                  choices = c("Vascular plants" = "vascularPlants"))
-                  ),
-                  box(title = "Species",
-                      br(),
-                      status = "primary",
-                      selectInput(inputId = "species", label = "Species:",
-                                  selected = "Arnica montana",
-                                  choices = c("Arnica montana" = "Arnica_montana",
-                                              "Fraxinus excelsior" = "Fraxinus_excelsior",
-                                              "Ulmus glabra" = "Ulmus_glabra")))
                 )
+                
         ),
         tabItem(tabName = "widgets",
                 h2("Widgets tab content"),

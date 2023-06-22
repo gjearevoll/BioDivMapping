@@ -38,6 +38,7 @@ shinyServer(function(input, output) {
                                          na.value = "grey50",
                                          guide = "colourbar",
                                          aesthetics = "fill")
+
     } else {
       fillData <- dataType
       scaleFill <-  scale_fill_gradient2(low = "red",

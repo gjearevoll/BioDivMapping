@@ -66,6 +66,7 @@ shinyUI(
                                                         "Juniperus communis" = "Juniperus_communis",
                                                         "Saxifraga aizoides" = "Saxifraga_aizoides",
                                                         "Agrostis capillaris" = "Agrostis_capillaris"))
+
                             )
                           )
                   ),

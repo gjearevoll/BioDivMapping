@@ -1,6 +1,6 @@
-# Hotspots
+# Biodiveristy mapping
 
-This pipeline is dedicated to the production of biodiversity hotspot metrics for Norway. It imports, processes, and models species
+This pipeline is dedicated to the production of biodiversity mapping and associated metrics for Norway. It imports, processes, and models species
 data from open-source data repositories, including GBIF and ANO. Currently the pipeline is in a draft format, producing species maps for 
 three vascular plant species across Trondheim.
 

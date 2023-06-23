@@ -49,7 +49,7 @@ for (i in 1:length(focalGroups)) {
   workflow <- workflowList[[focalGroup]]
 
   # Add model characteristics (mesh, priors, output)
-  workflow$addMesh(cutoff= 2000, max.edge=c(50000, 80000), offset= 100000)
+  workflow$addMesh(cutoff= 2000, max.edge=c(5000, 8000), offset= 100000)
   workflow$specifySpatial(prior.range = c(300000, 0.05),
                           prior.sigma = c(500, 0.2)) #100
   workflow$workflowOutput('Maps')

@@ -18,9 +18,9 @@ chooseSpecies <-  TRUE # This will be given int he command line as a first argum
 ###-----------------###
 
 # Run script to define geographical region and resolution we are working with 
-level <- "county"  # level can be country, county, municipality, or points (examples of points given below)
-region <- "50"
-runBuffer <- TRUE
+level <- "municipality"  # level can be country, county, municipality, or points (examples of points given below)
+region <- "5001"
+runBuffer <- FALSE
 #points <- c(4.641979, 57.97976, 31.05787, 71.18488)
 #names(points) <- c("north", "south", "east", "west")
 source("utils/defineRegion.R")
@@ -32,6 +32,7 @@ focalTaxa <- read.csv("data/external/focalTaxa.csv", header = T)
 # Use this command if we want to choose certain species, for now we do
 if (chooseSpecies == TRUE) {
   focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
+  focalSpecies <- focalSpecies[focalSpecies$selected,]
 }
 
 ###-----------------###
@@ -48,7 +49,7 @@ GBIFImportCompiled <- do.call(rbind, lapply(GBIFImport, FUN = function(x) {
 GBIFImportCompiled$simpleScientificName <- gsub(" ", "_", word(GBIFImportCompiled$scientificName, 1,2, sep=" "))
 
 ###------------------------------###
-### 2. Attach relevant metadata ####
+### 3. Attach relevant metadata ####
 ###------------------------------###
 
 # Now we import metadata related to GBIF data
@@ -60,10 +61,10 @@ source("utils/metadataPrep.R")
 GBIFImportCompiled <- merge(GBIFImportCompiled, metadataList$metadata, all.x=TRUE, by = "datasetKey")
 dataTypes <- read.csv("data/external/metadataSummary.csv")
 GBIFImportCompiled$dataType <- dataTypes$dataType[match(GBIFImportCompiled$datasetKey, dataTypes$datasetKey)]
+GBIFImportCompiled <- GBIFImportCompiled[!is.na(GBIFImportCompiled$dataType),]
 
 # Narrow down to known data types and split into data frames
 projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
-GBIFImportCompiled <- GBIFImportCompiled[!is.na(GBIFImportCompiled$dataType),]
 GBIFLists <- lapply(unique(GBIFImportCompiled$name), FUN  = function(x) {
   GBIFItem <- GBIFImportCompiled[GBIFImportCompiled$name == x,]
   st_as_sf(GBIFItem,                         
@@ -72,8 +73,17 @@ GBIFLists <- lapply(unique(GBIFImportCompiled$name), FUN  = function(x) {
 })
 names(GBIFLists) <- unique(GBIFImportCompiled$name)
 
+
+###----------------###
+### 4. ANO Import ####
+###----------------###
+
+source("utils/importANOData.R")
+GBIFLists[["ANOData"]] <- ANOData
+
+
 ###--------------------###
-### 3. Dataset Upload ####
+### 5. Dataset Upload ####
 ###--------------------###
 
 # For now we're just doing this to the data/temp folder, later this will go to Wallace. A version also needs to be saved in

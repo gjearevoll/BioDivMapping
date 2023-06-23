@@ -26,13 +26,16 @@ for (i in 1:length(focalGroups)) {
   workflow$addArea(Object = st_sf(regionGeometry), resolution = '60')
   
   # Add datasets
-  for (l in 1:length(speciesData)) {
+  for (l in c(1:5)) {
     dataset <- speciesData[[l]]
+    
+    if (nrow(dataset) < 5) next
+    
     dataType <- unique(dataset$dataType)
+    datasetName <- gsub(" ", "", gsub("[[:punct:]]", "", names(speciesData)[l]))
     
-    if(dataType == "PA") {dataset$individualCount <- 1}
+    if(dataType == "PA" & datasetName != "ANOData") {dataset$individualCount <- 1}
     
-    datasetName <- paste0("dataset", l, dataType)
     
     workflow$addStructured(dataStructured = dataset,
                            datasetType = dataType,

@@ -17,6 +17,7 @@ folderName <- paste0("data/run_", dateAccessed, "/modelOutputs")
 # Define species groups and import focal species
 speciesGroups <- gsub(paste0(folderName, "/"), "", list.dirs(path = folderName, recursive = FALSE))
 focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
+focalSpecies <- focalSpecies[focalSpecies$selected,]
 
 # Create list to save data in for easy access for visualisations
 outputList <- list()

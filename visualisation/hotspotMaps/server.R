@@ -70,11 +70,10 @@ shinyServer(function(input, output) {
     # Add datasets
     for (l in 1:length(speciesDataList)) {
       dataset <- speciesDataList[[l]]
-      dataType <- names(speciesDataList)[[l]]
+      dataType <- unique(dataset$dataType)
+      datasetName <- gsub(" ", "", gsub("[[:punct:]]", "", names(speciesDataList)[l]))
       
-      if(dataType == "PA") {dataset$individualCount <- 1}
-      
-      datasetName <- paste0("dataset", l, dataType)
+      if(dataType == "PA" & datasetName != "ANOData") {dataset$individualCount <- 1}
       
       workflow$addStructured(dataStructured = dataset,
                              datasetType = dataType,

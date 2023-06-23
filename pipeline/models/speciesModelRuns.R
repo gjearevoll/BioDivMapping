@@ -29,7 +29,7 @@ focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
 focalGroups <- unique(focalSpecies$taxonomicGroup)
 
 # Import datasets
-speciesDataList <- readRDS("data/temp/speciesDataImported.RDS")[["species"]]
+speciesData <- readRDS("data/temp/speciesDataImported.RDS")[["species"]]
 environmentalDataList <- readRDS("data/temp/environmentalDataImported.RDS")
 regionGeometry <- readRDS("data/temp/speciesDataImported.RDS")[["geometry"]]
 

@@ -26,16 +26,19 @@ for (i in 1:length(focalGroups)) {
   workflow$addArea(Object = st_sf(regionGeometry), resolution = '60')
   
   # Add datasets
-  for (l in 1:length(speciesDataList)) {
-    dataset <- speciesDataList[[l]]
-    dataType <- attr(dataset, "dataType")
+  for (l in 1:length(speciesData)) {
+    dataset <- speciesData[[l]]
+    dataType <- unique(dataset$dataType)
+    
+    if(dataType == "PA") {dataset$individualCount <- 1}
+    
     datasetName <- paste0("dataset", l, dataType)
     
     workflow$addStructured(dataStructured = dataset,
                            datasetType = dataType,
                            datasetName = datasetName,
                            responseName = 'individualCount',
-                           speciesName = 'species')
+                           speciesName = 'simpleScientificName')
   }
   
   # Add environmental characteristics

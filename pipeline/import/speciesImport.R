@@ -8,6 +8,10 @@
 library(intSDM)
 library(rgbif)
 library(sf)
+library(stringr)
+library(dplyr)
+
+chooseSpecies <-  TRUE # This will be given int he command line as a first argument
 
 ###-----------------###
 ### 1. Preparation ####
@@ -23,33 +27,50 @@ source("utils/defineRegion.R")
 
 # Define initial species list.
 # Here we would normally import a list of species names with associated taxonomic groups. 
-focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
+focalTaxa <- read.csv("data/external/focalTaxa.csv", header = T)
 
-###--------------------###
-### 2. Dataset Import ####
-###--------------------###
+# Use this command if we want to choose certain species, for now we do
+if (chooseSpecies == TRUE) {
+  focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
+}
 
-# Import dataset 1
-dataset1 <- PA_redlist[PA_redlist$species %in% focalSpecies$species,]
-dataset1$taxonomicGroup <- focalSpecies$taxonomicGroup[match(dataset1$species, focalSpecies$species)]
-dataset1 <- st_filter(dataset1, regionGeometry)
-attr(dataset1, "dataType") <- "PA"
+###-----------------###
+### 2. GBIF Import ####
+###-----------------###
 
-# Import dataset 2
-dataset2 <- occ_data(scientificName = focalSpecies$species, hasCoordinate = TRUE, limit = 500, 
-                     geometry = st_bbox(regionGeometry))
+# Import GBIF Data
+GBIFImport <- occ_data(scientificName = focalSpecies$species, hasCoordinate = TRUE, limit = 2000, 
+                     geometry = st_bbox(regionGeometry), phylumKey = focalTaxa$key, coordinateUncertaintyInMeters = '0,500')
+GBIFImportCompiled <- do.call(rbind, lapply(GBIFImport, FUN = function(x) {
+  x$data[,c("scientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord", "year", 
+            "datasetKey", "coordinateUncertaintyInMeters", "datasetName")]
+}))
+GBIFImportCompiled$simpleScientificName <- gsub(" ", "_", word(GBIFImportCompiled$scientificName, 1,2, sep=" "))
 
-# Convert dataset to sp values
+###------------------------------###
+### 2. Attach relevant metadata ####
+###------------------------------###
+
+# Now we import metadata related to GBIF data
+fullMeta <- TRUE
+metaSummary <- TRUE
+source("utils/metadataPrep.R")
+
+# Import dataset type based on dataset name
+GBIFImportCompiled <- merge(GBIFImportCompiled, metadataList$metadata, all.x=TRUE, by = "datasetKey")
+dataTypes <- read.csv("data/external/metadataSummary.csv")
+GBIFImportCompiled$dataType <- dataTypes$dataType[match(GBIFImportCompiled$datasetKey, dataTypes$datasetKey)]
+
+# Narrow down to known data types and split into data frames
 projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
-df <- lapply(dataset2, FUN = function(x) {
-  returningItem <- as.data.frame(x$data[,c("species", "decimalLongitude", "decimalLatitude")])
-  st_as_sf(x = returningItem,                         
+GBIFImportCompiled <- GBIFImportCompiled[!is.na(GBIFImportCompiled$dataType),]
+GBIFLists <- lapply(unique(GBIFImportCompiled$name), FUN  = function(x) {
+  GBIFItem <- GBIFImportCompiled[GBIFImportCompiled$name == x,]
+  st_as_sf(GBIFItem,                         
            coords = c("decimalLongitude", "decimalLatitude"),
            crs = projcrs)
 })
-dataset2 <- do.call(rbind, df)
-dataset2$taxonomicGroup <- focalSpecies$taxonomicGroup[match(dataset2$species, gsub("_", " ", focalSpecies$species))]
-attr(dataset2, "dataType") <- "PO"
+names(GBIFLists) <- unique(GBIFImportCompiled$name)
 
 ###--------------------###
 ### 3. Dataset Upload ####
@@ -57,10 +78,9 @@ attr(dataset2, "dataType") <- "PO"
 
 # For now we're just doing this to the data/temp folder, later this will go to Wallace. A version also needs to be saved in
 # the visualisation folder though, as this will go into the occurrence mapping.
-speciesDataList <- list(dataset1, dataset2)
-attr(speciesDataList, "level") <- level
-attr(speciesDataList, "region") <- region
-dataList <- list(species = speciesDataList, geometry = regionGeometry)
+dataList <- list(species = GBIFLists, metadata = metadataList, geometry = regionGeometry)
+attr(dataList, "level") <- level
+attr(dataList, "region") <- region
 saveRDS(dataList, "data/temp/speciesDataImported.RDS")
 saveRDS(dataList, "visualisation/hotspotMaps/speciesDataList.RDS")
 

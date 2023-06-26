@@ -65,7 +65,7 @@ ANOData <- st_as_sf(ANOData)
 st_crs(ANOData) <- "+proj=longlat +ellps=WGS84"
 
 # Crop to relevant region
-ANOData <- st_crop(ANOData, st_bbox(regionGeometry))
-st_crs(ANOData) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 "
+ANOData <- st_intersection(ANOData, regionGeometry)
+ANOData <- st_transform(ANOData, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
 
 rm("ANOSpecies", "ANOSpeciesTable", "ANOSpeciesFull", "ANOPoints", "ANOUnzippedFolder", "tempANOFolder")

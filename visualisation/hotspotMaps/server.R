@@ -14,6 +14,7 @@ library(shinyjs)
 library(sf)
 library(ggplot2)
 library(intSDM)
+library(dplyr)
 
 dataList <- readRDS("outputData.RDS")
 speciesDataList <- readRDS("speciesDataList.RDS")[["species"]]
@@ -56,35 +57,18 @@ shinyServer(function(input, output) {
   })
   
   output$speciesOccurrenceMap <- renderPlot({
-    
-    focalSpecies <- input$speciesOccurrence
-    projectDirectory <- "/modelOutputs"
-    
-    workflow <- startWorkflow(
-      Projection = '+proj=utm +zone=32 +ellps=WGS84 +datum=WGS84 +units=m +no_defs',
-      Species = focalSpecies,
-      saveOptions = list(projectDirectory = "", projectName =  "vascularPlants"), Save = FALSE
-    )
-    workflow$addArea(Object = st_sf(regionGeometry), resolution = '60')
-    
-    # Add datasets
-    for (l in 1:length(speciesDataList)) {
-      dataset <- speciesDataList[[l]]
-      dataType <- names(speciesDataList)[[l]]
-      
-      if(dataType == "PA") {dataset$individualCount <- 1}
-      
-      datasetName <- paste0("dataset", l, dataType)
-      
-      workflow$addStructured(dataStructured = dataset,
-                             datasetType = dataType,
-                             datasetName = datasetName,
-                             responseName = 'individualCount',
-                             speciesName = 'simpleScientificName')
+    speciesDataSubset <- lapply(speciesDataList, FUN = function(x) {
+      subset <- x[,c("simpleScientificName", "name")]
     }
+    )
+    speciesDataSubset$ANOData <- rename(speciesDataSubset$ANOData, geometry = SHAPE)
+    speciesDataCompiled <- do.call(rbind, speciesDataSubset)
     
+    dataToPlot <- speciesDataCompiled[speciesDataCompiled$simpleScientificName == input$speciesOccurrence,]
     
-    workflow$plot(Species = TRUE)
+    ggplot(regionGeometry) +
+      geom_sf() +
+      geom_sf(data = dataToPlot, aes(colour = name))
   })
   
 })

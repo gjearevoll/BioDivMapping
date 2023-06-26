@@ -51,4 +51,4 @@ if (runBuffer == TRUE) {
 }
 
 # Align project coordinates with the rest of our polygons.
-st_crs(regionGeometry) <- "+proj=longlat +ellps=WGS84"
+regionGeometry <- st_transform(regionGeometry, crs =  "+proj=longlat +ellps=WGS84")

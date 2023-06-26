@@ -58,11 +58,8 @@ shinyUI(
                                 selectInput(inputId = "species", label = "Species:",
                                             selected = "Agrostis capillaris",
                                             choices = c("Vicia sepium" = "Vicia_sepium",
-                                                        "Arnica montana" = "Arnica_montana",
                                                         "Fraxinus excelsior" = "Fraxinus_excelsior",
                                                         "Ulmus glabra" = "Ulmus_glabra",
-                                                        "Poa glauca" = "Poa_glauca",
-                                                        "Carex atrata" = "Carex_atrata",
                                                         "Juniperus communis" = "Juniperus_communis",
                                                         "Saxifraga aizoides" = "Saxifraga_aizoides",
                                                         "Agrostis capillaris" = "Agrostis_capillaris"))
@@ -96,11 +93,8 @@ shinyUI(
                       selectInput(inputId = "speciesOccurrence", label = "Species:",
                                   selected = "Agrostis capillaris",
                                   choices = c("Vicia sepium" = "Vicia_sepium",
-                                              "Arnica montana" = "Arnica_montana",
                                               "Fraxinus excelsior" = "Fraxinus_excelsior",
                                               "Ulmus glabra" = "Ulmus_glabra",
-                                              "Poa glauca" = "Poa_glauca",
-                                              "Carex atrata" = "Carex_atrata",
                                               "Juniperus communis" = "Juniperus_communis",
                                               "Saxifraga aizoides" = "Saxifraga_aizoides",
                                               "Agrostis capillaris" = "Agrostis_capillaris"

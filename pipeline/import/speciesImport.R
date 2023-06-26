@@ -67,10 +67,13 @@ GBIFImportCompiled <- GBIFImportCompiled[!is.na(GBIFImportCompiled$dataType),]
 projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 GBIFLists <- lapply(unique(GBIFImportCompiled$name), FUN  = function(x) {
   GBIFItem <- GBIFImportCompiled[GBIFImportCompiled$name == x,]
-  st_as_sf(GBIFItem,                         
+  GBIFItem <- st_as_sf(GBIFItem,                         
            coords = c("decimalLongitude", "decimalLatitude"),
            crs = projcrs)
+  GBIFcropped <- st_intersection(GBIFItem, st_transform(regionGeometry, crs = projcrs))
+  GBIFcropped
 })
+
 names(GBIFLists) <- unique(GBIFImportCompiled$name)
 
 

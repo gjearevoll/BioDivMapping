@@ -1,0 +1,219 @@
+<eml:eml xmlns:eml="eml://ecoinformatics.org/eml-2.1.1"
+         xmlns:dc="http://purl.org/dc/terms/"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="eml://ecoinformatics.org/eml-2.1.1 http://rs.gbif.org/schema/eml-gbif-profile/1.1/eml.xsd"
+         packageId="https://ipt.gbif.no/resource?id=aso/v1.1" system="http://gbif.org" scope="system"
+         xml:lang="nor">
+
+<dataset>
+  <alternateIdentifier>https://ipt.gbif.no/resource?r=aso</alternateIdentifier>
+  <title xml:lang="nor">Overvåking av semi-naturlig eng (ASO)</title>
+      <creator>
+    <individualName>
+      <surName>Bär</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Johansen</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Vesterbukt</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Svalheim</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Daugstad</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Hinderaker</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Thorvaldsen</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Albertsen</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Carlsen</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Grenne</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Maurset</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Øien</surName>
+    </individualName>
+    <organizationName>NTNU University Museum</organizationName>
+    <positionName>Senior Engineer</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Heimstad</surName>
+    </individualName>
+    <organizationName>Multiconsult</organizationName>
+    <positionName>Senior Environmental Advisor</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Lyngstad</surName>
+    </individualName>
+    <organizationName>NTNU University Museum</organizationName>
+    <positionName>Researcher</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Hasvik</surName>
+    </individualName>
+    <organizationName>Multiconsult</organizationName>
+    <positionName>Senior Environmental Advisor</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Ombler</surName>
+    </individualName>
+    <organizationName>NIBIO</organizationName>
+    <positionName>Student</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Wehn</surName>
+    </individualName>
+    <organizationName>Multiconsult</organizationName>
+    <positionName>Senior Environmental Advisor</positionName>
+      </creator>
+      <creator>
+    <individualName>
+      <surName>Moen</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </creator>
+      <metadataProvider>
+    <individualName>
+      <surName>Solbu</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </metadataProvider>
+      <associatedParty>
+    <individualName>
+      <surName>Solbu</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+    <role>user</role>
+      </associatedParty>
+  <pubDate>
+      2022-12-02
+  </pubDate>
+  <language>nor</language>
+  <abstract>
+    <para>Semi-naturlig eng er en sjelden naturtype i Norge med et høyt biologisk mangfold. Naturtypen er i sterk tilbakegang og truet, men det mangler arealrepresentative tall for denne tilbakegangen og tilstanden til gjenværende arealer. Siden semi-naturlig mark bare utgjør 0,3 % av det totale landarealet i Norge, er det ikke sannsynlig at nasjonal arealrepresentativ naturovervåkning (ANO) vil gi nok data til å utvikle holdbare tilstandsverdier for denne naturtypen. Arealtyperepresentativ overvåking er derfor nødvendig for å skaffe til veie et godt datagrunnlag. Derfor er det utviklet en metode for slik overvåking av semi-naturlig eng i Norge.</para>
+  </abstract>
+      <keywordSet>
+            <keyword>Samplingevent</keyword>
+        <keywordThesaurus>GBIF Dataset Type Vocabulary: http://rs.gbif.org/vocabulary/gbif/dataset_type_2015-07-10.xml</keywordThesaurus>
+      </keywordSet>
+  <intellectualRights>
+    <para>This work is licensed under a <ulink url="http://creativecommons.org/licenses/by/4.0/legalcode"><citetitle>Creative Commons Attribution (CC-BY) 4.0 License</citetitle></ulink>.</para>
+  </intellectualRights>
+  <distribution scope="document">
+    <online>
+      <url function="information">https://www.miljodirektoratet.no/ansvarsomrader/overvaking-arealplanlegging/miljoovervaking/overvakingsprogrammer/basisovervaking/semi-naturlig-eng/</url>
+    </online>
+  </distribution>
+  <coverage>
+      <geographicCoverage>
+          <geographicDescription>Norway</geographicDescription>
+        <boundingCoordinates>
+          <westBoundingCoordinate>4.131</westBoundingCoordinate>
+          <eastBoundingCoordinate>31.201</eastBoundingCoordinate>
+          <northBoundingCoordinate>71.131</northBoundingCoordinate>
+          <southBoundingCoordinate>58.078</southBoundingCoordinate>
+        </boundingCoordinates>
+      </geographicCoverage>
+          <taxonomicCoverage>
+              <taxonomicClassification>
+                  <taxonRankName>kingdom</taxonRankName>
+                <taxonRankValue></taxonRankValue>
+              </taxonomicClassification>
+          </taxonomicCoverage>
+  </coverage>
+  <maintenance>
+    <description>
+      <para></para>
+    </description>
+    <maintenanceUpdateFrequency>annually</maintenanceUpdateFrequency>
+  </maintenance>
+
+      <contact>
+    <individualName>
+      <surName>Solbu</surName>
+    </individualName>
+    <organizationName>Norwegian Institute of Bioeconomy Research</organizationName>
+    <positionName>Research Scientist</positionName>
+      </contact>
+  <methods>
+        <methodStep>
+          <description>
+            <para></para>
+          </description>
+        </methodStep>
+  </methods>
+</dataset>
+  <additionalMetadata>
+    <metadata>
+      <gbif>
+          <dateStamp>2022-12-01T06:09:10.214+00:00</dateStamp>
+          <hierarchyLevel>dataset</hierarchyLevel>
+          <dc:replaces>https://ipt.gbif.no/resource?id=aso/v1.1.xml</dc:replaces>
+      </gbif>
+    </metadata>
+  </additionalMetadata>
+</eml:eml>

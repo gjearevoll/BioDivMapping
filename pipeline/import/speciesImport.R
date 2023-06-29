@@ -35,6 +35,16 @@ if (chooseSpecies == TRUE) {
   focalSpecies <- focalSpecies[focalSpecies$selected,]
 }
 
+# Initialise folders for storage of all run data
+if (!exists("dateAccessed")) {
+  dateAccessed <- as.character(Sys.Date())
+}
+folderName <- paste0("data/run_", dateAccessed)
+if (!file.exists(folderName)) {
+  dir.create(folderName)
+  dir.create(paste0(folderName, "/temp"))
+}
+
 ###-----------------###
 ### 2. GBIF Import ####
 ###-----------------###
@@ -94,6 +104,6 @@ GBIFLists[["ANOData"]] <- ANOData
 dataList <- list(species = GBIFLists, metadata = metadataList, geometry = regionGeometry)
 attr(dataList, "level") <- level
 attr(dataList, "region") <- region
-saveRDS(dataList, "data/temp/speciesDataImported.RDS")
+saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
 saveRDS(dataList, "visualisation/hotspotMaps/speciesDataList.RDS")
 

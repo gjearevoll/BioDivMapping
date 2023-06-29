@@ -14,14 +14,11 @@ for (i in 1:length(focalGroups)) {
   focalGroup <- focalGroups[i]
   focalGroupSpecies <- focalSpecies$species[focalSpecies$taxonomicGroup %in% focalGroup]
   
-  # Define project directory
-  projectDirectory <- paste0(folderName, "/modelOutputs")
-  
   # Initialise workflow, creating folder for model result storage
   workflow <- startWorkflow(
     Projection = '+proj=utm +zone=32 +ellps=WGS84 +datum=WGS84 +units=m +no_defs',
     Species = focalGroupSpecies,
-    saveOptions = list(projectDirectory = projectDirectory, projectName =  focalGroup), Save = TRUE
+    saveOptions = list(projectDirectory = modelFolderName, projectName =  focalGroup), Save = TRUE
   )
   workflow$addArea(Object = st_sf(regionGeometry), resolution = '60')
   
@@ -33,9 +30,6 @@ for (i in 1:length(focalGroups)) {
     
     dataType <- unique(dataset$dataType)
     datasetName <- gsub(" ", "", gsub("[[:punct:]]", "", names(speciesData)[l]))
-    
-    if(dataType == "PA" & datasetName != "ANOData") {dataset$individualCount <- 1}
-    
     
     workflow$addStructured(dataStructured = dataset,
                            datasetType = dataType,

@@ -50,8 +50,8 @@ shinyUI(
                           fluidRow(
                             box(width = 12,title = "Species specs",
                                 sliderInput("range", "Range:",
-                                            min = -100, max = 100,
-                                            value = c(-50,50)),
+                                            min = -200, max = 100,
+                                            value = c(-150,-50)),
                                 selectInput(inputId = "taxa", label = "Taxa:",
                                             selected = "Vascular plants",
                                             choices = c("Vascular plants" = "vascularPlants")),
@@ -62,7 +62,10 @@ shinyUI(
                                                         "Ulmus glabra" = "Ulmus_glabra",
                                                         "Juniperus communis" = "Juniperus_communis",
                                                         "Saxifraga aizoides" = "Saxifraga_aizoides",
-                                                        "Agrostis capillaris" = "Agrostis_capillaris"))
+                                                        "Agrostis capillaris" = "Agrostis_capillaris",
+                                                        "Geranium sylvaticum" = "Geranium_sylvaticum",
+                                                        "Betula pubescens" = "Betula_pubescens"
+                                            ))
 
                             )
                           )
@@ -97,7 +100,9 @@ shinyUI(
                                               "Ulmus glabra" = "Ulmus_glabra",
                                               "Juniperus communis" = "Juniperus_communis",
                                               "Saxifraga aizoides" = "Saxifraga_aizoides",
-                                              "Agrostis capillaris" = "Agrostis_capillaris"
+                                              "Agrostis capillaris" = "Agrostis_capillaris",
+                                              "Geranium sylvaticum" = "Geranium_sylvaticum",
+                                              "Betula pubescens" = "Betula_pubescens"
                                    ))
                   )
                 )

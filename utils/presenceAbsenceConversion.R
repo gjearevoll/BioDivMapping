@@ -36,6 +36,7 @@ allSpecies$dataType <- dataType
 # the species was absent.
 allSpecies$individualCount <- ifelse(allSpecies$simpleScientificName %in% occurrence$species &
                                 allSpecies$eventID %in% occurrence$eventID, 1, 0)
+allSpecies <- allSpecies[complete.cases(allSpecies),]
 
 # New dataset is ready!
 newDataset <- st_as_sf(allSpecies,                         

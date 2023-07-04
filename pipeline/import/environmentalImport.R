@@ -10,7 +10,12 @@
 ###-----------------###
 
 # Run script to define geographical region and resolution we are working with 
-speciesDataList <- readRDS("data/temp/speciesDataImported.RDS")
+# Initialise folders for storage of all run data
+if (!exists("dateAccessed")) {
+  dateAccessed <- as.character(Sys.Date())
+}
+
+speciesDataList <- readRDS(paste0("data/run_", dateAccessed, "/temp/speciesDataImported.RDS"))
 regionGeometry <- speciesDataList$geometry
 
 ###--------------------###
@@ -40,4 +45,4 @@ precipitation <- scale(precipitationcropped)
 # For now we're just doing this to the data/temp folder, later this will go to Wallace
 dataList <- list(precipitation = precipitation, 
                  temperature = temperature)
-saveRDS(dataList, "data/temp/environmentalDataImported.RDS")
+saveRDS(dataList, paste0("data/run_", dateAccessed,"/temp/environmentalDataImported.RDS"))

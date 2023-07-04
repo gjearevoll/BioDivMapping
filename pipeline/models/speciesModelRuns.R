@@ -19,19 +19,22 @@ if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
 }
 folderName <- paste0("data/run_", dateAccessed)
-if (!file.exists(folderName)) {
-  dir.create(folderName)
-  dir.create(paste0(folderName, "/modelOutputs"))
+tempFolderName <- paste0(folderName, "/temp")
+modelFolderName <- paste0(folderName, "/modelOutputs")
+if (!file.exists(modelFolderName)) {
+  dir.create(modelFolderName)
 }
 
 # Import species list
 focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
+focalSpecies <- focalSpecies[focalSpecies$selected,]
 focalGroups <- unique(focalSpecies$taxonomicGroup)
 
 # Import datasets
-speciesData <- readRDS("data/temp/speciesDataImported.RDS")[["species"]]
+importedDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))
+speciesData <- readRDS(paste0(tempFolderName, "/speciesDataProcessed.RDS"))
+regionGeometry <- importedDataList[["geometry"]]
 environmentalDataList <- readRDS("data/temp/environmentalDataImported.RDS")
-regionGeometry <- readRDS("data/temp/speciesDataImported.RDS")[["geometry"]]
 
 source("utils/modelPreparation.R")
 

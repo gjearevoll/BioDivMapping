@@ -34,7 +34,7 @@ focalGroups <- unique(focalSpecies$taxonomicGroup)
 importedDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))
 speciesData <- readRDS(paste0(tempFolderName, "/speciesDataProcessed.RDS"))
 regionGeometry <- importedDataList[["geometry"]]
-environmentalDataList <- readRDS("data/temp/environmentalDataImported.RDS")
+environmentalDataList <- readRDS(paste0(tempFolderName, "/environmentalDataImported.RDS"))
 
 source("utils/modelPreparation.R")
 
@@ -52,7 +52,7 @@ for (i in 1:length(focalGroups)) {
   workflow <- workflowList[[focalGroup]]
 
   # Add model characteristics (mesh, priors, output)
-  workflow$addMesh(cutoff= 2000, max.edge=c(5000, 8000), offset= 100000)
+  workflow$addMesh(cutoff= 20000, max.edge=c(20000, 50000), offset= 100000)
   workflow$specifySpatial(prior.range = c(300000, 0.05),
                           prior.sigma = c(500, 0.2)) #100
   workflow$workflowOutput('Maps')

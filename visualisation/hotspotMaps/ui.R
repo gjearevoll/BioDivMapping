@@ -14,9 +14,7 @@ library(shinydashboard)
 library(shinyjs)
 library(sf)
 library(ggplot2)
-library(intSDM)
 
-dataList <- readRDS("outputData.RDS")
 
 # Define UI for application that draws a histogram
 shinyUI(
@@ -28,8 +26,9 @@ shinyUI(
     # SIDEBAR
     dashboardSidebar(
       sidebarMenu(id = "sidebar",
-                  menuItem("Outputs", tabName = "outputs", icon = icon("dashboard")),
-                  menuItem("Inputs", tabName = "widgets", icon = icon("th"))
+                  menuItem("Model Estimates", tabName = "outputs", icon = icon("binoculars")),
+                  menuItem("Species Occurrences", tabName = "occurrences", icon = icon("worm")),
+                  menuItem("Environmental Covariates", tabName = "covariates", icon = icon("cloud-sun"))
       )
     )
     ,
@@ -66,7 +65,7 @@ shinyUI(
                                                         "Geranium sylvaticum" = "Geranium_sylvaticum",
                                                         "Betula pubescens" = "Betula_pubescens"
                                             ))
-
+                                
                             )
                           )
                   ),
@@ -81,29 +80,64 @@ shinyUI(
                 )
                 
         ),
-        tabItem(tabName = "widgets",
-                h2("Widgets tab content"),
+        tabItem(tabName = "occurrences",
                 fluidRow(
-                  box(title = "Species Occurrence Map",
-                      plotOutput("speciesOccurrenceMap")
+                  column(width = 12,
+                         fluidRow(
+                           box(width = 3,
+                               title = "Species",
+                               br(),
+                               status = "primary",
+                               selectInput(inputId = "speciesOccurrence", label = "Species:",
+                                           selected = "Agrostis capillaris",
+                                           choices = c("Vicia sepium" = "Vicia_sepium",
+                                                       "Fraxinus excelsior" = "Fraxinus_excelsior",
+                                                       "Ulmus glabra" = "Ulmus_glabra",
+                                                       "Juniperus communis" = "Juniperus_communis",
+                                                       "Saxifraga aizoides" = "Saxifraga_aizoides",
+                                                       "Agrostis capillaris" = "Agrostis_capillaris",
+                                                       "Geranium sylvaticum" = "Geranium_sylvaticum",
+                                                       "Betula pubescens" = "Betula_pubescens"
+                                           )
+                               )
+                           )
+                         ),
+                         fluidRow(
+                           box(
+                             title = "Species Occurrence Map",
+                             plotOutput("speciesOccurrenceMap")
+                           )
+                         )
                   )
-                ),
+                )
+        ),
+        tabItem(tabName = "covariates",
                 fluidRow(
-                  
-                  box(title = "Species",
-                      br(),
-                      status = "primary",
-                      selectInput(inputId = "speciesOccurrence", label = "Species:",
-                                  selected = "Agrostis capillaris",
-                                  choices = c("Vicia sepium" = "Vicia_sepium",
-                                              "Fraxinus excelsior" = "Fraxinus_excelsior",
-                                              "Ulmus glabra" = "Ulmus_glabra",
-                                              "Juniperus communis" = "Juniperus_communis",
-                                              "Saxifraga aizoides" = "Saxifraga_aizoides",
-                                              "Agrostis capillaris" = "Agrostis_capillaris",
-                                              "Geranium sylvaticum" = "Geranium_sylvaticum",
-                                              "Betula pubescens" = "Betula_pubescens"
-                                   ))
+                  column(width = 12,
+                         fluidRow(
+                           box(width = 3,
+                               title = "Environmental Covariates",
+                               br(),
+                               status = "primary",
+                               selectInput(inputId = "covariate", label = "Environmental Covariate:",
+                                           selected = "temperature",
+                                           choices = c("Aspect" = "aspect",
+                                                       "Elevation" = "elevation",
+                                                       "Precipitation" = "precipitation",
+                                                       "Slope" = "slope",
+                                                       "Soil moisture" = "soil_moisture",
+                                                       "Soil organic carbon" = "soil_organic_carbon",
+                                                       "Temperature" = "temperature"
+                                           )
+                               )
+                           )
+                         ),
+                         fluidRow(
+                           box(
+                             title = "Environmental Covariate Map",
+                             plotOutput("covariateMap")
+                           )
+                         )
                   )
                 )
         )

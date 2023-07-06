@@ -52,14 +52,26 @@ for (i in 1:length(speciesGroups)) {
     dataset <- speciesIntensities[[x]]
     dataset$predictions$mean
   }))
-  colnames(speciesIntensityList) <- speciesRun
-  speciesIntensityList$metric <- apply(speciesIntensityList, 1, sum)
+  speciesIntensityList$metric <- scale(apply(speciesIntensityList, 1, sum))
+  
+  # Now we scale all columns based on all numbers
+  meanForScaling <- mean(as.vector(as.matrix(speciesIntensityList)))
+  sdForScaling <- sd(as.vector(as.matrix(speciesIntensityList)))
+  speciesIntensitiesScaled <- lapply(1:length(speciesIntensities), FUN = function(x) {
+    intensityList <- speciesIntensities[[x]]
+    intensityScaled <- (intensityList$predictions$mean - meanForScaling)/sdForScaling
+    intensityList$predictions$mean <- intensityScaled
+    intensityList
+  })
+  
+  # Name columns and take mean for biodiversity metric
+  names(speciesIntensitiesScaled) <- speciesRun
   
   # Save all relevant lists
   biodivPredictions <- readRDS(paste0(list.dirs(path = groupFolderLocation, recursive = FALSE)[1], "/Predictions.rds"))
   biodivPredictions$predictions$mean <- speciesIntensityList$metric
   saveRDS(biodivPredictions, file = paste0(groupFolderLocation, "/biodiversityMetric.RDS"))
-  outputList[[focalGroup]] <- list(biodiversity = biodivPredictions, speciesIntensities = speciesIntensities)
+  outputList[[focalGroup]] <- list(biodiversity = biodivPredictions, speciesIntensities = speciesIntensitiesScaled)
 }
 
 # Save visualisation data with species data

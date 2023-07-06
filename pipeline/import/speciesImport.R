@@ -18,8 +18,8 @@ chooseSpecies <-  TRUE # This will be given int he command line as a first argum
 ###-----------------###
 
 # Run script to define geographical region and resolution we are working with 
-level <- "municipality"  # level can be country, county, municipality, or points (examples of points given below)
-region <- "5001"
+level <- "county"  # level can be country, county, municipality, or points (examples of points given below)
+region <- "50"
 runBuffer <- FALSE
 #points <- c(4.641979, 57.97976, 31.05787, 71.18488)
 #names(points) <- c("north", "south", "east", "west")
@@ -101,7 +101,7 @@ GBIFLists[["ANOData"]] <- ANOData
 
 # For now we're just doing this to the data/temp folder, later this will go to Wallace. A version also needs to be saved in
 # the visualisation folder though, as this will go into the occurrence mapping.
-dataList <- list(species = GBIFLists, metadata = metadataList, geometry = regionGeometry)
+dataList <- list(species = GBIFLists, metadata = metadataList, geometry = regionGeometry, projcrs = projcrs)
 attr(dataList, "level") <- level
 attr(dataList, "region") <- region
 saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))

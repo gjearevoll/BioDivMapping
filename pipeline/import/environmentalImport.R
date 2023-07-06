@@ -5,6 +5,10 @@
 # The following script imports our various forms of environmental data and processes them, based on the type of data
 # and other specifications related to the source.
 
+# NOTE: Before runnign this script, the speciesImport.R script needs to have been run.
+
+library(raster)
+
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###
@@ -18,31 +22,32 @@ if (!exists("dateAccessed")) {
 speciesDataList <- readRDS(paste0("data/run_", dateAccessed, "/temp/speciesDataImported.RDS"))
 regionGeometry <- speciesDataList$geometry
 
+# The following is a list of the various environmental variables we have available.
+parameters <- read.csv("data/external/focalCovariates.csv")
+parameters <- parameters$parameters[parameters$selected]
+
+# Correct crs
+newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
+
 ###--------------------###
 ### 2. Dataset Import ####
 ###--------------------###
 
-# Import temperature data
-load('data/external/MeanSpringSummerTemp.rda')
-newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
-temp2 <- raster::projectRaster(MeanSpringSummerTemp, crs=newproj, res=0.1)
-names(temp2) <- "temperature"
-temperaturecropped <- crop(temp2, raster::extent(st_bbox(regionGeometry)))
-temperature <- scale(temperaturecropped)
-
-# Import precipitation data
-load('data/external/MeanSpringSummerPrec.rda')
-newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
-prec2 <- raster::projectRaster(MeanSpringSummerPrec, crs=newproj, res=0.1)
-names(prec2) <- "precipitation"
-precipitationcropped <- crop(prec2, raster::extent(st_bbox(regionGeometry)))
-precipitation <- scale(precipitationcropped)
+# Import and correctly project all covariate data selected in the csv file
+parametersCropped <- lapply(parameters, FUN = function(x) {
+  dataRaw <- raster(paste0("data/external/environmentalCovariates/", x ,".tiff"))
+  dataProjected <- projectRaster(dataRaw, crs=newproj, res=0.1)
+  dataCropped <- crop(dataProjected, as_Spatial(regionGeometry))
+  dataMasked <- mask(dataCropped, as_Spatial(regionGeometry))
+  names(dataMasked) <- x
+  dataFinal <- scale(dataMasked)
+})
+names(parametersCropped) <- parameters
 
 ###--------------------###
 ### 3. Dataset Upload ####
 ###--------------------###
 
 # For now we're just doing this to the data/temp folder, later this will go to Wallace
-dataList <- list(precipitation = precipitation, 
-                 temperature = temperature)
-saveRDS(dataList, paste0("data/run_", dateAccessed,"/temp/environmentalDataImported.RDS"))
+saveRDS(parametersCropped, paste0("data/run_", dateAccessed,"/temp/environmentalDataImported.RDS"))
+

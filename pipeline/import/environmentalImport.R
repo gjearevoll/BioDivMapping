@@ -8,6 +8,7 @@
 # NOTE: Before runnign this script, the speciesImport.R script needs to have been run.
 
 library(raster)
+library(sf)
 
 ###-----------------###
 ### 1. Preparation ####
@@ -50,4 +51,4 @@ names(parametersCropped) <- parameters
 
 # For now we're just doing this to the data/temp folder, later this will go to Wallace
 saveRDS(parametersCropped, paste0("data/run_", dateAccessed,"/temp/environmentalDataImported.RDS"))
-
+saveRDS(parametersCropped, "visualisation/hotspotMaps/data/covariateDataList.RDS")

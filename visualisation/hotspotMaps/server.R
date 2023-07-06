@@ -13,12 +13,27 @@ library(shinydashboard)
 library(shinyjs)
 library(sf)
 library(ggplot2)
-library(intSDM)
 library(dplyr)
+library(inlabru)
+library(randomcoloR)
 
-dataList <- readRDS("outputData.RDS")
-speciesDataList <- readRDS("speciesDataList.RDS")[["species"]]
-regionGeometry <- readRDS("speciesDataList.RDS")[["geometry"]]
+dataList <- readRDS("data/outputData.RDS")
+speciesDataList <- readRDS("data/speciesDataList.RDS")[["species"]]
+regionGeometry <- readRDS("data/speciesDataList.RDS")[["geometry"]]
+covariateData <- readRDS("data/covariateDataList.RDS")
+
+speciesDataSubset <- lapply(speciesDataList, FUN = function(x) {
+  subset <- x[,c("simpleScientificName", "name")]
+}
+)
+speciesDataSubset$ANOData <- rename(speciesDataSubset$ANOData, geometry = SHAPE)
+speciesDataCompiled <- do.call(rbind, speciesDataSubset) %>% arrange(name)
+
+n <- length(unique(speciesDataCompiled$name))
+palette <- distinctColorPalette(n)
+colourFrame <- data.frame(name = unique(speciesDataCompiled$name), colour =  palette)
+
+speciesDataCompiled$colours <- colourFrame$colour[match(speciesDataCompiled$name, colourFrame$name)]
 
 
 # Define server logic required to draw a histogram
@@ -39,7 +54,7 @@ shinyServer(function(input, output) {
                                          na.value = "grey50",
                                          guide = "colourbar",
                                          aesthetics = "fill")
-
+      
     } else {
       fillData <- dataType
       scaleFill <-  scale_fill_gradient2(low = "red",
@@ -57,18 +72,32 @@ shinyServer(function(input, output) {
   })
   
   output$speciesOccurrenceMap <- renderPlot({
-    speciesDataSubset <- lapply(speciesDataList, FUN = function(x) {
-      subset <- x[,c("simpleScientificName", "name")]
-    }
-    )
-    speciesDataSubset$ANOData <- rename(speciesDataSubset$ANOData, geometry = SHAPE)
-    speciesDataCompiled <- do.call(rbind, speciesDataSubset)
     
     dataToPlot <- speciesDataCompiled[speciesDataCompiled$simpleScientificName == input$speciesOccurrence,]
+    datasetsInData <- unique(dataToPlot$name)
     
     ggplot(regionGeometry) +
       geom_sf() +
-      geom_sf(data = dataToPlot, aes(colour = name))
+      geom_sf(data = dataToPlot, aes(colour = colours, labels = name)) +
+      scale_colour_identity(guide = "legend", breaks = colourFrame$colour, labels = colourFrame$name)
+  })
+  
+  output$covariateMap <- renderPlot({
+    
+    covariateToPlot <- covariateData[[input$covariate]]
+    covariateDataDF <- as.data.frame(covariateToPlot, xy = TRUE) 
+    colnames(covariateDataDF)[3] <- "value"
+    
+    ggplot(regionGeometry)+
+      geom_raster(data = covariateDataDF, aes(x = x, y = y, fill = value))  +
+      geom_sf(fill = NA, lwd = 1, colour = "black") +
+      theme_light()  +
+      theme(axis.title.x=element_blank(), 
+            axis.title.y=element_blank()) +
+      scale_fill_continuous(na.value = NA)
   })
   
 })
+
+
+

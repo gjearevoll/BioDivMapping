@@ -76,4 +76,4 @@ for (i in 1:length(speciesGroups)) {
 
 # Save visualisation data with species data
 saveRDS(outputList, file=paste0(folderName, "/outputData.RDS"))
-saveRDS(outputList, file="visualisation/hotspotMaps/outputData.RDS")
+saveRDS(outputList, file="visualisation/hotspotMaps/data/outputData.RDS")

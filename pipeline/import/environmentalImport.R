@@ -37,9 +37,10 @@ newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
 parametersCropped <- lapply(parameters, FUN = function(x) {
   dataRaw <- raster(paste0("data/external/environmentalCovariates/", x ,".tiff"))
   dataProjected <- projectRaster(dataRaw, crs=newproj, res=0.1)
-  dataCropped <- crop(dataProjected, raster::extent(st_bbox(regionGeometry)))
-  names(dataCropped) <- x
-  dataFinal <- scale(dataCropped)
+  dataCropped <- crop(dataProjected, as_Spatial(regionGeometry))
+  dataMasked <- mask(dataCropped, as_Spatial(regionGeometry))
+  names(dataMasked) <- x
+  dataFinal <- scale(dataMasked)
 })
 names(parametersCropped) <- parameters
 

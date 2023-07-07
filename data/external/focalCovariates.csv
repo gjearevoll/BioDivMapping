@@ -20,10 +20,10 @@
 19,forest_treeheight.tif,FALSE
 20,land.tif,FALSE
 21,precipitation,TRUE
-22,slope,TRUE
+22,slope,FALSE
 23,soil_coarse_fraction,FALSE
 24,soil_moisture,TRUE
-25,soil_organic_carbon,TRUE
+25,soil_organic_carbon,FALSE
 26,soil_ph,FALSE
 27,solar_radiation,FALSE
 28,temperature,TRUE

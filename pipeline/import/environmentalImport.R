@@ -40,6 +40,7 @@ newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
 # Import and correctly project all covariate data selected in the csv file
 parametersCropped <- lapply(parameters, FUN = function(x) {
   
+  # Import rasters from either Wallace server or a local folder
   if (externalImport == TRUE) {
     targetDatabase <- "environmental_covariates"
     source("utils/initiateWallaceConnection.R")
@@ -48,6 +49,8 @@ parametersCropped <- lapply(parameters, FUN = function(x) {
   } else {
     rasterisedVersion <- raster(paste0("data/external/environmentalCovariates/",x, ".tiff"))
   }
+  
+  # Need to project, crop and scale the raster
   crs(rasterisedVersion) <- "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs"
   dataProjected <- projectRaster(rasterisedVersion, crs=newproj, res=0.1)
   dataCropped <- crop(dataProjected, as_Spatial(st_buffer(regionGeometry, 20000)))
@@ -62,6 +65,6 @@ names(parametersCropped) <- parameters
 ### 3. Dataset Upload ####
 ###--------------------###
 
-# For now we're just doing this to the data/temp folder, later this will go to Wallace
+# Save both to temp file for model processing and visualisation folder for mapping
 saveRDS(parametersCropped, paste0("data/run_", dateAccessed,"/temp/environmentalDataImported.RDS"))
 saveRDS(parametersCropped, "visualisation/hotspotMaps/data/covariateDataList.RDS")

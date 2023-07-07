@@ -5,6 +5,8 @@
 # The following script processes our different forms of data based on rules for different datasets, so that
 # they are ready for use in our integrated SDMs.
 
+library(dplyr)
+
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###
@@ -78,8 +80,13 @@ if (uploadToWallace == TRUE) {
   
   # Edit data frames to have same umber of columns
   processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x) {
+    dataset <- processedData[[x]]
     datasetName <- names(processedData)[x]
-    datasetShort <- processedData[[x]][,c("simpleScientificName", "dataType", "individualCount", "geometry")]
+    datasetType <- unique(dataset$dataType)
+    if (datasetType == "PO") {
+      dataset$individualCount <- 1
+    }
+    datasetShort <- dataset[,c("simpleScientificName", "dataType", "individualCount", "geometry")]
     datasetShort$datasetName <- datasetName
     datasetShort
   }

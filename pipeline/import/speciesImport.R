@@ -101,9 +101,10 @@ GBIFLists[["ANOData"]] <- ANOData
 
 # For now we're just doing this to the data/temp folder, later this will go to Wallace. A version also needs to be saved in
 # the visualisation folder though, as this will go into the occurrence mapping.
-dataList <- list(species = GBIFLists, metadata = metadataList, geometry = regionGeometry, projcrs = projcrs)
+dataList <- list(species = GBIFLists, metadata = metadataList, projcrs = projcrs)
 attr(dataList, "level") <- level
 attr(dataList, "region") <- region
 saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
 saveRDS(dataList, "visualisation/hotspotMaps/data/speciesDataList.RDS")
+saveRDS(regionGeometry, paste0(folderName, "/regionGeometry.RDS"))
 

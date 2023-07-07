@@ -14,6 +14,8 @@ for (i in 1:length(focalGroups)) {
   focalGroup <- focalGroups[i]
   focalGroupSpecies <- focalSpecies$species[focalSpecies$taxonomicGroup %in% focalGroup]
   
+  focalSpeciesData <- speciesData
+  
   # Initialise workflow, creating folder for model result storage
   workflow <- startWorkflow(
     Projection = '+proj=utm +zone=32 +ellps=WGS84 +datum=WGS84 +units=m +no_defs',
@@ -22,15 +24,16 @@ for (i in 1:length(focalGroups)) {
   )
   workflow$addArea(Object = st_sf(regionGeometry), resolution = '60')
   
-  # Add datasets
+  # Add datasets - note that for the moment this excludes the NTNU field notes and ANO,
+  # the model will currently not run with these involved
   for (l in c(1:5)) {
-    dataset <- speciesData[[l]]
+    dataset <- focalSpeciesData[[l]]
     
     if (nrow(dataset) < 5) next
     
     dataType <- unique(dataset$dataType)
-    datasetName <- gsub(" ", "", gsub("[[:punct:]]", "", names(speciesData)[l]))
-    
+    datasetName <- gsub(" ", "", gsub("[[:punct:]]", "", names(focalSpeciesData)[l]))
+  
     workflow$addStructured(dataStructured = dataset,
                            datasetType = dataType,
                            datasetName = datasetName,
@@ -48,5 +51,5 @@ for (i in 1:length(focalGroups)) {
 }
 
 rm("i", "l", "dataset", "dataType", "datasetName", "workflow", 
-   "environmentalDataList", "speciesDataList", "focalGroup", "focalGroupSpecies")
+   "environmentalDataList", "focalGroup", "focalGroupSpecies")
 

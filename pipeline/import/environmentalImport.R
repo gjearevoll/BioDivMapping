@@ -14,6 +14,8 @@ library(sf)
 ### 1. Preparation ####
 ###-----------------###
 
+externalImport <- FALSE
+
 # Run script to define geographical region and resolution we are working with 
 # Initialise folders for storage of all run data
 if (!exists("dateAccessed")) {
@@ -21,7 +23,7 @@ if (!exists("dateAccessed")) {
 }
 
 speciesDataList <- readRDS(paste0("data/run_", dateAccessed, "/temp/speciesDataImported.RDS"))
-regionGeometry <- speciesDataList$geometry
+regionGeometry <- readRDS(paste0("data/run_", dateAccessed, "/regionGeometry.RDS"))
 
 # The following is a list of the various environmental variables we have available.
 parameters <- read.csv("data/external/focalCovariates.csv")
@@ -34,14 +36,25 @@ newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
 ### 2. Dataset Import ####
 ###--------------------###
 
+
 # Import and correctly project all covariate data selected in the csv file
 parametersCropped <- lapply(parameters, FUN = function(x) {
-  dataRaw <- raster(paste0("data/external/environmentalCovariates/", x ,".tiff"))
-  dataProjected <- projectRaster(dataRaw, crs=newproj, res=0.1)
-  dataCropped <- crop(dataProjected, as_Spatial(regionGeometry))
-  dataMasked <- mask(dataCropped, as_Spatial(regionGeometry))
+  
+  if (externalImport == TRUE) {
+    targetDatabase <- "environmental_covariates"
+    source("utils/initiateWallaceConnection.R")
+    dataRaw <- dbReadTable(con, x)
+    rasterisedVersion <- rasterFromXYZ(dataRaw)
+  } else {
+    rasterisedVersion <- raster(paste0("data/external/environmentalCovariates/",x, ".tiff"))
+  }
+  crs(rasterisedVersion) <- "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs"
+  dataProjected <- projectRaster(rasterisedVersion, crs=newproj, res=0.1)
+  dataCropped <- crop(dataProjected, as_Spatial(st_buffer(regionGeometry, 20000)))
+  dataMasked <- mask(dataCropped, as_Spatial(st_buffer(regionGeometry, 20000)))
   names(dataMasked) <- x
   dataFinal <- scale(dataMasked)
+  dataFinal
 })
 names(parametersCropped) <- parameters
 

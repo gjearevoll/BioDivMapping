@@ -14,6 +14,8 @@ print("Preparing data for model run.")
 library(intSDM)
 library(rgbif)
 
+externalImport <- FALSE
+
 # Initialise folders for storage of all run data
 if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
@@ -31,10 +33,37 @@ focalSpecies <- focalSpecies[focalSpecies$selected,]
 focalGroups <- unique(focalSpecies$taxonomicGroup)
 
 # Import datasets
-importedDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))
-speciesData <- readRDS(paste0(tempFolderName, "/speciesDataProcessed.RDS"))
-regionGeometry <- importedDataList[["geometry"]]
+regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 environmentalDataList <- readRDS(paste0(tempFolderName, "/environmentalDataImported.RDS"))
+
+if (externalImport == TRUE) {
+  
+  # When importing externally we need to take steps to transform this back into a series of nested lists
+  targetDatabase <- "species_occurrences"
+  source("utils/initiateWallaceConnection.R")
+  allSpeciesData <- dbReadTable(con, "processed_species_data")
+  
+  # Now convert data into nested lists
+  allSpeciesGroups <- unique(allSpeciesData$taxa)
+  speciesData <- lapply(allSpeciesGroups, FUN = function(x) {
+    speciesSubset <- allSpeciesData[allSpeciesData$taxa == x,]
+    allDatasets <- unique(speciesSubset$datasetName)
+    speciesByDataset <- lapply(allDatasets, FUN = function(y) {
+      dataSubset <- speciesSubset[speciesSubset$datasetName == y,]
+      geometrisedDataSubset <- st_as_sf(dataSubset, coords = c("decimalLongitude", "decimalLatitude"))
+      st_crs(geometrisedDataSubset) <- st_crs(regionGeometry)
+      geometrisedDataSubset
+    })
+    names(speciesByDataset) <- allDatasets
+    speciesByDataset
+  })
+  names(speciesData) <- allSpeciesGroups
+  
+} else {
+  speciesData <- readRDS(paste0(tempFolderName, "/speciesDataProcessed.RDS"))
+}
+
+
 
 source("utils/modelPreparation.R")
 

@@ -8,23 +8,60 @@ three vascular plant species across Trondheim.
 
 When the pipeline is running at an acceptable scope or level a more detailed instruction guide will be provided, however for the moment the description below serves as a brief overview of the pipeline structure. A viualisation of the workflow can be found [at this Miro board](https://miro.com/app/board/uXjVMCkk6YI=/).
 
-The first step is the speciesImport.R script, which imports species data from different sources and characterises them using
-their data type (presence/absence, occurrence-only or abundance) and data source (GBIF, ANO, other). In this step we also define the 
-region across which we want to measure hotspots.
+#### [speciesImport.R](https://github.com/gjearevoll/BioDivMapping/blob/main/pipeline/import/speciesImport.R)
 
-The environmentalImport.R script is then used to import environmental data across the same region.
+This is the starting point for the entire pipeline. There are a few inputs that should be defined at the top of the script before running. 
+These are necessary imports for the defineRegion.R util script, which defines the spatial region we are looking at during the pipeline run.
+These will later be converted to function arguments.
+
+- level - This defines the spatial level for which the pipeline will run. Options are 'municipality', 'county', 'country' or 'points'.
+- region - Defines the region. If 'municipality' or 'county', use Norwegian standard numerical codes to define the region 
+([found here](https://kartverket.no/til-lands/kommunereform/tekniske-endringer-ved-sammenslaing-og-grensejustering/komendr2020)).
+
+The script uses two csv files as well.
+
+- focalTaxa.csv - Defines the taxonomic groups we are focussing on and their necessary codes in GBIF.
+- focalSpecies.csv - Defines the species we are using in the pipeline.
+
+Thereafter the script imports data from GBIF using the spatial region defined above. It also imports necessary data from the ANO database.
+
+**Outputs**: Full species data list (sf class), regional geometry file (sf class).
+
+#### [environmentalImport.R](https://github.com/gjearevoll/BioDivMapping/blob/main/pipeline/import/environmentalImport.R)
+
+The environmentalImport.R script is then used to import environmental data across the same region. The focalCovariates.csv file defines which covariates we are using in the model. The environmental data has been provided by Dr. Ron Tugonov.
+
+**Outputs**: List of environmental datasets (raster class).
+
+#### [speciesProcessing.R](https://github.com/gjearevoll/BioDivMapping/blob/main/pipeline/processing/speciesDataProcessing.R)
+
+Since some of the databases are listed as presence only but are in fact presence absence, there is additional processing required. This 
+script takes those datasets and checks which species were surveyed for. If those species do not show up in an event, they are considered as
+absences in that event.
+
+Additionally, since this script provides the final dataset which will be used in the modelling, there is an option in this script to upload the dataset to Wallace. This is set to FALSE as a default for now.
+
+**Outputs**: List of processed datasets (sf).
+
+#### [speciesModelRuns.R](https://github.com/gjearevoll/BioDivMapping/blob/main/pipeline/models/speciesModelRuns.R)
 
 The speciesModelRuns.R data scripts are then used to coalesce the data into a format whereby it can be input into Philip Mosert's
-[intSDM package](https://github.com/PhilipMostert/intSDM). The script creates a new subfolder in the data folder based (unless otherwise 
-specified) on the date that the models are being run (run_xxxx-xx-xx). All output data is saved here, with species models nested under 
-taxa groups.
+[intSDM package](https://github.com/PhilipMostert/intSDM). The utils script modelPreparation.R also plays a large role here, coalescing the species and environmental data into an R6 Environment object.*
+
+**Important**: The properts of the INLA Mesh need to be adjusted whenever the region is changed. Best to run a few trials whenever you do this using `workflow$plot(Mesh = TRUE)`.
+
+**Outputs**: Each species run through the model gets its own folder with a map and set of predictions.
+
+#### [biodiversityMetricEstimation.R](https://github.com/gjearevoll/BioDivMapping/blob/main/pipeline/processing/biodiversityMetricEstimation.R)
 
 The biodiversityMetricEstimation.R script is then used to aggregate the results of the integrated species models to a biodiversity 
 metric. This, along with the results from individual species models, is saved in the data folder, as well as directly into the
 visualisation folder.
 
-The visualisation/hotspotMap folder contains a shiny app which shows species occurence data, modelled species intensity data, and
-biodiversity metrics.
+#### [visualisation/hotspotMaps](https://github.com/gjearevoll/BioDivMapping/tree/main/visualisation/hotspotMaps)
+
+The visualisation/hotspotMap folder contains a shiny app which shows species occurrence data, modelled species intensity data, and
+biodiversity metrics. THe output can be previewed in **[this shiny app](https://swp-data-projects.shinyapps.io/hotspotMaps/)**.
 
 ## Folder structure
 

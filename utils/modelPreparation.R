@@ -26,7 +26,7 @@ for (i in 1:length(focalGroups)) {
   
   # Add datasets - note that for the moment this excludes the NTNU field notes and ANO,
   # the model will currently not run with these involved
-  for (l in c(1:5)) {
+  for (l in c(1:length(focalSpeciesData))) {
     dataset <- focalSpeciesData[[l]]
     
     if (nrow(dataset) < 5) next

@@ -124,9 +124,7 @@ shinyUI(
                                            choices = c("Aspect" = "aspect",
                                                        "Elevation" = "elevation",
                                                        "Precipitation" = "precipitation",
-                                                       "Slope" = "slope",
                                                        "Soil moisture" = "soil_moisture",
-                                                       "Soil organic carbon" = "soil_organic_carbon",
                                                        "Temperature" = "temperature"
                                            )
                                )

@@ -19,7 +19,7 @@ library(randomcoloR)
 
 dataList <- readRDS("data/outputData.RDS")
 speciesDataList <- readRDS("data/speciesDataList.RDS")[["species"]]
-regionGeometry <- readRDS("data/speciesDataList.RDS")[["geometry"]]
+regionGeometry <- readRDS("data/regionGeometry.RDS")
 covariateData <- readRDS("data/covariateDataList.RDS")
 
 speciesDataSubset <- lapply(speciesDataList, FUN = function(x) {

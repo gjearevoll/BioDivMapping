@@ -48,9 +48,6 @@ shinyUI(
                           ),
                           fluidRow(
                             box(width = 12,title = "Species specs",
-                                sliderInput("range", "Range:",
-                                            min = -5, max = 5,
-                                            value = c(-2,2)),
                                 selectInput(inputId = "taxa", label = "Taxa:",
                                             selected = "Vascular plants",
                                             choices = c("Vascular plants" = "vascularPlants")),

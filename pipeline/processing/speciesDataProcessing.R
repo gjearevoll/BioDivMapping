@@ -30,6 +30,7 @@ tempFolderName <- paste0(folderName, "/temp")
 speciesDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))
 speciesData <- speciesDataList[["species"]]
 metadata <- speciesDataList$metadata$metadata
+regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 
 ###----------------###
 ### 2. Processing ####
@@ -72,35 +73,44 @@ names(processedData) <- namesProcessedData
 processedData <- processedData[lapply(processedData,length)>0]
 saveRDS(processedData, paste0(tempFolderName, "/speciesDataProcessed.RDS"))
 
+###----------------------###
+### 3. Produce metadata ####
+###----------------------###
+
+# To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
+ 
+# Edit data frames to have same number of columns
+processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x) {
+  dataset <- processedData[[x]]
+  datasetName <- names(processedData)[x]
+  datasetType <- unique(dataset$dataType)
+  if (datasetType == "PO") {
+    dataset$individualCount <- 1
+  }
+  datasetShort <- dataset[,c("simpleScientificName", "dataType", "individualCount", "geometry")]
+  datasetShort$datasetName <- datasetName
+  datasetShort
+}
+)
+
+# Combine into one data frame and add date accessed
+processedDataCompiled <- do.call(rbind, processedDataForCompilation)
+processedDataCompiled$dateAccessed <- Sys.Date()
+processedDataCompiled$taxa <- focalSpecies$taxonomicGroup[match(processedDataCompiled$simpleScientificName, focalSpecies$species)]
+
+# Turn geometry column to latitude and longitude
+processedDataDF <- st_drop_geometry(processedDataCompiled)
+processedDataDF[,c("decimalLongitude", "decimalLatitude")] <- st_coordinates(processedDataCompiled)
+
+rmarkdown::render("utils/metadataProduction.Rmd", output_file = paste0("../",folderName, "/speciesMetadata.html"))
+
+
 ###-----------------------###
-### 3. Upload to Wallace ####
+### 4. Upload to Wallace ####
 ###-----------------------###
 
 if (uploadToWallace == TRUE) {
-  
-  # Edit data frames to have same umber of columns
-  processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x) {
-    dataset <- processedData[[x]]
-    datasetName <- names(processedData)[x]
-    datasetType <- unique(dataset$dataType)
-    if (datasetType == "PO") {
-      dataset$individualCount <- 1
-    }
-    datasetShort <- dataset[,c("simpleScientificName", "dataType", "individualCount", "geometry")]
-    datasetShort$datasetName <- datasetName
-    datasetShort
-  }
-  )
-  
-  # Combine into one data frame and add date accessed
-  processedDataCompiled <- do.call(rbind, processedDataForCompilation)
-  processedDataCompiled$dateAccessed <- Sys.Date()
-  processedDataCompiled$taxa <- focalSpecies$taxonomicGroup[match(processedDataCompiled$simpleScientificName, focalSpecies$species)]
-  
-  # Turn geometry column to latitude and longitude
-  processedDataDF <- st_drop_geometry(processedDataCompiled)
-  processedDataDF[,c("decimalLongitude", "decimalLatitude")] <- st_coordinates(processedDataCompiled)
-  
+
   # Connect to database
   targetDatabase <- "species_occurrences"
   source("utils/initiateWallaceConnection.R")
@@ -108,3 +118,4 @@ if (uploadToWallace == TRUE) {
   # Upload
   dbAppendTable(con, name = "processed_species_data", value = processedDataDF)
 }
+

@@ -47,29 +47,29 @@ for (i in 1:length(speciesGroups)) {
   })
   names(speciesIntensities) <- speciesRun
   
-  # Calculate metric for species intensities
-  speciesIntensityList <- as.data.frame(sapply(1:length(speciesRun), FUN = function(x) {
-    dataset <- speciesIntensities[[x]]
-    dataset$predictions$mean
-  }))
-  speciesIntensityList$metric <- scale(apply(speciesIntensityList, 1, sum))
-  
-  # Now we scale all columns based on all numbers
-  meanForScaling <- mean(as.vector(as.matrix(speciesIntensityList)))
-  sdForScaling <- sd(as.vector(as.matrix(speciesIntensityList)))
+  # Scale all columns for each species between 0 and 1
   speciesIntensitiesScaled <- lapply(1:length(speciesIntensities), FUN = function(x) {
     intensityList <- speciesIntensities[[x]]
-    intensityScaled <- (intensityList$predictions$mean - meanForScaling)/sdForScaling
+    intensityVector <- intensityList$predictions$mean
+    intensityScaled <- (intensityVector - min(intensityVector))/(max(intensityVector)-min(intensityVector))
     intensityList$predictions$mean <- intensityScaled
     intensityList
   })
   
-  # Name columns and take mean for biodiversity metric
+  # Name columns and rescale aggregate for biodiversity metric
   names(speciesIntensitiesScaled) <- speciesRun
+  
+  # Calculate total metric for biodiversity
+  speciesIntensityList <- as.data.frame(sapply(1:length(speciesIntensitiesScaled), FUN = function(x) {
+    dataset <- speciesIntensitiesScaled[[x]]
+    dataset$predictions$mean
+  }))
+  totalIntensity <- rowSums(speciesIntensityList)
+  totalIntensityScaled <- (totalIntensity - min(totalIntensity))/(max(totalIntensity)-min(totalIntensity))
   
   # Save all relevant lists
   biodivPredictions <- readRDS(paste0(list.dirs(path = groupFolderLocation, recursive = FALSE)[1], "/Predictions.rds"))
-  biodivPredictions$predictions$mean <- speciesIntensityList$metric
+  biodivPredictions$predictions$mean <- totalIntensityScaled
   saveRDS(biodivPredictions, file = paste0(groupFolderLocation, "/biodiversityMetric.RDS"))
   outputList[[focalGroup]] <- list(biodiversity = biodivPredictions, speciesIntensities = speciesIntensitiesScaled)
 }

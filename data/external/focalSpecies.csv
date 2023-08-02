@@ -1,12 +1,20 @@
 species,taxonomicGroup,selected
 Fraxinus_excelsior,vascularPlants,TRUE
-Arnica_montana,vascularPlants,FALSE
+Arnica_montana,vascularPlants,TRUE
 Ulmus_glabra,vascularPlants,TRUE
-Poa_glauca,vascularPlants,FALSE
-Carex_atrata,vascularPlants,FALSE
+Poa_glauca,vascularPlants,TRUE
+Carex_atrata,vascularPlants,TRUE
 Juniperus_communis,vascularPlants,TRUE
 Saxifraga_aizoides,vascularPlants,TRUE
 Vicia_sepium,vascularPlants,TRUE
 Agrostis_capillaris,vascularPlants,TRUE
 Geranium_sylvaticum,vascularPlants,TRUE
 Betula_pubescens,vascularPlants,TRUE
+Alectoria_sarmentosa,fungi,TRUE
+Lobaria_pulmonaria,fungi,TRUE
+Bactrospora_corticola ,fungi,TRUE
+Lecanactis_abietina,fungi,TRUE
+Cuphophyllus_pratensis,fungi,TRUE
+Hygrocybe_conica,fungi,TRUE
+Sclerophora_pallida,fungi,TRUE
+Cuphophyllus_virgineus,fungi,TRUE

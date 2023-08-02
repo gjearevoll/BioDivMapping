@@ -10,7 +10,7 @@
 focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
 
 # Download and unzip file in temp folder
-download.file(focalEndpoint, paste0(tempFolderName,"/", datasetName ,".zip"))
+download.file(focalEndpoint, paste0(tempFolderName,"/", datasetName ,".zip"), mode = "wb")
 unzip(paste0(tempFolderName,"/", datasetName ,".zip"), exdir = paste0(tempFolderName,"/",  datasetName))
 
 # Function to change file names

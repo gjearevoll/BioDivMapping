@@ -1,0 +1,111 @@
+---
+title: Species metadata description
+output: html_document
+---
+
+# Biodiversity mapping
+
+The following pdf gives a description of the data used in the pipeline run that corresponds to the folder this document resides in.
+It should be used as a guide for anyone who wants to know more about the data used in the corresponding outputs (maps and datasets)
+and/or would like to replicate the data.
+
+We begin with basic information about the pipeline run.
+
+
+``` {r echo = FALSE}
+
+source(textConnection(readLines("../pipeline/import/speciesImport.R")[21:22]))
+focalTaxa <- read.csv("../data/external/focalTaxa.csv")
+infoNames <- c("Date",
+               "Taxa",
+               "Taxa code",
+               "Region type",
+               "Region code",
+               "Total species",
+               "Total datasets used")
+info <- c(dateAccessed, paste(focalTaxa$taxa, sep = ", "), 
+          paste(focalTaxa$key, sep = ", "), level, region, nrow(focalSpecies),
+          length(unique(processedDataDF$datasetName)))
+basicInfo <- data.frame(Characteristic = infoNames, Value = info)
+knitr::kable(basicInfo)
+```
+
+In addition to the above, data was downloaded with a maximum uncertainty regarding coordinates of 500 metres.
+
+The following shows total number of observations per taxa and per dataset from the initial download from GBIF and ANO.
+Note that only the top 10 datasets are shown. A full list of observations per dataset per taxa as well as observations per species can be found in the appendices.
+
+``` {r echo = FALSE}
+taxaTable <- processedDataDF %>%
+  group_by(taxa) %>%
+  tally(name = "Observations") %>%
+  arrange(-Observations) %>%
+  slice(1:10)
+datasetTable <- processedDataDF %>%
+  group_by(datasetName) %>%
+  tally(name = "Observations") %>%
+  arrange(-Observations) %>%
+  slice(1:10)
+
+knitr::kable(
+  list(taxaTable
+    ,datasetTable
+  ), 
+  valign = 't'
+)
+
+```
+
+The following gives spatial density for observations across the surveyed region by taxa.
+
+``` {r echo = FALSE}
+
+regionGeometry <- readRDS(paste0("../", folderName, "/regionGeometry.RDS"))
+for (i in 1:length(unique(focalTaxa$taxa))) {
+  focalTaxa <- unique(focalTaxa$taxa)[i]
+  processedDataShortened <- processedDataCompiled[processedDataCompiled$taxa == focalTaxa,]
+print(ggplot(regionGeometry) +
+      geom_sf() +
+      geom_sf(data = processedDataShortened, colour = alpha('blue', 0.2)) +
+  ggtitle(focalTaxa))
+}
+
+```
+
+
+\newpage
+
+## Appendices
+
+### Appendix 1
+
+The tables below give further information on the observations used for our pipeline run.
+
+``` {r echo = FALSE}
+
+speciesTable <- processedDataDF %>%
+  group_by(simpleScientificName) %>%
+  tally(name = "Observations") %>%
+  arrange(-Observations)
+knitr::kable(
+  speciesTable,
+  valign = 't',
+  caption = 'Total numbers of observations used in pipeline run for each species.'
+)
+
+```
+
+
+``` {r echo = FALSE}
+
+datasetTaxaTable <- processedDataDF %>%
+  group_by(taxa, datasetName) %>%
+  tally(name = "Observations") %>%
+  arrange(-Observations)
+knitr::kable(
+  datasetTaxaTable, 
+  valign = 't',
+  caption = 'Total numbers of observations used in pipeline run for each dataset by taxa.'
+)
+
+```

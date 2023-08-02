@@ -39,6 +39,14 @@ allSpecies$individualCount <- ifelse(allSpecies$simpleScientificName %in% occurr
 allSpecies <- allSpecies[complete.cases(allSpecies),]
 
 # New dataset is ready!
-newDataset <- st_as_sf(allSpecies,                         
+newDatasetNorway <- st_as_sf(allSpecies,                         
                      coords = c("longitude", "latitude"),
                      crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# Now just cut out all observations outside our region
+newDataset <- newDatasetNorway
+st_crs(newDataset) <- "+proj=longlat +ellps=WGS84"
+
+# Crop to relevant region
+newDataset <- st_intersection(newDataset, regionGeometry)
+newDataset <- st_transform(newDataset, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")

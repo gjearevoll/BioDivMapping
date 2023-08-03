@@ -15,6 +15,15 @@ library(shinyjs)
 library(sf)
 library(ggplot2)
 
+focalSpecies <- read.csv("data/focalSpecies.csv")
+focalSpeciesDDVector <- split(focalSpecies$species, f = focalSpecies$taxonomicGroup)
+focalSpeciesDDList <- lapply(focalSpeciesDDVector, FUN = function(x) {
+  speciesList <- as.list(x)
+  names(speciesList) <- x
+  speciesList
+}
+)
+
 
 # Define UI for application that draws a histogram
 shinyUI(
@@ -49,23 +58,15 @@ shinyUI(
                           fluidRow(
                             box(width = 12,title = "Species specs",
                                 selectInput(inputId = "taxa", label = "Taxa:",
-                                            selected = "Vascular plants",
-                                            choices = c("Vascular plants" = "vascularPlants")),
+                                            selected = "fungi",
+                                            choices = names(focalSpeciesDDList)),
                                 selectInput(inputId = "species", label = "Species:",
-                                            selected = "Agrostis capillaris",
-                                            choices = c("Vicia sepium" = "Vicia_sepium",
-                                                        "Fraxinus excelsior" = "Fraxinus_excelsior",
-                                                        "Ulmus glabra" = "Ulmus_glabra",
-                                                        "Juniperus communis" = "Juniperus_communis",
-                                                        "Saxifraga aizoides" = "Saxifraga_aizoides",
-                                                        "Agrostis capillaris" = "Agrostis_capillaris",
-                                                        "Geranium sylvaticum" = "Geranium_sylvaticum",
-                                                        "Betula pubescens" = "Betula_pubescens"
-                                            ))
-                                
-                            )
+                                            selected = "Alectoria_sarmentosa",
+                                            choices = focalSpeciesDDList[[1]]))
+                            
                           )
-                  ),
+                  )
+                  ,
                   column(
                     width = 5, offset = 0,
                     box(width = 12,title = "Species Map",
@@ -73,8 +74,8 @@ shinyUI(
                         plotOutput("speciesMap")
                     )
                   )
-                  
                 )
+                
                 
         ),
         tabItem(tabName = "occurrences",
@@ -85,20 +86,15 @@ shinyUI(
                                title = "Species",
                                br(),
                                status = "primary",
+                               selectInput(inputId = "taxaOccurrence", label = "Taxa:",
+                                           selected = names(focalSpeciesDDList)[1],
+                                           choices = names(focalSpeciesDDList)),
                                selectInput(inputId = "speciesOccurrence", label = "Species:",
-                                           selected = "Agrostis capillaris",
-                                           choices = c("Vicia sepium" = "Vicia_sepium",
-                                                       "Fraxinus excelsior" = "Fraxinus_excelsior",
-                                                       "Ulmus glabra" = "Ulmus_glabra",
-                                                       "Juniperus communis" = "Juniperus_communis",
-                                                       "Saxifraga aizoides" = "Saxifraga_aizoides",
-                                                       "Agrostis capillaris" = "Agrostis_capillaris",
-                                                       "Geranium sylvaticum" = "Geranium_sylvaticum",
-                                                       "Betula pubescens" = "Betula_pubescens"
-                                           )
-                               )
+                                           selected = "Alectoria_sarmentosa",
+                                           choices = focalSpeciesDDList[[1]])
                            )
-                         ),
+                         )
+                         ,
                          fluidRow(
                            box(
                              title = "Species Occurrence Map",
@@ -107,7 +103,8 @@ shinyUI(
                          )
                   )
                 )
-        ),
+        )
+        ,
         tabItem(tabName = "covariates",
                 fluidRow(
                   column(width = 12,
@@ -140,3 +137,4 @@ shinyUI(
     )
   )
 )
+

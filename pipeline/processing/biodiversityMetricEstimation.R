@@ -35,7 +35,7 @@ for (i in 1:length(speciesGroups)) {
   
   # Print warning if there are any species listed for which we don't have a model
   speciesRun <- gsub(paste0(groupFolderLocation, "/"), "", list.dirs(path = groupFolderLocation, recursive = FALSE))
-  speciesMissed <- focalSpecies$species[!(focalSpecies$species %in% speciesRun)]
+  speciesMissed <- focalSpecies$species[!(focalSpecies$species %in% speciesRun) & focalSpecies$taxonomicGroup == focalGroup]
   if (length(speciesMissed) > 0) {
     warning(paste0("The following species were not calculated but were in your original list: ", speciesMissed))
   }

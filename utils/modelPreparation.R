@@ -16,6 +16,16 @@ for (i in 1:length(focalGroups)) {
   
   focalSpeciesData <- speciesData
   
+  # We need to remove all unnecessary species datasets from the species data
+  focalSpeciesDataRefined <- lapply(focalSpeciesData, FUN = function(x) {
+    focalDataset <- x[x$simpleScientificName %in% focalGroupSpecies,]
+    if (nrow(focalDataset) == 0) {
+      focalDataset <- NA
+    }
+    focalDataset
+  })
+  focalSpeciesDataRefined <- focalSpeciesDataRefined[!is.na(focalSpeciesDataRefined)]
+  
   # Initialise workflow, creating folder for model result storage
   workflow <- startWorkflow(
     Projection = '+proj=utm +zone=32 +ellps=WGS84 +datum=WGS84 +units=m +no_defs',
@@ -26,13 +36,13 @@ for (i in 1:length(focalGroups)) {
   
   # Add datasets - note that for the moment this excludes the NTNU field notes and ANO,
   # the model will currently not run with these involved
-  for (l in c(1:length(focalSpeciesData))) {
-    dataset <- focalSpeciesData[[l]]
+  for (l in c(1:length(focalSpeciesDataRefined))) {
+    dataset <- focalSpeciesDataRefined[[l]]
     
     if (nrow(dataset) < 5) next
     
     dataType <- unique(dataset$dataType)
-    datasetName <- gsub(" ", "", gsub("[[:punct:]]", "", names(focalSpeciesData)[l]))
+    datasetName <- gsub(" ", "", gsub("[[:punct:]]", "", names(focalSpeciesDataRefined)[l]))
   
     workflow$addStructured(dataStructured = dataset,
                            datasetType = dataType,

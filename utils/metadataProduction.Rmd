@@ -3,6 +3,11 @@ title: Species metadata description
 output: html_document
 ---
 
+``` {r echo = FALSE}
+library(dplyr)
+library(ggplot2)
+```
+
 # Biodiversity mapping
 
 The following pdf gives a description of the data used in the pipeline run that corresponds to the folder this document resides in.
@@ -23,8 +28,8 @@ infoNames <- c("Date",
                "Region code",
                "Total species",
                "Total datasets used")
-info <- c(dateAccessed, paste(focalTaxa$taxa, sep = ", "), 
-          paste(focalTaxa$key, sep = ", "), level, region, nrow(focalSpecies),
+info <- c(dateAccessed, paste(focalTaxa$taxa, collapse = ", "), 
+          paste(focalTaxa$key, collapse = ", "), level, region, nrow(focalSpecies),
           length(unique(processedDataDF$datasetName)))
 basicInfo <- data.frame(Characteristic = infoNames, Value = info)
 knitr::kable(basicInfo)
@@ -62,12 +67,12 @@ The following gives spatial density for observations across the surveyed region 
 
 regionGeometry <- readRDS(paste0("../", folderName, "/regionGeometry.RDS"))
 for (i in 1:length(unique(focalTaxa$taxa))) {
-  focalTaxa <- unique(focalTaxa$taxa)[i]
-  processedDataShortened <- processedDataCompiled[processedDataCompiled$taxa == focalTaxa,]
+  focalTaxaGroup <- unique(focalTaxa$taxa)[i]
+  processedDataShortened <- processedDataCompiled[processedDataCompiled$taxa == focalTaxaGroup,]
 print(ggplot(regionGeometry) +
       geom_sf() +
       geom_sf(data = processedDataShortened, colour = alpha('blue', 0.2)) +
-  ggtitle(focalTaxa))
+  ggtitle(focalTaxaGroup))
 }
 
 ```
@@ -84,7 +89,7 @@ The tables below give further information on the observations used for our pipel
 ``` {r echo = FALSE}
 
 speciesTable <- processedDataDF %>%
-  group_by(simpleScientificName) %>%
+  group_by(simpleScientificName, taxa) %>%
   tally(name = "Observations") %>%
   arrange(-Observations)
 knitr::kable(
@@ -101,7 +106,7 @@ knitr::kable(
 datasetTaxaTable <- processedDataDF %>%
   group_by(taxa, datasetName) %>%
   tally(name = "Observations") %>%
-  arrange(-Observations)
+  arrange(taxa, -Observations)
 knitr::kable(
   datasetTaxaTable, 
   valign = 't',

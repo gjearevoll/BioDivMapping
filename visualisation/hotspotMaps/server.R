@@ -35,10 +35,26 @@ colourFrame <- data.frame(name = unique(speciesDataCompiled$name), colour =  pal
 
 speciesDataCompiled$colours <- colourFrame$colour[match(speciesDataCompiled$name, colourFrame$name)]
 
+focalSpecies <- read.csv("data/focalSpecies.csv")
+focalSpeciesDDVector <- split(focalSpecies$species, f = focalSpecies$taxonomicGroup)
+focalSpeciesDDList <- lapply(focalSpeciesDDVector, FUN = function(x) {
+  speciesList <- as.list(x)
+  names(speciesList) <- x
+  speciesList
+}
+)
+
 
 # Define server logic required to draw a histogram
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   
+  
+  observe({
+    updateSelectInput(inputId = "species", choices = focalSpeciesDDList[[input$taxa]])
+  })
+  observe({
+    updateSelectInput(inputId = "speciesOccurrence", choices = focalSpeciesDDList[[input$taxaOccurrence]])
+  })
   
   output$speciesMap <- renderPlot({
     taxaData <- dataList[[input$taxa]]
@@ -98,6 +114,7 @@ shinyServer(function(input, output) {
             axis.title.y=element_blank()) +
       scale_fill_continuous(na.value = NA)
   })
+  
   
 })
 

@@ -6,6 +6,8 @@
 # This script downloads the datasets of presence/absence data directly from the endpoint supplied
 # to GBIF. THis way we can figure out which species were NOT found.
 
+library(sf)
+
 # Get the relevant endpoint
 focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
 
@@ -24,9 +26,11 @@ foo = function(x){
 events <- read.delim(paste0(tempFolderName,"/", datasetName ,"/event.txt"))
 occurrence <- read.delim(paste0(tempFolderName,"/", datasetName ,"/occurrence.txt"))
 occurrence$species <- gsub(" ", "_", foo(occurrence$scientificName))
+surveyedSpecies <- unique(occurrence$species)
+ourSurveyedSpecies <- focalSpecies$species[focalSpecies$species %in% surveyedSpecies]
 
 # Create table with all data combinations that we can match to
-allSpecies <- expand.grid(simpleScientificName = focalSpecies$species,
+allSpecies <- expand.grid(simpleScientificName = ourSurveyedSpecies,
                          eventID = unique(occurrence$eventID))
 allSpecies$longitude <- events$decimalLongitude[match(allSpecies$eventID, events$eventID)]
 allSpecies$latitude <- events$decimalLatitude[match(allSpecies$eventID, events$eventID)]
@@ -50,3 +54,4 @@ st_crs(newDataset) <- "+proj=longlat +ellps=WGS84"
 # Crop to relevant region
 newDataset <- st_intersection(newDataset, regionGeometry)
 newDataset <- st_transform(newDataset, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
+

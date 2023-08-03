@@ -50,13 +50,27 @@ if (!file.exists(folderName)) {
 ###-----------------###
 
 # Import GBIF Data
-GBIFImport <- occ_data(scientificName = focalSpecies$species, hasCoordinate = TRUE, limit = 2000, 
-                     geometry = st_bbox(regionGeometry), phylumKey = focalTaxa$key, coordinateUncertaintyInMeters = '0,500')
-GBIFImportCompiled <- do.call(rbind, lapply(GBIFImport, FUN = function(x) {
-  x$data[,c("scientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord", "year", 
+
+gbifImportsPerTaxa <- lapply(focalTaxa$taxa, FUN = function(x) { 
+  focalTaxaImportKey <- focalTaxa$key[focalTaxa$taxa == x]
+  focalSpeciesImport <- focalSpecies$species[focalSpecies$taxonomicGroup == x]
+  GBIFImport <- occ_data(scientificName = focalSpeciesImport, hasCoordinate = TRUE, limit = 2000, 
+                         geometry = st_bbox(regionGeometry), coordinateUncertaintyInMeters = '0,500')
+  GBIFImportCompiled <- do.call(rbind, lapply(GBIFImport, FUN = function(z) {
+    dataSubset <- z$data
+    
+    # datasetName does not exist in some species for some reason. In these cases, let it equal NA
+    if (!("datasetName" %in% colnames(dataSubset))) {
+      dataSubset$datasetName <- NA
+    }
+    dataSubset[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord", "year", 
             "datasetKey", "coordinateUncertaintyInMeters", "datasetName")]
-}))
-GBIFImportCompiled$simpleScientificName <- gsub(" ", "_", word(GBIFImportCompiled$scientificName, 1,2, sep=" "))
+  }))
+  GBIFImportCompiled$simpleScientificName <- gsub(" ", "_", word(GBIFImportCompiled$acceptedScientificName, 1,2, sep=" "))
+  GBIFImportCompiled
+} )
+GBIFImportCompiled <- do.call(rbind, gbifImportsPerTaxa)
+GBIFImportCompiled$taxa <- focalSpecies$taxonomicGroup[match(GBIFImportCompiled$simpleScientificName, focalSpecies$species)]
 
 ###------------------------------###
 ### 3. Attach relevant metadata ####

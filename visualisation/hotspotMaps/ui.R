@@ -80,9 +80,9 @@ shinyUI(
         ),
         tabItem(tabName = "occurrences",
                 fluidRow(
-                  column(width = 12,
+                  column(width = 3,
                          fluidRow(
-                           box(width = 3,
+                           box(width = 12,
                                title = "Species",
                                br(),
                                status = "primary",
@@ -91,25 +91,28 @@ shinyUI(
                                            choices = names(focalSpeciesDDList)),
                                selectInput(inputId = "speciesOccurrence", label = "Species:",
                                            selected = "Alectoria_sarmentosa",
-                                           choices = focalSpeciesDDList[[1]])
-                           )
+                                           choices = focalSpeciesDDList[[1]]),
+                               checkboxInput(inputId = "selectAbsences", 
+                                             label = "Show absences",
+                                             value = FALSE)   
+                           ) 
                          )
-                         ,
+                  ),
+                  column(width = 9,
                          fluidRow(
-                           box(
-                             title = "Species Occurrence Map",
-                             plotOutput("speciesOccurrenceMap")
+                           box(width = 12,
+                               title = "Species Occurrence Map",
+                               plotOutput("speciesOccurrenceMap")
                            )
-                         )
-                  )
+                         ))
                 )
         )
         ,
         tabItem(tabName = "covariates",
                 fluidRow(
-                  column(width = 12,
+                  column(width = 3,
                          fluidRow(
-                           box(width = 3,
+                           box(width = 12,
                                title = "Environmental Covariates",
                                br(),
                                status = "primary",
@@ -123,12 +126,12 @@ shinyUI(
                                            )
                                )
                            )
-                         ),
-                         fluidRow(
-                           box(
-                             title = "Environmental Covariate Map",
-                             plotOutput("covariateMap")
-                           )
+                         )
+                  ),
+                  column(width = 9,
+                         box(
+                           title = "Environmental Covariate Map",
+                           plotOutput("covariateMap")
                          )
                   )
                 )

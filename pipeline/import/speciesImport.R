@@ -119,7 +119,6 @@ dataList <- list(species = GBIFLists, metadata = metadataList, projcrs = projcrs
 attr(dataList, "level") <- level
 attr(dataList, "region") <- region
 saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
-saveRDS(dataList, "visualisation/hotspotMaps/data/speciesDataList.RDS")
 saveRDS(regionGeometry, paste0(folderName, "/regionGeometry.RDS"))
 saveRDS(regionGeometry, "visualisation/hotspotMaps/data/regionGeometry.RDS")
 

@@ -16,34 +16,44 @@ library(ggplot2)
 library(dplyr)
 library(inlabru)
 library(randomcoloR)
+library(plotKML)
 
+# Import all necessary data
 dataList <- readRDS("data/outputData.RDS")
-speciesDataList <- readRDS("data/speciesDataList.RDS")[["species"]]
+processedDataList <- readRDS("data/processedDataList.RDS")
 regionGeometry <- readRDS("data/regionGeometry.RDS")
 covariateData <- readRDS("data/covariateDataList.RDS")
 
-speciesDataSubset <- lapply(speciesDataList, FUN = function(x) {
-  subset <- x[,c("simpleScientificName", "name")]
+# Reorganise occurrence data to read directly into plot
+processedDataCompiled <- do.call(rbind, lapply(1:length(processedDataList), FUN = function(x) {
+  processedDF <- processedDataList[[x]]
+  if (!("individualCount" %in% colnames(processedDF))) {
+    processedDF$individualCount <- 1
+  }
+  subset <- processedDF[,c("simpleScientificName", "individualCount")]
+  if ("SHAPE" %in% colnames(subset)) {
+    subset <- rename(subset, geometry = SHAPE)
+  }
+  subset$name <- names(processedDataList)[x]
+  subset
 }
-)
-speciesDataSubset$ANOData <- rename(speciesDataSubset$ANOData, geometry = SHAPE)
-speciesDataCompiled <- do.call(rbind, speciesDataSubset) %>% arrange(name)
+)) %>% arrange(name)
 
-n <- length(unique(speciesDataCompiled$name))
+# Arrange colours for occurrence points
+n <- length(unique(processedDataCompiled$name))
 palette <- distinctColorPalette(n)
-colourFrame <- data.frame(name = unique(speciesDataCompiled$name), colour =  palette)
+colourFrame <- data.frame(name = unique(processedDataCompiled$name), colour =  palette)
+processedDataCompiled$colours <- colourFrame$colour[match(processedDataCompiled$name, colourFrame$name)]
 
-speciesDataCompiled$colours <- colourFrame$colour[match(speciesDataCompiled$name, colourFrame$name)]
-
+# Create dropdown list for taxa
 focalSpecies <- read.csv("data/focalSpecies.csv")
 focalSpeciesDDVector <- split(focalSpecies$species, f = focalSpecies$taxonomicGroup)
-focalSpeciesDDList <- lapply(focalSpeciesDDVector, FUN = function(x) {
-  speciesList <- as.list(x)
-  names(speciesList) <- x
+focalSpeciesDDList <- lapply(focalSpeciesDDVector, FUN = function(z) {
+  speciesList <- as.list(z)
+  names(speciesList) <- z
   speciesList
 }
 )
-
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
@@ -62,42 +72,48 @@ shinyServer(function(input, output, session) {
     
     if (input$mapType == "speciesIntensities") {
       fillData <- dataType[[input$species]]
-      scaleFill <-  scale_fill_gradient2(low = "red",
-                                         mid = "white",
-                                         high = "blue",
-                                         limits = c(0,1),
-                                         midpoint = 0.5,
-                                         space = "Lab",
-                                         na.value = "grey50",
-                                         guide = "colourbar",
-                                         aesthetics = "fill")
       
     } else {
       fillData <- dataType
-      scaleFill <-  scale_fill_gradient2(low = "red",
-                                         mid = "white",
-                                         high = "blue",
-                                         limits = c(0,1),
-                                         midpoint = 0.5,
-                                         space = "Lab",
-                                         na.value = "grey50",
-                                         guide = "colourbar",
-                                         aesthetics = "fill")}
+    }
+    fillDataTransformed <- reproject(fillData$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
     
+    scaleFill <-  scale_fill_gradient2(low = "darkblue",
+                                       mid = "white",
+                                       high = "red",
+                                       limits = c(0,1),
+                                       midpoint = 0.5,
+                                       space = "Lab",
+                                       na.value = "grey50",
+                                       guide = "colourbar",
+                                       aesthetics = "fill")
     
-    
-    ggplot() + gg(fillData$predictions) + scaleFill
+      ggplot(regionGeometry) + 
+        gg(fillDataTransformed) + 
+        geom_sf(fill = NA, lwd = 0.7, colour = "black") +
+        scaleFill + 
+        theme_classic() + 
+        labs(fill = "Species\nintensity") + 
+        theme(axis.title.x = element_blank(),
+              axis.title.y = element_blank())
   })
   
   output$speciesOccurrenceMap <- renderPlot({
     
-    dataToPlot <- speciesDataCompiled[speciesDataCompiled$simpleScientificName == input$speciesOccurrence,]
-    datasetsInData <- unique(dataToPlot$name)
+    if (input$selectAbsences == TRUE) {
+      dataToPlot <- processedDataCompiled[processedDataCompiled$simpleScientificName == input$speciesOccurrence,] 
+    } else {
+    dataToPlot <- processedDataCompiled[processedDataCompiled$simpleScientificName == input$speciesOccurrence &
+                                          processedDataCompiled$individualCount == 1,]
+    }
     
     ggplot(regionGeometry) +
-      geom_sf() +
+      geom_sf(fill = "white", lwd = 0.7) +
       geom_sf(data = dataToPlot, aes(colour = colours, labels = name)) +
-      scale_colour_identity(guide = "legend", breaks = colourFrame$colour, labels = colourFrame$name)
+      theme_classic() +
+      theme(legend.text=element_text(size=14)) +
+      scale_colour_identity(guide = "legend", breaks = colourFrame$colour, labels = colourFrame$name, name = "Data source")
+    
   })
   
   output$covariateMap <- renderPlot({
@@ -109,7 +125,7 @@ shinyServer(function(input, output, session) {
     ggplot(regionGeometry)+
       geom_raster(data = covariateDataDF, aes(x = x, y = y, fill = value))  +
       geom_sf(fill = NA, lwd = 1, colour = "black") +
-      theme_light()  +
+      theme_classic()  +
       theme(axis.title.x=element_blank(), 
             axis.title.y=element_blank()) +
       scale_fill_continuous(na.value = NA)

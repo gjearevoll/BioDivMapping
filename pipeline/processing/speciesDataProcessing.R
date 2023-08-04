@@ -72,6 +72,7 @@ names(processedData) <- namesProcessedData
 # Save for use in model construction
 processedData <- processedData[lapply(processedData,length)>0]
 saveRDS(processedData, paste0(tempFolderName, "/speciesDataProcessed.RDS"))
+saveRDS(processedData, "visualisation/hotspotMaps/data/processedDataList.RDS")
 
 ###----------------------###
 ### 3. Produce metadata ####

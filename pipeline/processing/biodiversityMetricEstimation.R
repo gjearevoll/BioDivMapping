@@ -64,14 +64,29 @@ for (i in 1:length(speciesGroups)) {
     dataset <- speciesIntensitiesScaled[[x]]
     dataset$predictions$mean
   }))
+  colnames(speciesIntensityList) <- speciesRun
+  
+  # Get total biodiversity
   totalIntensity <- rowSums(speciesIntensityList)
   totalIntensityScaled <- (totalIntensity - min(totalIntensity))/(max(totalIntensity)-min(totalIntensity))
+  
+  # And red-listed biodiversity
+  redListedSpecies <- focalSpecies$species[focalSpecies$taxonomicGroup == focalGroup & 
+                                             focalSpecies$threatened == TRUE]
+  redListedSpecies <- redListedSpecies[redListedSpecies %in% colnames(speciesIntensityList)]
+  redListedSpeciesIntensityList <- speciesIntensityList[,redListedSpecies]
+  redListedIntensity <- rowSums(redListedSpeciesIntensityList)
+  redListedIntensityScaled <- (redListedIntensity - min(redListedIntensity))/(max(redListedIntensity)-min(redListedIntensity))
   
   # Save all relevant lists
   biodivPredictions <- readRDS(paste0(list.dirs(path = groupFolderLocation, recursive = FALSE)[1], "/Predictions.rds"))
   biodivPredictions$predictions$mean <- totalIntensityScaled
+  redListPredictions <- readRDS(paste0(list.dirs(path = groupFolderLocation, recursive = FALSE)[1], "/Predictions.rds"))
+  redListPredictions$predictions$mean <- redListedIntensityScaled
   saveRDS(biodivPredictions, file = paste0(groupFolderLocation, "/biodiversityMetric.RDS"))
-  outputList[[focalGroup]] <- list(biodiversity = biodivPredictions, speciesIntensities = speciesIntensitiesScaled)
+  saveRDS(redListPredictions, file = paste0(groupFolderLocation, "/biodiversityMetric.RDS"))
+  outputList[[focalGroup]] <- list(biodiversity = biodivPredictions, redListBiodiversity = redListPredictions,
+                                   speciesIntensities = speciesIntensitiesScaled)
 }
 
 # Save visualisation data with species data

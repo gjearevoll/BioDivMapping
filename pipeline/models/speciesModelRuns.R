@@ -85,7 +85,7 @@ for (i in 1:length(focalGroups)) {
   workflow$specifySpatial(prior.range = c(300000, 0.05),
                           prior.sigma = c(500, 0.2)) #100
   workflow$workflowOutput('Maps')
-  workflow$modelOptions(INLA = list(control.inla=list(int.strategy = 'eb'),
+  workflow$modelOptions(INLA = list(control.inla=list(int.strategy = 'eb', cmin = 0),
                                     safe = TRUE))
   
   # Run model (this directly saves output to folder specified above)

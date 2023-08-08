@@ -14,6 +14,7 @@ library(shinydashboard)
 library(shinyjs)
 library(sf)
 library(ggplot2)
+library(raster)
 
 focalSpecies <- read.csv("data/focalSpecies.csv")
 focalSpeciesDDVector <- split(focalSpecies$species, f = focalSpecies$taxonomicGroup)
@@ -35,9 +36,11 @@ shinyUI(
     # SIDEBAR
     dashboardSidebar(
       sidebarMenu(id = "sidebar",
-                  menuItem("Model Estimates", tabName = "outputs", icon = icon("binoculars")),
-                  menuItem("Species Occurrences", tabName = "occurrences", icon = icon("worm")),
-                  menuItem("Environmental Covariates", tabName = "covariates", icon = icon("cloud-sun"))
+                  menuItem("Species Intensities", tabName = "outputs", icon = icon("binoculars")),
+                  menuItem("Taxa Biodiversity", tabName = "diversity", icon = icon("worm")),
+                  menuItem("Species Occurrences", tabName = "occurrences", icon = icon("bugs")),
+                  menuItem("Environmental Covariates", tabName = "covariates", icon = icon("cloud-sun")),
+                  menuItem("How it Works", tabName = "howItWorks", icon = icon("circle-question"))
       )
     )
     ,
@@ -48,35 +51,37 @@ shinyUI(
                 fluidRow(
                   column( width = 3, offset = 0,
                           fluidRow(
-                            box(width = 12,title = "Map type",
-                                selectInput(inputId = "mapType", label = "Map type:",
-                                            selected = "Species diversity",
-                                            choices = c("Species intensities" = "speciesIntensities",
-                                                        "Species diversity" = "biodiversity"))
-                            )
-                          ),
-                          fluidRow(
                             box(width = 12,title = "Species specs",
                                 selectInput(inputId = "taxa", label = "Taxa:",
                                             selected = "fungi",
                                             choices = names(focalSpeciesDDList)),
                                 selectInput(inputId = "species", label = "Species:",
                                             selected = "Alectoria_sarmentosa",
-                                            choices = focalSpeciesDDList[[1]]))
-                            
-                          )
-                  )
-                  ,
+                                            choices = focalSpeciesDDList[[1]])))),
                   column(
                     width = 5, offset = 0,
-                    box(width = 12,title = "Species Map",
+                    box(width = 12,title = "Species Intensity Map",
                         status = "primary",
-                        plotOutput("speciesMap")
-                    )
-                  )
-                )
-                
-                
+                        plotOutput("speciesMap"))))
+        ),
+        tabItem(
+          tabName = "diversity",
+          fluidRow(
+            column( width = 3, offset = 0,
+                    fluidRow(
+                      box(width = 12,title = "Species specs",
+                          selectInput(inputId = "taxa2", label = "Taxa:",
+                                      selected = "fungi",
+                                      choices = names(focalSpeciesDDList)),
+                          checkboxInput(inputId = "selectRedList", 
+                                        label = "Use only red-listed species",
+                                        value = FALSE)))),
+            column(
+              width = 5, offset = 0,
+              box(width = 12,title = "Taxa Diversity Map",
+                  status = "primary",
+                  plotOutput("taxaDiversityMap")
+              )))
         ),
         tabItem(tabName = "occurrences",
                 fluidRow(
@@ -135,6 +140,18 @@ shinyUI(
                          )
                   )
                 )
+        ),
+        tabItem(tabName = "howItWorks",
+                mainPanel(
+                  h1("What is the Biodiversity Mapping Tool?"),
+                  p("This tool was created as part of an initiative from the Gjærvoll 
+                    Centre for Biodiversity Foresight Analyses, as a means of showing 
+                    biodiversity hotspots throughout Norway. "),
+                  p("More information will be available in this online version of the 
+                    tool shortly.")
+                  
+                )
+          
         )
       )
     )

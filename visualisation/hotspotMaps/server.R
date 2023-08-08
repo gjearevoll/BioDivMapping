@@ -69,14 +69,7 @@ shinyServer(function(input, output, session) {
   
   output$speciesMap <- renderPlot({
     taxaData <- dataList[[input$taxa]]
-    dataType <- taxaData[[input$mapType]]
-    
-    if (input$mapType == "speciesIntensities") {
-      fillData <- dataType[[input$species]]
-      
-    } else {
-      fillData <- dataType
-    }
+    fillData <- taxaData$speciesIntensities[[input$species]]
     fillDataTransformed <- reproject(fillData$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
     
     scaleFill <-  scale_fill_gradient2(low = "darkblue",
@@ -97,6 +90,37 @@ shinyServer(function(input, output, session) {
         labs(fill = "Species\nintensity") + 
         theme(axis.title.x = element_blank(),
               axis.title.y = element_blank())
+  })
+  
+  output$taxaDiversityMap <- renderPlot({
+    taxaData <- dataList[[input$taxa2]]
+    
+    if (input$selectRedList == TRUE) {
+      fillData <- taxaData$redListBiodiversity
+    } else {
+    fillData <- taxaData$biodiversity
+    }
+    
+    fillDataTransformed <- reproject(fillData$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+    
+    scaleFill <-  scale_fill_gradient2(low = "darkblue",
+                                       mid = "white",
+                                       high = "red",
+                                       limits = c(0,1),
+                                       midpoint = 0.5,
+                                       space = "Lab",
+                                       na.value = "grey50",
+                                       guide = "colourbar",
+                                       aesthetics = "fill")
+    
+    ggplot(regionGeometry) + 
+      gg(fillDataTransformed) + 
+      geom_sf(fill = NA, lwd = 0.7, colour = "black") +
+      scaleFill + 
+      theme_classic() + 
+      labs(fill = "Species\nbiodiversity") + 
+      theme(axis.title.x = element_blank(),
+            axis.title.y = element_blank())
   })
   
   output$speciesOccurrenceMap <- renderPlot({

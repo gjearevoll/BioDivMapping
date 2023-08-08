@@ -17,6 +17,7 @@ library(dplyr)
 library(inlabru)
 library(randomcoloR)
 library(plotKML)
+library(raster)
 
 # Import all necessary data
 dataList <- readRDS("data/outputData.RDS")
@@ -123,7 +124,7 @@ shinyServer(function(input, output, session) {
     colnames(covariateDataDF)[3] <- "value"
     
     ggplot(regionGeometry)+
-      geom_raster(data = covariateDataDF, aes(x = x, y = y, fill = value))  +
+      geom_raster(data = covariateDataDF[!is.na(covariateDataDF$value),], aes(x = x, y = y, fill = value))  +
       geom_sf(fill = NA, lwd = 1, colour = "black") +
       theme_classic()  +
       theme(axis.title.x=element_blank(), 

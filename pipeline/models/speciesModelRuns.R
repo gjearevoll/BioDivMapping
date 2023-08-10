@@ -92,3 +92,25 @@ for (i in 1:length(focalGroups)) {
   sdmWorkflow(workflow)
 }
 
+
+###---------------------###
+### 3. Download photos ####
+###---------------------###
+
+for (taxa in focalGroups) {
+  speciesImaged <- focalSpecies$species[focalSpecies$taxonomicGroup == taxa]
+  taxaFolder <- paste0("visualisation/hotspotMaps/data/photos/",taxa)
+  if (!file.exists(taxaFolder)) {
+    dir.create(taxaFolder)
+  }
+  for (species in speciesImaged) {
+    # Create species folder
+    speciesFolder <- paste0(taxaFolder,"/",species)
+    if (!file.exists(speciesFolder)) {
+      dir.create(speciesFolder)
+    }
+    tryCatch({inatAttempt <- rinat::get_inat_obs(taxon_name = species, maxresults = 10)
+    imageURL <- inatAttempt$image_url[!is.na(inatAttempt$image_url) & inatAttempt$image_url != ""][1]
+    download.file(imageURL, destfile = paste0(speciesFolder,"/speciesImage.jpg" ), mode = 'wb')}
+    , error = function(species){print(paste0("Error for species ",species))})
+  }}

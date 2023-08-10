@@ -57,7 +57,13 @@ shinyUI(
                                             choices = names(focalSpeciesDDList)),
                                 selectInput(inputId = "species", label = "Species:",
                                             selected = "Alectoria_sarmentosa",
-                                            choices = focalSpeciesDDList[[1]])))),
+                                            choices = focalSpeciesDDList[[1]]))),
+                          fluidRow(
+                            box(width = 12, title = "Species Info",
+                                htmlOutput("textBox1"),
+                                imageOutput("imageBox1"))
+                          )
+                  ),
                   column(
                     width = 5, offset = 0,
                     box(width = 12,title = "Species Intensity Map",
@@ -110,6 +116,11 @@ shinyUI(
                                            choices = c("Data source" = "dataSource",
                                                        "Data type" = "dataType"))
                            )
+                         ),
+                         fluidRow(
+                           box(width = 12, title = "Species Info",
+                               htmlOutput("textBox2"),
+                               imageOutput("imageBox2"))
                          )
                   ),
                   column(width = 9,

@@ -171,6 +171,34 @@ shinyServer(function(input, output, session) {
       scale_fill_continuous(na.value = NA)
   })
   
+  output$imageBox1 <- renderImage({
+    ImgTxt <- paste0("data/photos/", input$taxa, "/", input$species,"/speciesImage.jpg")
+    list(src = ImgTxt,
+         contentType = "image/jpg",
+         width = "80%"
+    )
+  }, deleteFile = FALSE)
+  
+  output$textBox1 <- renderUI({
+    commonName <- focalSpecies$commonName[focalSpecies$species == input$species]
+    noOccurrences <- nrow(processedDataCompiled[processedDataCompiled$simpleScientificName == input$speciesOccurrence,])
+    HTML(paste0("Common name: ", commonName, "<br/>Number of occurrences: ", noOccurrences))
+  })
+  output$imageBox2 <- renderImage({
+    ImgTxt <- paste0("data/photos/", input$taxa, "/", input$species,"/speciesImage.jpg")
+    list(src = ImgTxt,
+         contentType = "image/jpg",
+         width = "80%"
+    )
+  }, deleteFile = FALSE)
+  
+  output$textBox2 <- renderUI({
+    commonName <- focalSpecies$commonName[focalSpecies$species == input$speciesOccurrence]
+    noOccurrences <- nrow(processedDataCompiled[processedDataCompiled$simpleScientificName == input$speciesOccurrence,])
+    HTML(paste0("Common name: ", commonName, "<br/>Number of occurrences: ", noOccurrences))
+  })
+  
+  
   
 })
 

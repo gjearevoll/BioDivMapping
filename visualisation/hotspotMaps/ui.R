@@ -101,6 +101,15 @@ shinyUI(
                                              label = "Show absences",
                                              value = FALSE)   
                            ) 
+                         ),
+                         fluidRow(
+                           box(width = 12,
+                               title = "Data type",
+                               selectInput(inputId = "dataClassification", label = "Show observations by:",
+                                           selected = "Data source",
+                                           choices = c("Data source" = "dataSource",
+                                                       "Data type" = "dataType"))
+                           )
                          )
                   ),
                   column(width = 9,
@@ -151,7 +160,7 @@ shinyUI(
                     tool shortly.")
                   
                 )
-          
+                
         )
       )
     )

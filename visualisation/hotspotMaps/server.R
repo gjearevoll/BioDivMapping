@@ -31,7 +31,7 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(processedDataList), FUN 
   if (!("individualCount" %in% colnames(processedDF))) {
     processedDF$individualCount <- 1
   }
-  subset <- processedDF[,c("simpleScientificName", "individualCount")]
+  subset <- processedDF[,c("simpleScientificName", "individualCount", "dataType")]
   if ("SHAPE" %in% colnames(subset)) {
     subset <- rename(subset, geometry = SHAPE)
   }
@@ -40,11 +40,18 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(processedDataList), FUN 
 }
 )) %>% arrange(name)
 
-# Arrange colours for occurrence points
-n <- length(unique(processedDataCompiled$name))
-palette <- distinctColorPalette(n)
-colourFrame <- data.frame(name = unique(processedDataCompiled$name), colour =  palette)
-processedDataCompiled$colours <- colourFrame$colour[match(processedDataCompiled$name, colourFrame$name)]
+# Arrange colours for occurrence points based on data source
+n1 <- length(unique(processedDataCompiled$name))
+palette1 <- distinctColorPalette(n1)
+colourFrame1 <- data.frame(name = unique(processedDataCompiled$name), colour =  palette1)
+processedDataCompiled$colours1 <- colourFrame1$colour[match(processedDataCompiled$name, colourFrame1$name)]
+
+# Arrange colours for occurrence points based on data type
+n2 <- length(unique(processedDataCompiled$dataType))
+palette2 <- distinctColorPalette(n2)
+colourFrame2 <- data.frame(dataType = unique(processedDataCompiled$dataType), colour =  palette2)
+colourFrame2$dataTypeFull <- ifelse(colourFrame2$dataType == "PO", "Presence only", "Presence-absence")
+processedDataCompiled$colours2 <- colourFrame2$colour[match(processedDataCompiled$dataType, colourFrame2$dataType)]
 
 # Create dropdown list for taxa
 focalSpecies <- read.csv("data/focalSpecies.csv")
@@ -82,14 +89,14 @@ shinyServer(function(input, output, session) {
                                        guide = "colourbar",
                                        aesthetics = "fill")
     
-      ggplot(regionGeometry) + 
-        gg(fillDataTransformed) + 
-        geom_sf(fill = NA, lwd = 0.7, colour = "black") +
-        scaleFill + 
-        theme_classic() + 
-        labs(fill = "Species\nintensity") + 
-        theme(axis.title.x = element_blank(),
-              axis.title.y = element_blank())
+    ggplot(regionGeometry) + 
+      gg(fillDataTransformed) + 
+      geom_sf(fill = NA, lwd = 0.7, colour = "black") +
+      scaleFill + 
+      theme_classic() + 
+      labs(fill = "Species\nintensity") + 
+      theme(axis.title.x = element_blank(),
+            axis.title.y = element_blank())
   })
   
   output$taxaDiversityMap <- renderPlot({
@@ -98,7 +105,7 @@ shinyServer(function(input, output, session) {
     if (input$selectRedList == TRUE) {
       fillData <- taxaData$redListBiodiversity
     } else {
-    fillData <- taxaData$biodiversity
+      fillData <- taxaData$biodiversity
     }
     
     fillDataTransformed <- reproject(fillData$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
@@ -128,16 +135,24 @@ shinyServer(function(input, output, session) {
     if (input$selectAbsences == TRUE) {
       dataToPlot <- processedDataCompiled[processedDataCompiled$simpleScientificName == input$speciesOccurrence,] 
     } else {
-    dataToPlot <- processedDataCompiled[processedDataCompiled$simpleScientificName == input$speciesOccurrence &
-                                          processedDataCompiled$individualCount == 1,]
+      dataToPlot <- processedDataCompiled[processedDataCompiled$simpleScientificName == input$speciesOccurrence &
+                                            processedDataCompiled$individualCount == 1,]
     }
     
-    ggplot(regionGeometry) +
+    basePlot <- ggplot(regionGeometry) +
       geom_sf(fill = "white", lwd = 0.7) +
-      geom_sf(data = dataToPlot, aes(colour = colours, labels = name)) +
       theme_classic() +
-      theme(legend.text=element_text(size=14)) +
-      scale_colour_identity(guide = "legend", breaks = colourFrame$colour, labels = colourFrame$name, name = "Data source")
+      theme(legend.text=element_text(size=14))
+    
+    if (input$dataClassification == "dataSource") {
+      fullPlot <- basePlot + geom_sf(data = dataToPlot, aes(colour = colours1, labels = name)) +
+        scale_colour_identity(guide = "legend", breaks = colourFrame1$colour, labels = colourFrame1$name, name = "Data source")
+    } else {
+      fullPlot <- basePlot + geom_sf(data = dataToPlot, aes(colour = colours2, labels = dataType)) +
+        scale_colour_identity(guide = "legend", breaks = colourFrame2$colour, labels = colourFrame2$dataTypeFull, name = "Data source")
+    }
+    
+    fullPlot
     
   })
   

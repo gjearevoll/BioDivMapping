@@ -51,16 +51,21 @@ shinyUI(
                 fluidRow(
                   column( width = 3, offset = 0,
                           fluidRow(
-                            box(width = 12,title = "Species specs",
+                            box(width = 12,title = "Select species",
                                 selectInput(inputId = "taxa", label = "Taxa:",
                                             selected = "fungi",
                                             choices = names(focalSpeciesDDList)),
                                 selectInput(inputId = "species", label = "Species:",
                                             selected = "Alectoria_sarmentosa",
-                                            choices = focalSpeciesDDList[[1]]))),
+                                            choices = focalSpeciesDDList[[1]]),
+                                checkboxInput(inputId = "showOccurrences",
+                                              label = "Show occurrences",
+                                              value = FALSE))),
                           fluidRow(
                             box(width = 12, title = "Species Info",
+                                collapsible = TRUE,
                                 htmlOutput("textBox1"),
+                                p(),
                                 imageOutput("imageBox1"))
                           )
                   ),
@@ -75,7 +80,7 @@ shinyUI(
           fluidRow(
             column( width = 3, offset = 0,
                     fluidRow(
-                      box(width = 12,title = "Species specs",
+                      box(width = 12,title = "Select taxa",
                           selectInput(inputId = "taxa2", label = "Taxa:",
                                       selected = "fungi",
                                       choices = names(focalSpeciesDDList)),
@@ -94,7 +99,7 @@ shinyUI(
                   column(width = 3,
                          fluidRow(
                            box(width = 12,
-                               title = "Species",
+                               title = "Select species",
                                br(),
                                status = "primary",
                                selectInput(inputId = "taxaOccurrence", label = "Taxa:",
@@ -119,7 +124,9 @@ shinyUI(
                          ),
                          fluidRow(
                            box(width = 12, title = "Species Info",
+                               collapsible = TRUE,
                                htmlOutput("textBox2"),
+                               p(),
                                imageOutput("imageBox2"))
                          )
                   ),
@@ -141,7 +148,7 @@ shinyUI(
                                title = "Environmental Covariates",
                                br(),
                                status = "primary",
-                               selectInput(inputId = "covariate", label = "Environmental Covariate:",
+                               selectInput(inputId = "covariate", label = "",
                                            selected = "temperature",
                                            choices = c("Aspect" = "aspect",
                                                        "Elevation" = "elevation",

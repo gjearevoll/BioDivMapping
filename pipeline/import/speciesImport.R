@@ -121,4 +121,27 @@ attr(dataList, "region") <- region
 saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
 saveRDS(regionGeometry, paste0(folderName, "/regionGeometry.RDS"))
 saveRDS(regionGeometry, "visualisation/hotspotMaps/data/regionGeometry.RDS")
+write.csv(focalSpecies, "visualisation/hotspotMaps/data/focalSpecies.csv", row.names = FALSE)
 
+
+###---------------------###
+### 6. Download photos ####
+###---------------------###
+
+for (taxa in focalGroups) {
+  speciesImaged <- focalSpecies$species[focalSpecies$taxonomicGroup == taxa]
+  taxaFolder <- paste0("visualisation/hotspotMaps/data/photos/",taxa)
+  if (!file.exists(taxaFolder)) {
+    dir.create(taxaFolder)
+  }
+  for (species in speciesImaged) {
+    # Create species folder
+    speciesFolder <- paste0(taxaFolder,"/",species)
+    if (!file.exists(speciesFolder)) {
+      dir.create(speciesFolder)
+    }
+    tryCatch({inatAttempt <- rinat::get_inat_obs(taxon_name = species, maxresults = 10)
+    imageURL <- inatAttempt$image_url[!is.na(inatAttempt$image_url) & inatAttempt$image_url != ""][1]
+    download.file(imageURL, destfile = paste0(speciesFolder,"/speciesImage.jpg" ), mode = 'wb')}
+    , error = function(species){print(paste0("Error for species ",species))})
+  }}

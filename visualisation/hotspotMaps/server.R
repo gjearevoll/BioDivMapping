@@ -89,7 +89,7 @@ shinyServer(function(input, output, session) {
                                        guide = "colourbar",
                                        aesthetics = "fill")
     
-    ggplot(regionGeometry) + 
+    intensityPlot <- ggplot(regionGeometry) + 
       gg(fillDataTransformed) + 
       geom_sf(fill = NA, lwd = 0.7, colour = "black") +
       scaleFill + 
@@ -97,6 +97,14 @@ shinyServer(function(input, output, session) {
       labs(fill = "Species\nintensity") + 
       theme(axis.title.x = element_blank(),
             axis.title.y = element_blank())
+    
+    if (input$showOccurrences == TRUE) {
+      dataToPlot <- processedDataCompiled[processedDataCompiled$simpleScientificName == input$species &
+                                            processedDataCompiled$individualCount == 1,] 
+      intensityPlot <- intensityPlot + geom_sf(data = dataToPlot)
+    }
+    intensityPlot
+    
   })
   
   output$taxaDiversityMap <- renderPlot({
@@ -170,6 +178,45 @@ shinyServer(function(input, output, session) {
             axis.title.y=element_blank()) +
       scale_fill_continuous(na.value = NA)
   })
+  
+  output$imageBox1 <- renderImage({
+    ImgTxt <- paste0("data/photos/", input$taxa, "/", input$species,"/speciesImage.jpg")
+    list(src = ImgTxt,
+         contentType = "image/jpg",
+         width = "80%"
+    )
+  }, deleteFile = FALSE)
+  
+  output$textBox1 <- renderUI({
+    scientificName <- gsub("_", " ", input$species)
+    commonName <- focalSpecies$commonName[focalSpecies$species == input$species]
+    redListStatus <- focalSpecies$redListStatus[focalSpecies$species == input$species]
+    noOccurrences <- nrow(processedDataCompiled[processedDataCompiled$simpleScientificName == input$species,])
+    HTML(paste0("Scientific name: ", scientificName  ,"<br/>Common name: ", commonName, "<br/>Number of occurrences: ", noOccurrences,
+                "<br/>Red list status: ", redListStatus))
+  })
+  
+  output$imageBox2 <- renderImage({
+    if (!file.exists(paste0("data/photos/", input$taxaOccurrence, "/", input$speciesOccurrence,"/speciesImage.jpg"))) {
+      ImgTxt <- paste0("data/photos/imageNotAvailable.png")
+    } else {
+    ImgTxt <- paste0("data/photos/", input$taxaOccurrence, "/", input$speciesOccurrence,"/speciesImage.jpg")
+    }
+    list(src = ImgTxt,
+         contentType = "image/jpg",
+         width = "80%"
+    )
+  }, deleteFile = FALSE)
+  
+  output$textBox2 <- renderUI({
+    scientificName <- gsub("_", " ", input$speciesOccurrence)
+    commonName <- focalSpecies$commonName[focalSpecies$species == input$speciesOccurrence]
+    redListStatus <- focalSpecies$redListStatus[focalSpecies$species == input$speciesOccurrence]
+    noOccurrences <- nrow(processedDataCompiled[processedDataCompiled$simpleScientificName == input$speciesOccurrence,])
+    HTML(paste0("Scientific name: ", scientificName  ,"<br/>Common name: ", commonName, "<br/>Number of occurrences: ", noOccurrences,
+                "<br/>Red list status: ", redListStatus))
+  })
+  
   
   
 })

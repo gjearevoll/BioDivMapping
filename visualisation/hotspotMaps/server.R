@@ -99,7 +99,8 @@ shinyServer(function(input, output, session) {
             axis.title.y = element_blank())
     
     if (input$showOccurrences == TRUE) {
-      dataToPlot <- processedDataCompiled[processedDataCompiled$simpleScientificName == input$species,] 
+      dataToPlot <- processedDataCompiled[processedDataCompiled$simpleScientificName == input$species &
+                                            processedDataCompiled$individualCount == 1,] 
       intensityPlot <- intensityPlot + geom_sf(data = dataToPlot)
     }
     intensityPlot
@@ -194,6 +195,7 @@ shinyServer(function(input, output, session) {
     HTML(paste0("Scientific name: ", scientificName  ,"<br/>Common name: ", commonName, "<br/>Number of occurrences: ", noOccurrences,
                 "<br/>Red list status: ", redListStatus))
   })
+  
   output$imageBox2 <- renderImage({
     if (!file.exists(paste0("data/photos/", input$taxaOccurrence, "/", input$speciesOccurrence,"/speciesImage.jpg"))) {
       ImgTxt <- paste0("data/photos/imageNotAvailable.png")

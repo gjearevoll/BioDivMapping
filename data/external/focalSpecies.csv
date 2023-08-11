@@ -1,30 +1,30 @@
-"species","taxonomicGroup","selected","threatened"
-"Fraxinus_excelsior","vascularPlants",TRUE,TRUE
-"Arnica_montana","vascularPlants",TRUE,TRUE
-"Ulmus_glabra","vascularPlants",TRUE,TRUE
-"Poa_glauca","vascularPlants",TRUE,FALSE
-"Carex_atrata","vascularPlants",TRUE,FALSE
-"Juniperus_communis","vascularPlants",TRUE,FALSE
-"Saxifraga_aizoides","vascularPlants",TRUE,FALSE
-"Vicia_sepium","vascularPlants",TRUE,FALSE
-"Agrostis_capillaris","vascularPlants",TRUE,FALSE
-"Geranium_sylvaticum","vascularPlants",TRUE,FALSE
-"Betula_pubescens","vascularPlants",TRUE,FALSE
-"Alectoria_sarmentosa","fungi",TRUE,FALSE
-"Lobaria_pulmonaria","fungi",TRUE,FALSE
-"Bactrospora_corticola","fungi",TRUE,FALSE
-"Lecanactis_abietina","fungi",TRUE,FALSE
-"Cuphophyllus_pratensis","fungi",TRUE,FALSE
-"Hygrocybe_conica","fungi",TRUE,FALSE
-"Sclerophora_pallida","fungi",TRUE,FALSE
-"Cuphophyllus_virgineus","fungi",TRUE,FALSE
-"Niemelaea_consobrina","fungi",TRUE,TRUE
-"Entoloma_neglectum","fungi",TRUE,TRUE
-"Hydnellum_martioflavum","fungi",TRUE,TRUE
-"Mitopus_morio","spiders",TRUE,FALSE
-"Centromerus_arcanus","spiders",TRUE,FALSE
-"Arctosa_cinerea","spiders",TRUE,TRUE
-"Psammitis_sabulosus","spiders",TRUE,TRUE
-"Singa_nitidula","spiders",TRUE,TRUE
-"Tenuiphantes_alacris","spiders",TRUE,FALSE
-"Diplocentria_bidentata","spiders",TRUE,FALSE
+species,taxonomicGroup,selected,threatened,commonName,redListStatus
+Fraxinus_excelsior,vascularPlants,TRUE,TRUE,European ash,Endangered
+Arnica_montana,vascularPlants,TRUE,TRUE,Mountain arnica,Endangered
+Ulmus_glabra,vascularPlants,TRUE,TRUE,Scots elm,Endangered
+Poa_glauca,vascularPlants,TRUE,FALSE,Glaucous bluegrass,Least concent
+Carex_atrata,vascularPlants,TRUE,FALSE,Black alpine sedge,Least concent
+Juniperus_communis,vascularPlants,TRUE,FALSE,Common juniper,Least concent
+Saxifraga_aizoides,vascularPlants,TRUE,FALSE,Yellow saxifrage,Least concent
+Vicia_sepium,vascularPlants,TRUE,FALSE,Bush vetch,Least concent
+Agrostis_capillaris,vascularPlants,TRUE,FALSE,Common bent,Least concent
+Geranium_sylvaticum,vascularPlants,TRUE,FALSE,Wood crane’s bill,Least concent
+Betula_pubescens,vascularPlants,TRUE,FALSE,Silver birch,Least concent
+Alectoria_sarmentosa,fungi,TRUE,FALSE,Common witch’s-hair lichen,Least concent
+Lobaria_pulmonaria,fungi,TRUE,FALSE,Tree lungwort,Least concent
+Bactrospora_corticola,fungi,TRUE,FALSE,Bactrospora corticola,Least concent
+Lecanactis_abietina,fungi,TRUE,FALSE,Lecanactis abietina,Least concent
+Cuphophyllus_pratensis,fungi,TRUE,FALSE,Meadow waxcap,Least concent
+Hygrocybe_conica,fungi,TRUE,FALSE,Witch’s hat,Least concent
+Sclerophora_pallida,fungi,TRUE,FALSE,Sclerophora pallida,Least concent
+Cuphophyllus_virgineus,fungi,TRUE,FALSE,Snowy waxcap,Least concent
+Niemelaea_consobrina,fungi,TRUE,TRUE,Niemelaea consobrina,Vulnerable
+Entoloma_neglectum,fungi,TRUE,TRUE,Entoloma neglectum,Vulnerable
+Hydnellum_martioflavum,fungi,TRUE,TRUE,Hydnellum martioflavum,Vulnerable
+Mitopus_morio,spiders,TRUE,FALSE,Mitopus morio,Least concent
+Centromerus_arcanus,spiders,TRUE,FALSE,Centromerus arcanus,Least concent
+Arctosa_cinerea,spiders,TRUE,TRUE,Arctosa cinerea,Endangered
+Psammitis_sabulosus,spiders,TRUE,TRUE,Psammitis sabulosus,Vulnerable
+Singa_nitidula,spiders,TRUE,TRUE,Singa nitidula,Endangered
+Tenuiphantes_alacris,spiders,TRUE,FALSE,Tenuiphantes alacris,Least concent
+Diplocentria_bidentata,spiders,TRUE,FALSE,Diplocentria bidentata,Least concent

@@ -121,4 +121,4 @@ attr(dataList, "region") <- region
 saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
 saveRDS(regionGeometry, paste0(folderName, "/regionGeometry.RDS"))
 saveRDS(regionGeometry, "visualisation/hotspotMaps/data/regionGeometry.RDS")
-
+write.csv(focalSpecies, "visualisation/hotspotMaps/data/focalSpecies.csv", row.names = FALSE)

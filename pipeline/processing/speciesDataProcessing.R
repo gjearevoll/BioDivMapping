@@ -22,7 +22,6 @@ if (!exists("dateAccessed")) {
 # Import species list
 focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
 focalSpecies <- focalSpecies[focalSpecies$selected,]
-focalGroups <- unique(focalSpecies$taxonomicGroup)
 
 # Import datasets
 folderName <- paste0("data/run_", dateAccessed)

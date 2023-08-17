@@ -25,6 +25,8 @@ focalSpeciesDDList <- lapply(focalSpeciesDDVector, FUN = function(x) {
 }
 )
 
+source("data/textFunctions.R")
+
 
 # Define UI for application that draws a histogram
 shinyUI(
@@ -36,17 +38,20 @@ shinyUI(
     # SIDEBAR
     dashboardSidebar(
       sidebarMenu(id = "sidebar",
+                  menuItem("Open Data Biodiversity Mapper", tabName = "landingPage", icon = icon("house")),
                   menuItem("Species Intensities", tabName = "outputs", icon = icon("binoculars")),
                   menuItem("Taxa Biodiversity", tabName = "diversity", icon = icon("worm")),
                   menuItem("Species Occurrences", tabName = "occurrences", icon = icon("bugs")),
-                  menuItem("Environmental Covariates", tabName = "covariates", icon = icon("cloud-sun")),
-                  menuItem("How it Works", tabName = "howItWorks", icon = icon("circle-question"))
+                  menuItem("Environmental Covariates", tabName = "covariates", icon = icon("cloud-sun"))
       )
     )
     ,
     
     dashboardBody(
       tabItems(
+        tabItem(tabName = "landingPage",
+                landingPageText()),
+                
         tabItem(tabName = "outputs",
                 fluidRow(
                   column( width = 3, offset = 0,
@@ -167,21 +172,11 @@ shinyUI(
                          )
                   )
                 )
-        ),
-        tabItem(tabName = "howItWorks",
-                mainPanel(
-                  h1("What is the Biodiversity Mapping Tool?"),
-                  p("This tool was created as part of an initiative from the Gjærvoll 
-                    Centre for Biodiversity Foresight Analyses, as a means of showing 
-                    biodiversity hotspots throughout Norway. "),
-                  p("More information will be available in this online version of the 
-                    tool shortly.")
-                  
-                )
-                
+        )
+
         )
       )
     )
   )
-)
+
 

@@ -8,10 +8,10 @@
 workflowList <- list()
 
 # Begin running different species groups
-for (i in 1:length(focalGroups)) {
+for (i in 1:length(focalTaxa)) {
   
   # Define species group to create
-  focalGroup <- focalGroups[i]
+  focalGroup <- focalTaxa[i]
   focalGroupSpecies <- focalSpecies$species[focalSpecies$taxonomicGroup %in% focalGroup]
   
   focalSpeciesData <- speciesData

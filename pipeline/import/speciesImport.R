@@ -10,8 +10,7 @@ library(rgbif)
 library(sf)
 library(stringr)
 library(dplyr)
-
-chooseSpecies <-  TRUE # This will be given int he command line as a first argument
+library(rinat)
 
 ###-----------------###
 ### 1. Preparation ####
@@ -26,14 +25,9 @@ runBuffer <- FALSE
 source("utils/defineRegion.R")
 
 # Define initial species list.
-# Here we would normally import a list of species names with associated taxonomic groups. 
-focalTaxa <- read.csv("data/external/focalTaxa.csv", header = T)
-
-# Use this command if we want to choose certain species, for now we do
-if (chooseSpecies == TRUE) {
-  focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
-  focalSpecies <- focalSpecies[focalSpecies$selected,]
-}
+focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
+focalSpecies <- focalSpecies[focalSpecies$selected,]
+focalTaxa <- unique(focalSpecies$taxonomicGroup)
 
 # Initialise folders for storage of all run data
 if (!exists("dateAccessed")) {
@@ -50,11 +44,9 @@ if (!file.exists(folderName)) {
 ###-----------------###
 
 # Import GBIF Data
-
-gbifImportsPerTaxa <- lapply(focalTaxa$taxa, FUN = function(x) { 
-  focalTaxaImportKey <- focalTaxa$key[focalTaxa$taxa == x]
+gbifImportsPerTaxa <- lapply(focalTaxa, FUN = function(x) {
   focalSpeciesImport <- focalSpecies$species[focalSpecies$taxonomicGroup == x]
-  GBIFImport <- occ_data(scientificName = focalSpeciesImport, hasCoordinate = TRUE, limit = 2000, 
+  GBIFImport <- occ_data(scientificName = focalSpeciesImport, hasCoordinate = TRUE, limit = 3000, 
                          geometry = st_bbox(regionGeometry), coordinateUncertaintyInMeters = '0,500')
   GBIFImportCompiled <- do.call(rbind, lapply(GBIFImport, FUN = function(z) {
     dataSubset <- z$data
@@ -64,7 +56,7 @@ gbifImportsPerTaxa <- lapply(focalTaxa$taxa, FUN = function(x) {
       dataSubset$datasetName <- NA
     }
     dataSubset[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord", "year", 
-            "datasetKey", "coordinateUncertaintyInMeters", "datasetName")]
+                  "datasetKey", "coordinateUncertaintyInMeters", "datasetName")]
   }))
   GBIFImportCompiled$simpleScientificName <- gsub(" ", "_", word(GBIFImportCompiled$acceptedScientificName, 1,2, sep=" "))
   GBIFImportCompiled
@@ -92,8 +84,8 @@ projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 GBIFLists <- lapply(unique(GBIFImportCompiled$name), FUN  = function(x) {
   GBIFItem <- GBIFImportCompiled[GBIFImportCompiled$name == x,]
   GBIFItem <- st_as_sf(GBIFItem,                         
-           coords = c("decimalLongitude", "decimalLatitude"),
-           crs = projcrs)
+                       coords = c("decimalLongitude", "decimalLatitude"),
+                       crs = projcrs)
   GBIFcropped <- st_intersection(GBIFItem, st_transform(regionGeometry, crs = projcrs))
   GBIFcropped
 })
@@ -128,7 +120,14 @@ write.csv(focalSpecies, "visualisation/hotspotMaps/data/focalSpecies.csv", row.n
 ### 6. Download photos ####
 ###---------------------###
 
-for (taxa in focalGroups) {
+# We need to download photos from iNaturalist, including their URL and the user name of the individual
+# who took the photo to give appropriate credit
+imageCredit <- data.frame(species = focalSpecies$species,
+                          credit = NA,
+                          url = NA,
+                          stringsAsFactors = FALSE)
+
+for (taxa in focalTaxa) {
   speciesImaged <- focalSpecies$species[focalSpecies$taxonomicGroup == taxa]
   taxaFolder <- paste0("visualisation/hotspotMaps/data/photos/",taxa)
   if (!file.exists(taxaFolder)) {
@@ -140,8 +139,16 @@ for (taxa in focalGroups) {
     if (!file.exists(speciesFolder)) {
       dir.create(speciesFolder)
     }
+    # Create species file (if it doesn't already exist)
+    if (file.exists(paste0(speciesFolder, "/speciesImage.jpg"))) {next}
     tryCatch({inatAttempt <- rinat::get_inat_obs(taxon_name = species, maxresults = 10)
-    imageURL <- inatAttempt$image_url[!is.na(inatAttempt$image_url) & inatAttempt$image_url != ""][1]
-    download.file(imageURL, destfile = paste0(speciesFolder,"/speciesImage.jpg" ), mode = 'wb')}
-    , error = function(species){print(paste0("Error for species ",species))})
+    imageRow <- inatAttempt[!is.na(inatAttempt$image_url) & inatAttempt$image_url != "",]
+    imageCredit$url[imageCredit$species == species] <- imageRow$url[1]
+    imageCredit$credit[imageCredit$species == species] <- imageRow$user_login[1]
+    download.file(imageRow$image_url[1], destfile = paste0(speciesFolder,"/speciesImage.jpg" ), mode = 'wb')
+    }
+    , error = function(x){print(paste0("Error for species ",species, ". ", x))})
   }}
+
+imageCredit$credit[imageCredit$credit == "" | is.na(imageCredit$credit)] <- "User name not provided"
+saveRDS(imageCredit, "visualisation/hotspotMaps/data/imageCredit.RDS")

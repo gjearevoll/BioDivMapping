@@ -17,7 +17,12 @@ landingPageText <- function() {
     currently GBIF and Norwegian database Arearepresentativ overvakning (ANO). A user can define their own taxa or species
     of choice depending on their need. Because a bit of detail can be lost during the standardisation to GBIF, the pipeline
     also digs into the source files to add that detail back in. What the user is left with is a list of datasets containing
-    one or more of the species that they’re studying. This is then processed through an",
+    one or more of the species that they’re studying."),
+    p("This is combined with a series of relevant environmental covariates, standardised to a 1km grid, with plans for higher 
+      resolution in future models. The environmental data was sourced from a range of different databases, more detail on 
+      which can be found in the ",a("GitHub repository.", 
+                                    href = "https://github.com/gjearevoll/BioDivMapping/tree/main/data/external/environmentalCovariates")),
+    p("This is then processed through an",
       strong("integrated species distribution model (ISDM)"), "to give a series of species intensity maps."),
     p("These intensity maps can then be combined to show biodiversity hotspots within a region, for all species involved 
       and for threatened species (those on the Norwegian Red List). The tool also allows the user to view the data behind 
@@ -55,7 +60,21 @@ landingPageText <- function() {
     p("Lastly, we are planning on automating the data pipeline using the targets package in order to ensure we are always 
       using the most up-to-date datasets without constant manual updates. We will also be integrating temporal data into the 
       pipeline to reflect the regional changes that have and will affect species distribution.")
-    
-    
+  )
+}
+
+
+speciesIntensityText <- function() {
+  mainPanel(
+    p("Put simply, intensity here refers to the probability of a species occurrence. When we refer to intensity, 
+    we are referring to the intensity function of the underlying point-process model."),
+    p("Put less simply, what it really describes is the density of species at any location across the map of interest. 
+    This is modelled as a function of environmental covariates and a Gaussian random field, which is used to 
+      account for any unmeasured covariates and potential spatial autocorrelation. The higher the value of the intensity 
+      function at some point on the map, the more probable the species is to be found there."),
+    p("What is ", strong("important to note"), "is that a single species' intensity in our mapping tool is currently ",
+      strong("only relative to that species."), "That is to say that a species intensity of 0.5 on a fairly common species
+      and of 0.5 on a very rare species do not imply the same likelihood of occurrence.")
+
   )
 }

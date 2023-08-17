@@ -1,4 +1,4 @@
-# Biodiveristy mapping
+# Biodiversity mapping
 
 This pipeline is dedicated to the production of biodiversity mapping and associated metrics for Norway. It imports, processes, and models species
 data from open-source data repositories, including GBIF and ANO. Currently the pipeline is in a draft format, producing species maps for 
@@ -29,7 +29,7 @@ Thereafter the script imports data from GBIF using the spatial region defined ab
 
 #### [environmentalImport.R](https://github.com/gjearevoll/BioDivMapping/blob/main/pipeline/import/environmentalImport.R)
 
-The environmentalImport.R script is then used to import environmental data across the same region. The focalCovariates.csv file defines which covariates we are using in the model. The environmental data has been provided by Dr. Ron Tugonov.
+The environmentalImport.R script is then used to import environmental data across the same region. The focalCovariates.csv file defines which covariates we are using in the model. The environmental data has been provided by Dr. Ron Togunov. Further information on the data sources used can be found in the [external/data/environmentalCovariates](https://github.com/gjearevoll/BioDivMapping/tree/main/data/external/environmentalCovariates) description.
 
 **Outputs**: List of environmental datasets (raster class).
 
@@ -45,8 +45,8 @@ Additionally, since this script provides the final dataset which will be used in
 
 #### [speciesModelRuns.R](https://github.com/gjearevoll/BioDivMapping/blob/main/pipeline/models/speciesModelRuns.R)
 
-The speciesModelRuns.R data scripts are then used to coalesce the data into a format whereby it can be input into Philip Mosert's
-[intSDM package](https://github.com/PhilipMostert/intSDM). The utils script modelPreparation.R also plays a large role here, coalescing the species and environmental data into an R6 Environment object.*
+The speciesModelRuns.R data scripts are then used to coalesce the data into a format so that it can be inputted into Philip Mosert's
+[intSDM package](https://github.com/PhilipMostert/intSDM). The utils script modelPreparation.R also plays a large role here, merging the species and environmental data into an R6 Environment object.*
 
 **Important**: The properts of the INLA Mesh need to be adjusted whenever the region is changed. Best to run a few trials whenever you do this using `workflow$plot(Mesh = TRUE)`.
 

@@ -30,7 +30,7 @@ if (!file.exists(modelFolderName)) {
 # Import species list
 focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
 focalSpecies <- focalSpecies[focalSpecies$selected,]
-focalGroups <- unique(focalSpecies$taxonomicGroup)
+focalTaxa <- unique(focalSpecies$taxonomicGroup)
 
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
@@ -74,14 +74,14 @@ source("utils/modelPreparation.R")
 print("Starting model run.")
 
 # Begin running different species groups
-for (i in 1:length(focalGroups)) {
+for (i in 1:length(focalTaxa)) {
   
   # Define species group to create
-  focalGroup <- focalGroups[i]
+  focalGroup <- focalTaxa[i]
   workflow <- workflowList[[focalGroup]]
 
   # Add model characteristics (mesh, priors, output)
-  workflow$addMesh(cutoff= 20000, max.edge=c(50000, 90000), offset= 100000)
+  workflow$addMesh(cutoff= 9000, max.edge=c(36000, 42000), offset= 72000)
   workflow$specifySpatial(prior.range = c(300000, 0.05),
                           prior.sigma = c(500, 0.2)) #100
   workflow$workflowOutput('Maps')

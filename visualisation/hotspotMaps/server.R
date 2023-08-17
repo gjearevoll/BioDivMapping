@@ -24,6 +24,7 @@ dataList <- readRDS("data/outputData.RDS")
 processedDataList <- readRDS("data/processedDataList.RDS")
 regionGeometry <- readRDS("data/regionGeometry.RDS")
 covariateData <- readRDS("data/covariateDataList.RDS")
+creditList <- readRDS("data/imageCredit.RDS")
 
 # Reorganise occurrence data to read directly into plot
 processedDataCompiled <- do.call(rbind, lapply(1:length(processedDataList), FUN = function(x) {
@@ -192,8 +193,12 @@ shinyServer(function(input, output, session) {
     commonName <- focalSpecies$commonName[focalSpecies$species == input$species]
     redListStatus <- focalSpecies$redListStatus[focalSpecies$species == input$species]
     noOccurrences <- nrow(processedDataCompiled[processedDataCompiled$simpleScientificName == input$species,])
-    HTML(paste0("Scientific name: ", scientificName  ,"<br/>Common name: ", commonName, "<br/>Number of occurrences: ", noOccurrences,
-                "<br/>Red list status: ", redListStatus))
+    imageUser <- creditList$credit[creditList$species == input$species]
+    imageURL <- creditList$url[creditList$species == input$species]
+    HTML(paste0("<strong>Scientific name:</strong> ", scientificName  ,"<br/><strong>Common name:</strong> ", 
+                commonName, "<br/><strong>Number of occurrences:</strong> ", noOccurrences,
+                "<br/><strong>Red list status:</strong> ", redListStatus, "<br/><strong>Image Credit:</strong> <a href = ", 
+                imageURL, ">", imageUser, "<a/>"))
   })
   
   output$imageBox2 <- renderImage({
@@ -213,8 +218,12 @@ shinyServer(function(input, output, session) {
     commonName <- focalSpecies$commonName[focalSpecies$species == input$speciesOccurrence]
     redListStatus <- focalSpecies$redListStatus[focalSpecies$species == input$speciesOccurrence]
     noOccurrences <- nrow(processedDataCompiled[processedDataCompiled$simpleScientificName == input$speciesOccurrence,])
-    HTML(paste0("Scientific name: ", scientificName  ,"<br/>Common name: ", commonName, "<br/>Number of occurrences: ", noOccurrences,
-                "<br/>Red list status: ", redListStatus))
+    imageUser <- creditList$credit[creditList$species == input$speciesOccurrence]
+    imageURL <- creditList$url[creditList$species == input$speciesOccurrence]
+    HTML(paste0("<strong>Scientific name:</strong> ", scientificName  ,"<br/><strong>Common name:</strong> ", 
+                commonName, "<br/><strong>Number of occurrences:</strong> ", noOccurrences,
+                "<br/><strong>Red list status:</strong> ", redListStatus, "<br/><strong>Image Credit:</strong> <a href = ", 
+                imageURL, ">", imageUser, "<a/>"))
   })
   
   

@@ -31,7 +31,8 @@ landingPageText2 <- function() {
     p("These intensity maps can then be combined to show biodiversity hotspots within a region, for all species involved 
       and for threatened species (those on the Norwegian Red List). The tool also allows the user to view the data behind 
       the estimations on a species basis. This can be separated into data type (presence-absence or presence-only), as well 
-      as data source.")
+      as data source."),
+    img(src = "workflowImage.png", width = 700)
   )
 }
 

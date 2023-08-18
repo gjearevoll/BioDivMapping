@@ -87,17 +87,17 @@ speciesIntensityText <- function() {
     p("What is ", strong("important to note"), "is that a single species' intensity in our mapping tool is currently ",
       strong("only relative to that species."), "That is to say that a species intensity of 0.5 on a fairly common species
       and of 0.5 on a very rare species do not imply the same likelihood of occurrence.")
-
+    
   )
 }
 
 instructionsText1 <- function() {
   mainPanel(
     h2("Can I create my own version of this?"),
-  p("Absolutely! Below we've laid out a set of instructions so that you can create your own version of the 
+    p("Absolutely! Below we've laid out a set of instructions so that you can create your own version of the 
   pipeline for your own species or taxa. Just remember that this tool is still only in the alpha stage,
     so best not to make any important conservation decisions using the tool just yet!"),
-  p("Prerequisite knowledge for running this pipeline is not too intense. You’ll need to have a reasonable understanding of R, 
+    p("Prerequisite knowledge for running this pipeline is not too intense. You’ll need to have a reasonable understanding of R, 
     and you’ll need to know a bit about GitHub and GBIF as well. We've attempted to answer questions about GBIF 
     and GitHub in the FAQ section below, let us know if there's something more we should add!")
   )
@@ -140,8 +140,8 @@ instructionsText2 <- function() {
     p("You need to define which datasets you’d like to use in the metadataSummary.csv file (there’s a template 
     for this too in that data/external folder). GBIF has a range of datasets for each species and you’ll need the 
     following information about those datasets:"),
-      p(),
-      p("- The dataset name"),
+    p(),
+    p("- The dataset name"),
     p("- The dataset code as listed in GBIF"),
     p("- The type of data it is (PA - presence/absence, or PO - presence only)"),
     p("- Whether or not the dataset should be activated (TRUE/FALSE)"),
@@ -194,7 +194,7 @@ instructionsText4 <- function() {
     p("To start your own app, you’ll need to open either the ui.R or server.R script found in the 
       visualisations/hotspotMap folder. From there you can hit ‘Run app’ in the top right corner of the script panel."),
     img(src = "runAppImage.png", width = 600)
-
+    
   )
 } 
 
@@ -309,4 +309,13 @@ contactText <- function() {
     p("Philip Stanley Mostert"),
     p("philip.s.mostert@ntnu.no")
   )
+}
+
+environmentalCovariateText <- function() {
+  mainPanel(
+    p("The data model found in the R Shiny app currently encompasses five covariates from a series of different sources.
+    All data were standardised to a 1 km grid, with plans for higher resolution interpolations in future models."),
+    p("For a full list of data sources (including citations), check the ", 
+      a("GitHub repo folder", href = "https://github.com/gjearevoll/BioDivMapping/tree/main/data/external/environmentalCovariates"))
+)
 }

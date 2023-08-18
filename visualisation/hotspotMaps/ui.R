@@ -208,6 +208,12 @@ shinyUI(
                                            )
                                )
                            )
+                         ),
+                         fluidRow(
+                           box(width = 12,
+                               title = "Where do these covariates come from?",
+                               environmentalCovariateText(), collapsible = TRUE,
+                               collapsed = TRUE)
                          )
                   ),
                   column(width = 9,

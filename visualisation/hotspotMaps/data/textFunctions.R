@@ -266,7 +266,7 @@ faqText7 <- function() {
 
 faqText8 <- function() {
   mainPanel(
-    p("ANy decent spatial model needs to have some method of accounting for spatial autocorrelation - 
+    p("Any decent spatial model needs to have some method of accounting for spatial autocorrelation - 
     the phenomena whereby two regions have similar species occurrences not because of any similarities 
     in environmental variables, but just because they’re close together."),
     p("The intensity function in our INLA model uses a Gaussian random field to account for potential 

@@ -11,5 +11,5 @@ mesh <- INLA::inla.mesh.2d(inlabru::fm_as_inla_mesh_segment(regionGeometry),
                            offset= myMesh$offset)
 
 ggplot2::ggplot() +
-  ggplot2::geom_sf(data = sf::st_boundary(private$Area)) +
+  ggplot2::geom_sf(data = sf::st_boundary(regionGeometry)) +
   inlabru::gg(mesh)

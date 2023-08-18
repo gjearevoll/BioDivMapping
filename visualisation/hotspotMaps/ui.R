@@ -33,12 +33,16 @@ shinyUI(
   dashboardPage(
     
     # HEADER
-    dashboardHeader(title = "Norwegian Species Diversity"),
+    dashboardHeader(title = "The Open Data Biodiversity Mapper", titleWidth = 400),
     
     # SIDEBAR
     dashboardSidebar(
       sidebarMenu(id = "sidebar",
-                  menuItem("Open Data Biodiversity Mapper", tabName = "landingPage", icon = icon("house")),
+                  menuItem("Home", tabName = "home", icon = icon("house"),
+                           menuSubItem("About the tool", tabName = "landingPage"),
+                           menuSubItem("Instructions", tabName = "instructions"),
+                           menuSubItem("FAQs", tabName = "faqs"),
+                           menuSubItem("Contact", tabName = "contactPage")),
                   menuItem("Species Intensities", tabName = "intensity", icon = icon("binoculars")),
                   menuItem("Taxa Biodiversity", tabName = "diversity", icon = icon("worm")),
                   menuItem("Species Occurrences", tabName = "occurrences", icon = icon("bugs")),
@@ -50,7 +54,43 @@ shinyUI(
     dashboardBody(
       tabItems(
         tabItem(tabName = "landingPage",
-                box(landingPageText(), width = 12)),
+                box(landingPageText1(), width = 12),
+                box(landingPageText2(), title = "How does it work?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(landingPageText3(), title = "What's an Integrated Species Distribution Model?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(landingPageText4(), title = "Who is the tool designed for?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE)),
+        tabItem(tabName = "instructions",
+                box(instructionsText1(), width = 12),
+                box(instructionsText2(), title = "Setting up your data", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(instructionsText3(), title = "Running the pipeline", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(instructionsText4(), title = "Creating your own app", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE)),
+        tabItem(tabName = "faqs",
+                box(faqText1(), width = 12),
+                box(speciesIntensityText(), title = "What is species intensity?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(faqText2(), title = "What is an integrated distribution model?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(faqText3(), title = "How do you integrate presence-only data with presence-absence data?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(faqText4(), title = "How do I find the GBIF taxa number?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(faqText5(), title = "How do I find the GBIF dataset code?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(faqText6(), title = "How do I get the pipeline onto my computer?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(faqText7(), title = "What's an accepted scientific name?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(faqText8(), title = "What is a (good) INLA mesh?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE),
+                box(faqText9(), title = "What parameters should I give when building an INLA mesh?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE)),
+        tabItem(tabName = "contactPage",
+                box(contactText(), width = 12)),
         
         tabItem(tabName = "intensity",
                 fluidRow(
@@ -168,6 +208,12 @@ shinyUI(
                                            )
                                )
                            )
+                         ),
+                         fluidRow(
+                           box(width = 12,
+                               title = "Where do these covariates come from?",
+                               environmentalCovariateText(), collapsible = TRUE,
+                               collapsed = TRUE)
                          )
                   ),
                   column(width = 9,

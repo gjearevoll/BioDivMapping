@@ -8,7 +8,7 @@ landingPageText1 <- function() {
     p("But with such copious amounts of data come obvious challenges. Though every scientist that uploads data to GBIF 
       standardises their data, they’re still collecting said data in vastly different ways. Occurrence only data like an 
       amateur bird photo can’t necessarily just be thrown into the same model as data from a complex abundance sampling 
-      project. And while scientists, natural resource makers and environmental policy makers worldwide can benefit from 
+      project. And while scientists, natural resource managers and environmental policy makers worldwide can benefit from 
       said data, not all of these groups have the necessary skills to download, process, integrate and then analyse this 
       data."),
     p("This is why we’ve developed the Open Data Biodiversity Mapper. It allows scientists and natural resource managers in 
@@ -127,8 +127,8 @@ instructionsText2 <- function() {
     p(),
     p("Let’s go through them one by one."),
     h3("Species"),
-    p("The species information should be inputted into the file marked focalSpecies.csv in data/external 
-    there’s a template you can use in there already so just follow the case and structure there). The file requires:"),
+    p("The species information should be inputted into the file marked focalSpecies.csv in data/external. 
+    Just follow the structure and format of the example species that are already in there. The file requires:"),
     p(),
     p("- The species’ scientific name (make sure it’s the accepted scientific name on GBIF"),
     p("- The taxonomic group the species belongs to"),
@@ -171,7 +171,8 @@ instructionsText2 <- function() {
 
 instructionsText3 <- function() {
   mainPanel(
-    p("Once you’ve set the above up you’ll need to create a branch off from the main GitHub repo so you can 
+    p("Once you’ve set the above up you’ll need to create a branch off",
+    strong(a(" from the main GitHub repo", href = "https://github.com/gjearevoll/BioDivMapping", target = "_blank")),"so you can 
     run your own code locally. You should then open the script masterScript.R found at the head of the 
     repository, and start running it. This is the only script that you should need to change any of the code 
     on, though you’re of course welcome to open other scripts and have a poke around inside!"),
@@ -258,12 +259,15 @@ faqText5 <- function() {
 
 faqText6 <- function() {
   mainPanel(
-    p("You’ll need to have GitHub installed on your computer, more on how to do that here. 
-      If you’re using RStudio, you’ll want to turn on the GitHub functionality as well, which 
-      you can do here. You’ll then want to start a new project locally, connecting it to 
-      BioDivMapping using the url. Once you’ve done that, you’ll want to start a new branch 
+    p("You’ll need to have GitHub installed on your computer, ",
+    strong(a("more on how to do that here", href = "https://github.com/git-guides/install-git", target = "_blank")),". 
+      If you’re using RStudio, you’ll want to turn on the GitHub functionality as well, ",
+    strong(a("which you can do using this link", 
+             href = "https://sites.northwestern.edu/researchcomputing/resources/using-git-and-github-with-r-rstudio/", target = "_blank")),
+    ". You’ll then want to start a new project locally. When you do this, choose 'Version Control' on the Create
+     Project screen. You can then select 'Git', and feed in the repository URL. Once you’ve done that, you’ll want to start a new branch 
       in GitHub, which you can do by clicking ‘main’ on the repo home page and typing in your 
-      new branch’s name. Then you can click ‘pull’in RStudio and start working on your own 
+      new branch’s name. Then you can click ‘pull’ in RStudio and start working on your own 
       version of the tool!")
   )
 } 
@@ -275,7 +279,8 @@ faqText7 <- function() {
       Luckily, GBIF will most likely have your species’ name floating around, and attached to the 
       right species - but it will be listed as a synonym, and not the accepted scientific name. 
       Make sure you use the accepted scientific name in focalSpecies.csv, or the pipeline will 
-      have trouble.")
+      have trouble. GBIF actually has a tool that allows you to do this. which you can access ",
+      strong(a("at this link", href = "https://www.gbif.org/tools/species-lookup", target = "_blank")), ".")
   )
 } 
 

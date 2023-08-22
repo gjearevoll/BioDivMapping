@@ -7,7 +7,7 @@ different taxa in the county of Trøndelag in central Norway. The current end pr
 
 ## Pipeline structure
 
-When the pipeline is running at an acceptable scope or level a more detailed instruction guide will be provided, however for the moment the description below serves as a brief overview of the pipeline structure. A visualisation of the workflow can be found [**at this Miro board**](https://miro.com/app/board/uXjVMCkk6YI=/).
+When the pipeline is running at an acceptable scope or level a more detailed instruction guide will be provided, however for the moment the description below serves as a brief overview of the pipeline structure.
 
 To run the pipeline the following files need to be supplied in the data/external folder. Once you have cloned to repository to your
 local environment you can simply edit the current versions of these files that already reside there.

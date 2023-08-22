@@ -93,12 +93,16 @@ biodiversity metrics. The output can be previewed in the
 ## Folder structure
 
 - data
-  + external - This is a temporary repository for any data we currently have stored locally, which will in the future be accessed externally (it. GBIF data, environmental data downloaded from external servers)
-  + temp - Another temporary data folder, this is where all data will be stored that would normally be uploaded to our server and then accessed again later in the pipeline
+  + external - This repository contains any data which needs to be inputted manually, including our species, dataset and covariate list, as well as the environmental covariate folder.
   + run_xxxx-xx-xx - Model output data for each species group. This folder is created automatically when models are initiated.
-- pipeline - this folder contains all scripts which need to be run anually from the command line
+    * temp - This is where all data that is required during the pipeline but not required for the ODBM resides, such as our unzipped endpoint data files and GBIF lists
+    * modelOutputs - This contains a nested list of all species model outputs before they have been processed and formatted for the ODBM
+- pipeline - this folder contains all scripts which need to be run annually from the command line
   + imports - contains the scripts necessary for importing species and environmental data
   + models - contains scripts relevant to running integrated species distribution models
   + processing - contains scripts that process data for input or output
 - utils - contains scripts which perform action that do not require manual inputs. Will be turned into functions in the future.
 - visualisations - contains the shiny app (hotspotMaps) which visualises biodiversity, species intensities and species occurrences
+  + data - contains all data necessary for production of the ODBM
+  + www - contains all one-off multimedia files for the ODMB
+

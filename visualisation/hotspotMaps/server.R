@@ -106,7 +106,7 @@ shinyServer(function(input, output, session) {
     }
     intensityPlot
     
-  })
+  }, height = 500)
   
   output$taxaDiversityMap <- renderPlot({
     taxaData <- dataList[[input$taxa2]]
@@ -137,7 +137,7 @@ shinyServer(function(input, output, session) {
       labs(fill = "Species\nbiodiversity") + 
       theme(axis.title.x = element_blank(),
             axis.title.y = element_blank())
-  })
+  }, height = 500)
   
   output$speciesOccurrenceMap <- renderPlot({
     
@@ -151,7 +151,9 @@ shinyServer(function(input, output, session) {
     basePlot <- ggplot(regionGeometry) +
       geom_sf(fill = "white", lwd = 0.7) +
       theme_classic() +
-      theme(legend.text=element_text(size=14))
+      theme(legend.text=element_text(size=14),
+            legend.position = "bottom",
+            legend.direction = "vertical")
     
     if (input$dataClassification == "dataSource") {
       fullPlot <- basePlot + geom_sf(data = dataToPlot, aes(colour = colours1, labels = name)) +
@@ -163,7 +165,7 @@ shinyServer(function(input, output, session) {
     
     fullPlot
     
-  })
+  }, height = 600)
   
   output$covariateMap <- renderPlot({
     
@@ -178,7 +180,7 @@ shinyServer(function(input, output, session) {
       theme(axis.title.x=element_blank(), 
             axis.title.y=element_blank()) +
       scale_fill_continuous(na.value = NA)
-  })
+  }, height = 500)
   
   output$imageBox1 <- renderImage({
     ImgTxt <- paste0("data/photos/", input$taxa, "/", input$species,"/speciesImage.jpg")

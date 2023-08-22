@@ -2,13 +2,15 @@ landingPageText1 <- function() {
   mainPanel(
     h1("What is the Open Data Biodiversity Mapper?"),
     p("Over the last decade, open data has exploded, and biologists from every part of the globe are reaping the benefits. 
-      Data that once would have been hidden in a faculty corner office’s filing cabinet can now easily be standardised 
-      and uploaded to databases like the Global Biodiversity Information Facility (GBIF). It’s a process which has opened 
-      up a myriad of new possibilities for ecological modellers and statisticians."),
+      Data from intense field sampling, half century old herbarium specimens, even photos of species taken by hikers, they 
+      can all easily be standardised and uploaded to the Global Biodiversity Information Facility (GBIF). It’s a process 
+      which has opened up a myriad of new possibilities for ecological modellers and statisticians."),
     p("But with such copious amounts of data come obvious challenges. Though every scientist that uploads data to GBIF 
-      standardises their data, they’re still collecting said data in vastly different ways. And while scientists, natural 
-      resource makers and environmental policy makers worldwide can benefit from said data, not all of these groups have the 
-      necessary skills to download, process, integrate and then analyse this data."),
+      standardises their data, they’re still collecting said data in vastly different ways. Occurrence only data like an 
+      amateur bird photo can’t necessarily just be thrown into the same model as data from a complex abundance sampling 
+      project. And while scientists, natural resource makers and environmental policy makers worldwide can benefit from 
+      said data, not all of these groups have the necessary skills to download, process, integrate and then analyse this 
+      data."),
     p("This is why we’ve developed the Open Data Biodiversity Mapper. It allows scientists and natural resource managers in 
       Norway (and soon the rest of the world) to mobilise data at a variety of scales to map individual species occurrences, 
       and from there plot biodiversity hotspots for the purpose of setting conservation priorities.")
@@ -18,14 +20,17 @@ landingPageText1 <- function() {
 landingPageText2 <- function() {
   mainPanel(
     p("The tool is currently an R Shiny app, which relies on a data pipeline which draws down data from open data sources, 
-    currently GBIF and Norwegian database Arearepresentativ overvakning (ANO). A user can define their own taxa or species
+    currently GBIF and Norwegian database ", strong(a("Arealrepresentativ naturovervakning (ANO)",
+    href = "https://www.miljodirektoratet.no/ansvarsomrader/overvaking-arealplanlegging/miljoovervaking/overvakingsprogrammer/natur-pa-land/arealrepresentativ-naturovervakning-ano/",
+    target = "_blank")),". A user can define their own taxa or species
     of choice depending on their need. Because a bit of detail can be lost during the standardisation to GBIF, the pipeline
     also digs into the source files to add that detail back in. What the user is left with is a list of datasets containing
     one or more of the species that they’re studying."),
     p("This is combined with a series of relevant environmental covariates, standardised to a 1km grid, with plans for higher 
       resolution in future models. The environmental data was sourced from a range of different databases, more detail on 
-      which can be found in the ",a("GitHub repository.", 
-                                    href = "https://github.com/gjearevoll/BioDivMapping/tree/main/data/external/environmentalCovariates")),
+      which can be found in the ",strong(a("GitHub repository.", 
+                                    href = "https://github.com/gjearevoll/BioDivMapping/tree/main/data/external/environmentalCovariates",
+                                    target = "_blank"))),
     p("This is then processed through an",
       strong("integrated species distribution model (ISDM)"), "to give a series of species intensity maps."),
     p("These intensity maps can then be combined to show biodiversity hotspots within a region, for all species involved 
@@ -63,13 +68,20 @@ landingPageText4 <- function() {
     p("- Developers looking to assess sites of expansion of infrastructure"),
     p("- Government organisations creating new protected areas"),
     p("- Conservationists carrying out habitat restoration work"),
-    p("- Field workers looking to assess regions which have historically been under surveyed"),
-    h3("Future development"),
+    p("- Field workers looking to assess regions which have historically been under surveyed")
+  )
+}
+
+landingPageText5 <- function() {
+  mainPanel(
     p("While the open source code can be used to run the Biodiversity Mapping pipeline at small regional scales, we are 
       currently scaling the tool in order to produce maps for the whole of Norway. We are also focussing on adding more 
       tangible conservation visualisations, such as replacing species intensity with probability of occurrence. We are also 
       planning on comparing model accuracy to the expectations of domain experts to see whether their experience with 
       specific species lines up with the predictions produced by our species intensity models."),
+    p("On the modelling side, we’re also looking to provide further specifications for different data types in order to take 
+      advantage of as much detail as possible. We’ll be looking to integrate complex data like eDNA-based records with more 
+      precision and introduce uncertainty parameters into the model."),
     p("Lastly, we are planning on automating the data pipeline using the targets package in order to ensure we are always 
       using the most up-to-date datasets without constant manual updates. We will also be integrating temporal data into the 
       pipeline to reflect the regional changes that have and will affect species distribution.")
@@ -99,7 +111,9 @@ instructionsText1 <- function() {
     so best not to make any important conservation decisions using the tool just yet!"),
     p("Prerequisite knowledge for running this pipeline is not too intense. You’ll need to have a reasonable understanding of R, 
     and you’ll need to know a bit about GitHub and GBIF as well. We've attempted to answer questions about GBIF 
-    and GitHub in the FAQ section below, let us know if there's something more we should add!")
+    and GitHub in the FAQ section below, let us know if there's something more we should add!"),
+    p("If you'd like a more technical description, or would like to have a poke around in the code yourself, all the 
+      necessary code is located ", strong(a("on our GitHub repository.", href = "https://github.com/gjearevoll/BioDivMapping", target = "_blank")))
   )
 } 
 
@@ -135,7 +149,8 @@ instructionsText2 <- function() {
     p(),
     p("Keep in mind of course that the larger the region you select, the longer the model will take to run. 
     Two and four-number codes for Norwegian municipalities can be found ",
-      a("at this link.", href = "https://kartverket.no/til-lands/kommunereform/tekniske-endringer-ved-sammenslaing-og-grensejustering/komendr2020")),
+      strong(a("at this link.", href = "https://kartverket.no/til-lands/kommunereform/tekniske-endringer-ved-sammenslaing-og-grensejustering/komendr2020", 
+        target = "_blank"))),
     h3("Datasets"),
     p("You need to define which datasets you’d like to use in the metadataSummary.csv file (there’s a template 
     for this too in that data/external folder). GBIF has a range of datasets for each species and you’ll need the 
@@ -164,7 +179,7 @@ instructionsText3 <- function() {
     p("The last thing you need to do before you get started is to make sure you’ve got all relevant R packages 
     installed. There is a utility script at the start of the master script which helps out here, but of course 
     R isn’t always known for willingly installing packages. This utility script also installs INLA in order to 
-    run the models - ", strong(a("more on that here.", href = "https://www.r-inla.org"))),
+    run the models - ", strong(a("more on that here.", href = "https://www.r-inla.org", target = "_blank"))),
     p(""),
     p("The master script runs five different scripts, one after the other. Here’s a brief overview of the process 
     that occurs when you’re running the master script (a more detailed description can be found in the main 
@@ -304,7 +319,7 @@ contactText <- function() {
     h2("If you have any questions you'd like to ask about the project, feel free to get in touch!"),
     p("Sam Wenaas Perrin, PhD."),
     p("sam.perrin@ntnu.no"),
-    p(a("Sam's profile at Ecology for the Masses", href = "https://ecologyforthemasses.com/sam-perrin-2/")),
+    p(a("Sam's profile at Ecology for the Masses", href = "https://ecologyforthemasses.com/sam-perrin-2/", target = "_blank")),
     br(),
     p("Philip Stanley Mostert"),
     p("philip.s.mostert@ntnu.no")
@@ -316,6 +331,6 @@ environmentalCovariateText <- function() {
     p("The data model found in the R Shiny app currently encompasses five covariates from a series of different sources.
     All data were standardised to a 1 km grid, with plans for higher resolution interpolations in future models."),
     p("For a full list of data sources (including citations), check the ", 
-      a("GitHub repo folder", href = "https://github.com/gjearevoll/BioDivMapping/tree/main/data/external/environmentalCovariates"))
+      strong(a("GitHub repo folder", href = "https://github.com/gjearevoll/BioDivMapping/tree/main/data/external/environmentalCovariates", target = "_blank")))
 )
 }

@@ -3,7 +3,7 @@
 This pipeline is dedicated to the production of biodiversity mapping and associated metrics for Norway. It imports, processes, and models species 
 data from open-source data repositories, including GBIF and ANO. Currently the pipeline is in a draft format, producing species maps across four 
 different taxa in the county of Trøndelag in central Norway. The current end product, the Open Data Biodiversity Mapper (ODBM) can be viewed 
-[**at this link**](https://swp-data-projects.shinyapps.io/hotspotMaps2/).
+[**at this link**](https://swp-data-projects.shinyapps.io/odbm/).
 
 ## Pipeline structure
 
@@ -15,7 +15,7 @@ local environment you can simply edit the current versions of these files that a
 - focalSpecies.csv - A list of species. Follow the format of the example provided, making sure you use the accepted scientific name as 
 listed in GBIF (if you're unsure of the accepted scientific name, [**GBIF has a tool for this purpose**](https://www.gbif.org/tools/species-lookup))
 - metadataSummary.csv - A list of datasets to be used, along with their GBIF dataset codes and the data type, plus a TRUE/FALSE column 
-stating whether they should be used or not. Check the [**FAQ section of the ODBM**](https://swp-data-projects.shinyapps.io/hotspotMaps2/) for
+stating whether they should be used or not. Check the [**FAQ section of the ODBM**](https://swp-data-projects.shinyapps.io/odbm/) for
 information on finding GBIF dataset codes.
 
 You'll also need to edit the focalCovariates.csv folder, however this is simply a matter of deciding which
@@ -73,7 +73,7 @@ and environmental data into an R6 Environment object. Model calculation is by fa
 and will vary in its comuptation time depending on the size of the region surveyed, the number of species occurrences, the 
 
 **Important**: The properties of the INLA Mesh need to be adjusted whenever the region is changed. You can read more about an INLA Mesh and how to 
-construct a good one in our [**FAQ section of ODBM**](https://swp-data-projects.shinyapps.io/hotspotMaps2/). As presented in the 
+construct a good one in our [**FAQ section of ODBM**](https://swp-data-projects.shinyapps.io/odbm/). As presented in the 
 master script, you can also construct a mesh with a bit of trial and error using the utils/meshTest.R script.
 
 **Outputs**: Each species run through the model gets its own folder with a map and set of predictions for the entire region.
@@ -88,17 +88,21 @@ visualisation folder.
 
 The visualisation/hotspotMap folder contains a shiny app which shows species occurrence data, modelled species intensity data, and
 biodiversity metrics. The output can be previewed in the 
-[**Taxa biodiversity tab of the ODBM**](https://swp-data-projects.shinyapps.io/hotspotMaps2/).
+[**Taxa biodiversity tab of the ODBM**](https://swp-data-projects.shinyapps.io/odbm/).
 
 ## Folder structure
 
 - data
-  + external - This is a temporary repository for any data we currently have stored locally, which will in the future be accessed externally (it. GBIF data, environmental data downloaded from external servers)
-  + temp - Another temporary data folder, this is where all data will be stored that would normally be uploaded to our server and then accessed again later in the pipeline
+  + external - This repository contains any data which needs to be inputted manually, including our species, dataset and covariate list, as well as the environmental covariate folder.
   + run_xxxx-xx-xx - Model output data for each species group. This folder is created automatically when models are initiated.
-- pipeline - this folder contains all scripts which need to be run anually from the command line
+    * temp - This is where all data that is required during the pipeline but not required for the ODBM resides, such as our unzipped endpoint data files and GBIF lists
+    * modelOutputs - This contains a nested list of all species model outputs before they have been processed and formatted for the ODBM
+- pipeline - this folder contains all scripts which need to be run annually from the command line
   + imports - contains the scripts necessary for importing species and environmental data
   + models - contains scripts relevant to running integrated species distribution models
   + processing - contains scripts that process data for input or output
 - utils - contains scripts which perform action that do not require manual inputs. Will be turned into functions in the future.
 - visualisations - contains the shiny app (hotspotMaps) which visualises biodiversity, species intensities and species occurrences
+  + data - contains all data necessary for production of the ODBM
+  + www - contains all one-off multimedia files for the ODMB
+

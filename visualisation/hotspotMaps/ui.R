@@ -54,13 +54,15 @@ shinyUI(
     dashboardBody(
       tabItems(
         tabItem(tabName = "landingPage",
-                box(landingPageText1(), width = 12),
-                box(landingPageText2(), title = "How does it work?", width = 12, 
-                    collapsible = TRUE, collapsed = TRUE),
-                box(landingPageText3(), title = "What's an Integrated Species Distribution Model?", width = 12, 
-                    collapsible = TRUE, collapsed = TRUE),
-                box(landingPageText4(), title = "Who is the tool designed for?", width = 12, 
+                fluidRow(box(landingPageText1(), width = 12)),
+                fluidRow(box(landingPageText2(), title = "How does it work?", width = 12, 
                     collapsible = TRUE, collapsed = TRUE)),
+                    fluidRow(box(landingPageText3(), title = "What's an Integrated Species Distribution Model?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE)),
+                    fluidRow(box(landingPageText4(), title = "Who is the tool designed for?", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE)),
+                    fluidRow(box(landingPageText5(), title = "Future development", width = 12, 
+                    collapsible = TRUE, collapsed = TRUE))),
         tabItem(tabName = "instructions",
                 box(instructionsText1(), width = 12),
                 box(instructionsText2(), title = "Setting up your data", width = 12, 
@@ -119,7 +121,7 @@ shinyUI(
                     fluidRow(
                       box(width = 12,title = "Species Intensity Map",
                           status = "primary",
-                          plotOutput("speciesMap"))),
+                          plotOutput("speciesMap", height = '100%'))),
                     fluidRow(
                       box(width = 12, title = "What is species intensity?",
                           collapsible = TRUE, collapsed = TRUE,
@@ -141,7 +143,7 @@ shinyUI(
               width = 5, offset = 0,
               box(width = 12,title = "Taxa Diversity Map",
                   status = "primary",
-                  plotOutput("taxaDiversityMap")
+                  plotOutput("taxaDiversityMap", height = '100%')
               )))
         ),
         tabItem(tabName = "occurrences",
@@ -182,9 +184,9 @@ shinyUI(
                   ),
                   column(width = 9,
                          fluidRow(
-                           box(width = 12,
+                           box(
                                title = "Species Occurrence Map",
-                               plotOutput("speciesOccurrenceMap")
+                               plotOutput("speciesOccurrenceMap", height = "100%")
                            )
                          ))
                 )
@@ -196,7 +198,6 @@ shinyUI(
                          fluidRow(
                            box(width = 12,
                                title = "Environmental Covariates",
-                               br(),
                                status = "primary",
                                selectInput(inputId = "covariate", label = "",
                                            selected = "temperature",
@@ -208,19 +209,22 @@ shinyUI(
                                            )
                                )
                            )
+                         )
+                  ),
+                  column(width = 9,
+                         fluidRow(
+                         box(
+                           title = "Environmental Covariate Map",
+                           plotOutput("covariateMap", height = "100%")
+                         )
                          ),
                          fluidRow(
-                           box(width = 12,
+                           box(
                                title = "Where do these covariates come from?",
                                environmentalCovariateText(), collapsible = TRUE,
                                collapsed = TRUE)
                          )
-                  ),
-                  column(width = 9,
-                         box(
-                           title = "Environmental Covariate Map",
-                           plotOutput("covariateMap")
-                         )
+                         
                   )
                 )
         )

@@ -327,7 +327,10 @@ contactText <- function() {
     p(a("Sam's profile at Ecology for the Masses", href = "https://ecologyforthemasses.com/sam-perrin-2/", target = "_blank")),
     br(),
     p("Philip Stanley Mostert"),
-    p("philip.s.mostert@ntnu.no")
+    p("philip.s.mostert@ntnu.no"),
+    br(),
+    p("Rog Togunov"),
+    p("ron.togunov@ntnu.no")
   )
 }
 

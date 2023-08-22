@@ -3,7 +3,7 @@
 This pipeline is dedicated to the production of biodiversity mapping and associated metrics for Norway. It imports, processes, and models species 
 data from open-source data repositories, including GBIF and ANO. Currently the pipeline is in a draft format, producing species maps across four 
 different taxa in the county of Trøndelag in central Norway. The current end product, the Open Data Biodiversity Mapper (ODBM) can be viewed 
-[**at this link**](https://swp-data-projects.shinyapps.io/hotspotMaps2/).
+[**at this link**](https://swp-data-projects.shinyapps.io/odbm/).
 
 ## Pipeline structure
 
@@ -15,7 +15,7 @@ local environment you can simply edit the current versions of these files that a
 - focalSpecies.csv - A list of species. Follow the format of the example provided, making sure you use the accepted scientific name as 
 listed in GBIF (if you're unsure of the accepted scientific name, [**GBIF has a tool for this purpose**](https://www.gbif.org/tools/species-lookup))
 - metadataSummary.csv - A list of datasets to be used, along with their GBIF dataset codes and the data type, plus a TRUE/FALSE column 
-stating whether they should be used or not. Check the [**FAQ section of the ODBM**](https://swp-data-projects.shinyapps.io/hotspotMaps2/) for
+stating whether they should be used or not. Check the [**FAQ section of the ODBM**](https://swp-data-projects.shinyapps.io/odbm/) for
 information on finding GBIF dataset codes.
 
 You'll also need to edit the focalCovariates.csv folder, however this is simply a matter of deciding which
@@ -73,7 +73,7 @@ and environmental data into an R6 Environment object. Model calculation is by fa
 and will vary in its comuptation time depending on the size of the region surveyed, the number of species occurrences, the 
 
 **Important**: The properties of the INLA Mesh need to be adjusted whenever the region is changed. You can read more about an INLA Mesh and how to 
-construct a good one in our [**FAQ section of ODBM**](https://swp-data-projects.shinyapps.io/hotspotMaps2/). As presented in the 
+construct a good one in our [**FAQ section of ODBM**](https://swp-data-projects.shinyapps.io/odbm/). As presented in the 
 master script, you can also construct a mesh with a bit of trial and error using the utils/meshTest.R script.
 
 **Outputs**: Each species run through the model gets its own folder with a map and set of predictions for the entire region.
@@ -88,7 +88,7 @@ visualisation folder.
 
 The visualisation/hotspotMap folder contains a shiny app which shows species occurrence data, modelled species intensity data, and
 biodiversity metrics. The output can be previewed in the 
-[**Taxa biodiversity tab of the ODBM**](https://swp-data-projects.shinyapps.io/hotspotMaps2/).
+[**Taxa biodiversity tab of the ODBM**](https://swp-data-projects.shinyapps.io/odbm/).
 
 ## Folder structure
 

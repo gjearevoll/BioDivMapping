@@ -14,7 +14,7 @@ if (!file.exists(tempANOFolder)) {
 # Download and unzip ANO data from endpoint
 ANOEndpoint <- "https://nedlasting.miljodirektoratet.no/naturovervaking/naturovervaking_eksport.gdb.zip"
 ANOfile <- download.file(url=ANOEndpoint, 
-                         destfile=paste0(tempANOFolder, "/naturovervaking_eksport.gdb.zip"))
+                         destfile=paste0(tempANOFolder, "/naturovervaking_eksport.gdb.zip"), mode = "wb")
 unzip(paste0(tempANOFolder, "/naturovervaking_eksport.gdb.zip"), 
       exdir = tempANOFolder)
 ANOUnzippedFolder <- paste0(tempANOFolder, "/Naturovervaking_eksport.gdb")
@@ -43,29 +43,32 @@ ANOSpeciesFull <- ANOSpeciesFull[,c("GlobalID", "ParentGlobalID", "simpleScienti
 # Narrow down to only species we are looking for
 ANOSpecies <- ANOSpeciesFull[ANOSpeciesFull$simpleScientificName %in% focalSpecies$species,]
 
-# Start creating a matrix of species occurrence
-ANOSpeciesTable <- as.data.frame(table(ANOSpecies$ParentGlobalID, ANOSpecies$simpleScientificName), 
+# continue only if at least one species is present in ANO
+if(nrow(ANOSpecies) > 0) {
+  # Start creating a matrix of species occurrence
+  ANOSpeciesTable <- as.data.frame(table(ANOSpecies$ParentGlobalID, ANOSpecies$simpleScientificName), 
                                    stringsAsFactors = FALSE)
-# Convert anything more than 2 to a presence
-ANOSpeciesTable$Freq[ANOSpeciesTable$Freq > 0] <- 1
-colnames(ANOSpeciesTable) <- c("GlobalID", "simpleScientificName", "individualCount")
-
-# Add geometry data
-ANOData <- merge(ANOSpeciesTable, ANOPoints[,c("GlobalID")], 
-                 by="GlobalID", all.x=TRUE)
-ANOData$dataType <- "PA"
-ANOData$name <- "ANO Data"
-ANOData$geometry <- ANOData$SHAPE
-ANOData$DWCEndpoint <- ANOEndpoint
-ANOData$basisofRecord <- "HUMAN_OBSERVATION"
-ANOData$type <- "SAMPLING_EVENT"
-ANOData$datasetKey <- ANOData$coordinateUncertaintyInMeters <- ANOData$year <- NA
-
-ANOData <- st_as_sf(ANOData)
-st_crs(ANOData) <- "+proj=longlat +ellps=WGS84"
-
-# Crop to relevant region
-ANOData <- st_intersection(ANOData, regionGeometry)
-ANOData <- st_transform(ANOData, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
-
-rm("ANOSpecies", "ANOSpeciesTable", "ANOSpeciesFull", "ANOPoints", "ANOUnzippedFolder", "tempANOFolder")
+  # Convert anything more than 2 to a presence
+  ANOSpeciesTable$Freq[ANOSpeciesTable$Freq > 0] <- 1
+  colnames(ANOSpeciesTable) <- c("GlobalID", "simpleScientificName", "individualCount")
+  
+  # Add geometry data
+  ANOData <- merge(ANOSpeciesTable, ANOPoints[,c("GlobalID")], 
+                   by="GlobalID", all.x=TRUE)
+  ANOData$dataType <- "PA"
+  ANOData$name <- "ANO Data"
+  ANOData$geometry <- ANOData$SHAPE
+  ANOData$DWCEndpoint <- ANOEndpoint
+  ANOData$basisofRecord <- "HUMAN_OBSERVATION"
+  ANOData$type <- "SAMPLING_EVENT"
+  ANOData$datasetKey <- ANOData$coordinateUncertaintyInMeters <- ANOData$year <- NA
+  
+  ANOData <- st_as_sf(ANOData)
+  st_crs(ANOData) <- "+proj=longlat +ellps=WGS84"
+  
+  # Crop to relevant region
+  ANOData <- st_intersection(ANOData, regionGeometry)
+  ANOData <- st_transform(ANOData, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
+  
+  rm("ANOSpecies", "ANOSpeciesTable", "ANOSpeciesFull", "ANOPoints", "ANOUnzippedFolder", "tempANOFolder")
+}

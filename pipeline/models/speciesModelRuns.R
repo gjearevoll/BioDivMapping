@@ -34,7 +34,8 @@ focalTaxa <- unique(focalSpecies$taxonomicGroup)
 
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
-environmentalDataList <- readRDS(paste0(tempFolderName, "/environmentalDataImported.RDS"))
+# environmentalDataList <- readRDS(paste0(tempFolderName, "/environmentalDataImported.RDS"))
+environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
 
 if (externalImport == TRUE) {
   

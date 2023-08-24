@@ -10,6 +10,6 @@ mesh <- INLA::inla.mesh.2d(boundary = inlabru::fm_as_inla_mesh_segment(regionGeo
                            max.edge=myMesh$max.edge, 
                            offset= myMesh$offset)
 
-ggplot2::ggplot() +
+print(ggplot2::ggplot() +
   ggplot2::geom_sf(data = st_transform(regionGeometry, mesh$crs)) +
-  inlabru::gg(mesh)
+  inlabru::gg(mesh))

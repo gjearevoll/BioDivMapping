@@ -14,7 +14,7 @@ if (!file.exists(tempANOFolder)) {
 # Download and unzip ANO data from endpoint
 ANOEndpoint <- "https://nedlasting.miljodirektoratet.no/naturovervaking/naturovervaking_eksport.gdb.zip"
 ANOfile <- download.file(url=ANOEndpoint, 
-                         destfile=paste0(tempANOFolder, "/naturovervaking_eksport.gdb.zip"))
+                         destfile=paste0(tempANOFolder, "/naturovervaking_eksport.gdb.zip"), mode = "wb")
 unzip(paste0(tempANOFolder, "/naturovervaking_eksport.gdb.zip"), 
       exdir = tempANOFolder)
 ANOUnzippedFolder <- paste0(tempANOFolder, "/Naturovervaking_eksport.gdb")

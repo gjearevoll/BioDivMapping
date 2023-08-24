@@ -19,17 +19,17 @@ We begin with basic information about the pipeline run.
 
 ``` {r echo = FALSE}
 
-source(textConnection(readLines("../pipeline/import/speciesImport.R")[22:23]))
-focalTaxa <- read.csv("../data/external/focalTaxa.csv")
+region <- attr(speciesDataList, "region")
+level <- attr(speciesDataList, "level")
+focalSpecies <- read.csv("../data/external/focalSpecies.csv")
+focalTaxa <- unique(focalSpecies$species)
 infoNames <- c("Date",
                "Taxa",
-               "Taxa code",
                "Region type",
                "Region code",
                "Total species",
                "Total datasets used")
-info <- c(dateAccessed, paste(focalTaxa$taxa, collapse = ", "), 
-          paste(focalTaxa$key, collapse = ", "), level, region, nrow(focalSpecies),
+info <- c(dateAccessed, paste(focalTaxa, collapse = ", "), level, region, nrow(focalSpecies),
           length(unique(processedDataDF$datasetName)))
 basicInfo <- data.frame(Characteristic = infoNames, Value = info)
 knitr::kable(basicInfo)
@@ -66,8 +66,8 @@ The following gives spatial density for observations across the surveyed region 
 ``` {r echo = FALSE}
 
 regionGeometry <- readRDS(paste0("../", folderName, "/regionGeometry.RDS"))
-for (i in 1:length(unique(focalTaxa$taxa))) {
-  focalTaxaGroup <- unique(focalTaxa$taxa)[i]
+for (i in 1:length(focalTaxa)) {
+  focalTaxaGroup <- focalTaxa[i]
   processedDataShortened <- processedDataCompiled[processedDataCompiled$taxa == focalTaxaGroup,]
 print(ggplot(regionGeometry) +
       geom_sf() +

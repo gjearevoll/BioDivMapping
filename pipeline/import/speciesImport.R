@@ -98,7 +98,7 @@ names(GBIFLists) <- unique(GBIFImportCompiled$name)
 ###----------------###
 
 source("utils/importANOData.R")
-GBIFLists[["ANOData"]] <- ANOData
+if(exists("ANOData")) GBIFLists[["ANOData"]] <- ANOData
 
 
 ###--------------------###

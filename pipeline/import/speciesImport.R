@@ -58,7 +58,6 @@ gbifImportsPerTaxa <- lapply(focalTaxa, FUN = function(x) {
   focalSpeciesImport <- focalSpecies$species[focalSpecies$taxonomicGroup == x]
   GBIFImport <- occ_data(scientificName = focalSpeciesImport, hasCoordinate = TRUE, limit = 3000, 
                          geometry = st_bbox(regionGeometry), coordinateUncertaintyInMeters = '0,500')
-      dataSubset$datasetName <- NA
   # compile import 
   if(all(names(GBIFImport) == c("meta", "data"))){  # if only one species selected
     GBIFImportCompiled <- CompileGBIFImport(GBIFImport)

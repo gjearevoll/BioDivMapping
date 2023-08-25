@@ -42,25 +42,32 @@ if (!file.exists(folderName)) {
 ###-----------------###
 ### 2. GBIF Import ####
 ###-----------------###
-
+CompileGBIFImport <- function(z) {
+  dataSubset <- z$data
+  
+  # datasetName does not exist in some species for some reason. In these cases, let it equal NA
+  if (!("datasetName" %in% colnames(dataSubset))) {
+    dataSubset$datasetName <- NA
+  }
+  dataSubset[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord", "year", 
+                "datasetKey", "coordinateUncertaintyInMeters", "datasetName")]
+}
+  
 # Import GBIF Data
 gbifImportsPerTaxa <- lapply(focalTaxa, FUN = function(x) {
   focalSpeciesImport <- focalSpecies$species[focalSpecies$taxonomicGroup == x]
   GBIFImport <- occ_data(scientificName = focalSpeciesImport, hasCoordinate = TRUE, limit = 3000, 
                          geometry = st_bbox(regionGeometry), coordinateUncertaintyInMeters = '0,500')
-  GBIFImportCompiled <- do.call(rbind, lapply(GBIFImport, FUN = function(z) {
-    dataSubset <- z$data
-    
-    # datasetName does not exist in some species for some reason. In these cases, let it equal NA
-    if (!("datasetName" %in% colnames(dataSubset))) {
       dataSubset$datasetName <- NA
-    }
-    dataSubset[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord", "year", 
-                  "datasetKey", "coordinateUncertaintyInMeters", "datasetName")]
-  }))
+  # compile import 
+  if(all(names(GBIFImport) == c("meta", "data"))){  # if only one species selected
+    GBIFImportCompiled <- CompileGBIFImport(GBIFImport)
+  } else if(any(names(GBIFImport) %in% focalSpeciesImport)){  # if multiple species 
+    GBIFImportCompiled <- do.call(rbind, lapply(GBIFImport, CompileGBIFImport))
+  }
   GBIFImportCompiled$simpleScientificName <- gsub(" ", "_", word(GBIFImportCompiled$acceptedScientificName, 1,2, sep=" "))
   GBIFImportCompiled
-} )
+})
 GBIFImportCompiled <- do.call(rbind, gbifImportsPerTaxa)
 GBIFImportCompiled$taxa <- focalSpecies$taxonomicGroup[match(GBIFImportCompiled$simpleScientificName, focalSpecies$species)]
 

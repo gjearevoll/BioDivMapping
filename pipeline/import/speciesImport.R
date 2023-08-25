@@ -17,8 +17,8 @@ library(rinat)
 ###-----------------###
 
 # Run script to define geographical region and resolution we are working with 
-if (!exists(level)) {level <- "county"}  # level can be country, county, municipality, or points (examples of points given below)
-if (!exists(region)) {region <- "50"}
+if (!exists("level")) {level <- "county"}  # level can be country, county, municipality, or points (examples of points given below)
+if (!exists("region")) {region <- "50"}
 runBuffer <- FALSE
 #points <- c(4.641979, 57.97976, 31.05787, 71.18488)
 #names(points) <- c("north", "south", "east", "west")
@@ -105,7 +105,7 @@ names(GBIFLists) <- unique(GBIFImportCompiled$name)
 ###----------------###
 
 source("utils/importANOData.R")
-GBIFLists[["ANOData"]] <- ANOData
+if(exists("ANOData")) {GBIFLists[["ANOData"]] <- ANOData}
 
 
 ###--------------------###

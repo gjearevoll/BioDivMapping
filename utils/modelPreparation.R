@@ -52,8 +52,9 @@ for (i in 1:length(focalTaxa)) {
   }
   
   # Add environmental characteristics
-  for (e in 1:length(environmentalDataList)) {
-       workflow$addCovariates(Object = environmentalDataList[[e]])
+  for (e in 1:nlyr(environmentalDataList)) {
+    cat(sprintf("Adding covariate '%s' to the model.\n", names(environmentalDataList)[e]))
+    workflow$addCovariates(Object = environmentalDataList[[e]])
   }
     
   workflowList[[focalGroup]] <- workflow

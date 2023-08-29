@@ -42,16 +42,9 @@ if (!file.exists(folderName)) {
 ###-----------------###
 ### 2. GBIF Import ####
 ###-----------------###
-CompileGBIFImport <- function(z) {
-  dataSubset <- z$data
-  
-  # datasetName does not exist in some species for some reason. In these cases, let it equal NA
-  if (!("datasetName" %in% colnames(dataSubset))) {
-    dataSubset$datasetName <- NA
-  }
-  dataSubset[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord", "year", 
-                "datasetKey", "coordinateUncertaintyInMeters", "datasetName")]
-}
+
+# Import GBIF compilation function
+source("utils/compileGBIFImport.R")
   
 # Import GBIF Data
 gbifImportsPerTaxa <- lapply(focalTaxa, FUN = function(x) {

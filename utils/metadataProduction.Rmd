@@ -22,7 +22,7 @@ We begin with basic information about the pipeline run.
 region <- attr(speciesDataList, "region")
 level <- attr(speciesDataList, "level")
 focalSpecies <- read.csv("../data/external/focalSpecies.csv")
-focalTaxa <- unique(focalSpecies$species)
+focalTaxa <- unique(focalSpecies$taxonomicGroup)
 infoNames <- c("Date",
                "Taxa",
                "Region type",

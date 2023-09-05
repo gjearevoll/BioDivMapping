@@ -62,24 +62,6 @@ parametersCropped <- lapply(parameters, FUN = function(x) {
          project(regionGeometry_buffer, rasterisedVersion), 
          snap = "out", mask = T)
   )
-  # dataFinal <- scale(
-  #   mask(
-  #     crop(
-  #       project(rasterisedVersion, regionGeometry_buffer), 
-  #       regionGeometry_buffer),
-  #     regionGeometry_buffer)
-  #   ) 
-  # foo <- scale(
-  #   crop(project(rasterisedVersion, regionGeometry_buffer),
-  #        regionGeometry_buffer, snap = "out", mask = T)
-  # )
-  # crs(rasterisedVersion) <- "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs"
-  # dataProjected <- projectRaster(rasterisedVersion2, crs=newproj, res=0.1)
-  # dataCropped <- crop(dataProjected, as_Spatial(st_buffer(regionGeometry, 20000)))
-  # dataMasked <- mask(dataCropped, as_Spatial(st_buffer(regionGeometry, 20000)))
-  # names(dataMasked) <- x
-  # dataFinal <- scale(dataMasked)
-  # dataFinal
 })
 # project all rasters to the one with the highest resolution and combine 
 reference <- which.min(sapply(parametersCropped, res)[1,])
@@ -97,5 +79,3 @@ names(parametersCropped) <- parameters
 # Save both to temp file for model processing and visualisation folder for mapping
 writeRaster(parametersCropped, paste0("data/run_", dateAccessed,"/temp/environmentalDataImported.tiff"), overwrite=TRUE)
 writeRaster(parametersCropped, "visualisation/hotspotMaps/data/covariateDataList.tiff", overwrite=TRUE)
-# saveRDS(parametersCropped, paste0("data/run_", dateAccessed,"/temp/environmentalDataImported.RDS"))
-# saveRDS(parametersCropped, "visualisation/hotspotMaps/data/covariateDataList.RDS")

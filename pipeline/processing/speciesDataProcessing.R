@@ -53,8 +53,16 @@ for (ds in 1:length(speciesData)) {
   dataType <- unique(focalData$dataType)
   datasetName <- names(speciesData)[ds]
   if (dataType == "PA" & datasetName != "ANOData") { 
-    # Here we apply our conversion script for presence/absence data
-    source("utils/presenceAbsenceConversion.R")
+    # Here we apply our conversion script for presence/absence data - tryCatch is for if any links to endpoints are broken
+    tryCatch(
+      {
+        newDataset <- NULL
+        source("utils/presenceAbsenceConversion.R")
+      },
+      error=function(e) {
+        message(paste0('An error occurred and dataset ', datasetName, ' was not produced.'))
+      }
+    )
   } else if (datasetName == "ANOData") {
     # ANO data has a different nedpoint and has already been taken care of in the utils/ANOIntegration scropt
     newDataset <- focalData[,c("simpleScientificName", "SHAPE", "individualCount", "dataType")]

@@ -5,6 +5,8 @@
 
 library(dplyr)
 library(sf)
+library(raster)
+library(terra)
 
 ###-----------------###
 ### 1. Preparation ####
@@ -20,6 +22,10 @@ folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 
 processedDataList <- readRDS(paste0("data/run_", dateAccessed, "/temp/speciesDataProcessed.RDS"))
+regionGeometry <- readRDS(paste0("data/run_", dateAccessed, "/regionGeometry.RDS"))
+
+
+regionGeometry_buffer <- vect(st_buffer(regionGeometry, 1))
 
 # Edit data frames to have same number of columns
 processedDataForCompilation <- lapply(1:length(processedDataList), FUN = function(x) {
@@ -46,18 +52,19 @@ processedDataCompiled <- do.call(rbind, processedDataForCompilation)
 blankRaster <- projectRaster(raster(rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))$aspect), 
                              crs= "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs")
 
+
 # Group taxa and create list
 focalTaxa <- unique(processedDataCompiled$taxa) 
 taxaRasters <- list()
 
 # Stack the rasters for each taxa
-for (i in focalTaxa){
-  processedTaxaData <- processedDataCompiled[processedDataCompiled$taxa == i,]
+taxaRasters <- lapply(focalTaxa, FUN = function(x) {
+  processedTaxaData <- processedDataCompiled[processedDataCompiled$taxa == x,]
   processedPoints <- as(processedTaxaData, "Spatial")
   speciesNames <- unique(processedPoints$simpleScientificName)
   # We now turn every pixel that has more than 1 occurrence of a species in it into a 1, and then 
   # add these rasters together to get total species richness in that square
-    speciesPointList <- lapply(speciesNames, FUN = function(x) {
+  speciesPointList <- lapply(speciesNames, FUN = function(x) {
     processedPointsSubset <- processedPoints[processedPoints$simpleScientificName == x,]
     pointsRaster <- rasterize(processedPointsSubset, raster(blankRaster), processedPoints$individualCount, fun = sum)
     values(pointsRaster) <- ifelse(is.na(values(pointsRaster)), 0, 1)
@@ -66,13 +73,23 @@ for (i in focalTaxa){
   names(speciesPointList) <- speciesNames
   rs <- stack(speciesPointList)
   rs1 <- calc(rs, sum)
-  taxaRasters[[i]] <- rs1
-}
-names(taxaRasters) <- focalTaxa
+  
+  # Crop raster layers
+  rasterCropped <- terra::crop(rast(rs1), regionGeometry_buffer, 
+                               snap = "out", mask = T)
+  rasterCropped
+})
+
+# project all rasters to the one with the highest resolution and combine 
+reference <- which.min(sapply(taxaRasters, res)[1,])
+taxaRasterStack <- do.call(c, 
+                           lapply(taxaRasters, function(x){
+                             project(x, taxaRasters[[reference]])
+                           }))
+names(taxaRasterStack) <- focalTaxa
 
 # For now we're just savign this in visualisation data
-writeRaster(taxaRasters, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
-
+writeRaster(taxaRasterStack, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
 
 
 

@@ -32,7 +32,7 @@ ourSurveyedSpecies <- focalSpecies$species[focalSpecies$species %in% surveyedSpe
 
 # Create table with all data combinations that we can match to
 allSpecies <- expand.grid(simpleScientificName = ourSurveyedSpecies,
-                         eventID = unique(occurrence$eventID))
+                          eventID = unique(occurrence$eventID))
 allSpecies$longitude <- events$decimalLongitude[match(allSpecies$eventID, events$eventID)]
 allSpecies$latitude <- events$decimalLatitude[match(allSpecies$eventID, events$eventID)]
 allSpecies$dataType <- dataType
@@ -40,13 +40,13 @@ allSpecies$dataType <- dataType
 # Create an individual count if the species/event combination are found in our original data. If they aren't
 # the species was absent.
 allSpecies$individualCount <- ifelse(allSpecies$simpleScientificName %in% occurrence$species &
-                                allSpecies$eventID %in% occurrence$eventID, 1, 0)
+                                       allSpecies$eventID %in% occurrence$eventID, 1, 0)
 allSpecies <- allSpecies[complete.cases(allSpecies),]
 
 # New dataset is ready!
 newDatasetNorway <- st_as_sf(allSpecies,                         
-                     coords = c("longitude", "latitude"),
-                     crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+                             coords = c("longitude", "latitude"),
+                             crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # Now just cut out all observations outside our region
 newDataset <- newDatasetNorway
@@ -55,4 +55,5 @@ st_crs(newDataset) <- "+proj=longlat +ellps=WGS84"
 # Crop to relevant region
 newDataset <- st_intersection(newDataset, regionGeometry)
 newDataset <- st_transform(newDataset, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
+newDataset$taxa <- focalSpecies$taxonomicGroup[match(newDataset$simpleScientificName, focalSpecies$species)]
 

@@ -130,7 +130,7 @@ shinyUI(
         tabItem(
           tabName = "diversity",
           fluidRow(
-            column( width = 3, offset = 0,
+            column( width = 2, offset = 0,
                     fluidRow(
                       box(width = 12,title = "Select taxa",
                           selectInput(inputId = "taxa2", label = "Taxa:",
@@ -144,7 +144,13 @@ shinyUI(
               box(width = 12,title = "Taxa Diversity Map",
                   status = "primary",
                   plotOutput("taxaDiversityMap", height = '100%')
-              )))
+              )),
+            column(
+              width = 5, offset = 0,
+              box(width = 12,title = "Taxa Richness Map",
+                  plotOutput("speciesRichnessMap", height = '100%')
+              ))
+            )
         ),
         tabItem(tabName = "occurrences",
                 fluidRow(

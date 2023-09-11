@@ -47,7 +47,9 @@ for (par in 1:length(selectedParameters)) {
   if (external == FALSE) {
     rasterisedVersion <- rast(paste0("data/external/environmentalCovariates/",focalParameter, ".tiff"))
   } else {
-    source(paste0("utils/environmentalImport/", focalParameter, ".R"))
+    # source(paste0("utils/environmentalImport/", focalParameter, ".R"))
+    dataSource <- parameters$dataSource[parameters$parameters == focalParameter]
+    source(paste0("utils/environmentalImport/get_", dataSource, ".R"))
   }
   parameterList[[par]] <- rasterisedVersion
 }

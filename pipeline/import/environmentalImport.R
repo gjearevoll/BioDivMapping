@@ -15,8 +15,6 @@ library(sf)
 ### 1. Preparation ####
 ###-----------------###
 
-externalImport <- FALSE
-
 # Run script to define geographical region and resolution we are working with 
 # Initialise folders for storage of all run data
 if (!exists("dateAccessed")) {
@@ -28,7 +26,7 @@ regionGeometry <- readRDS(paste0("data/run_", dateAccessed, "/regionGeometry.RDS
 
 # The following is a list of the various environmental variables we have available.
 parameters <- read.csv("data/external/focalCovariates.csv")
-parameters <- parameters$parameters[parameters$selected]
+selectedParameters <- parameters$parameters[parameters$selected]
 
 # Correct crs
 newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
@@ -40,26 +38,26 @@ newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
 # define region with buffer 
 regionGeometry_buffer <- vect(st_buffer(regionGeometry, 20000))
 
-# Import and correctly project all covariate data selected in the csv file
-parametersCropped <- lapply(parameters, FUN = function(x) {
+parameterList <- list()
+
+for (par in 1:length(selectedParameters)) {
+  focalParameter <- selectedParameters[par]
+  external <- parameters$external[parameters$parameters == focalParameter]
   
-  # Import rasters from either Wallace server or a local folder
-  if (externalImport == TRUE) {
-    targetDatabase <- "environmental_covariates"
-    source("utils/initiateWallaceConnection.R")
-    dataRaw <- dbReadTable(con, x)
-    rasterisedVersion <- rast(rasterFromXYZ(dataRaw))
+  if (external == FALSE) {
+    rasterisedVersion <- rast(paste0("data/external/environmentalCovariates/",focalParameter, ".tiff"))
   } else {
-    # rasterisedVersion2 <- raster(paste0("data/external/environmentalCovariates/",x, ".tiff"))
-    rasterisedVersion <- rast(paste0("data/external/environmentalCovariates/",x, ".tiff"))
+    source(paste0("utils/environmentalImport/", focalParameter, ".R"))
   }
-  
-  # Need to project, crop and scale the raster
-  # note1: nesting arguments to avoid writing large objects to memory
-  # note2: projecting raster takes a long time and is best done last
+  parameterList[[par]] <- rasterisedVersion
+}
+
+
+# Import and correctly project all covariate data selected in the csv file
+parametersCropped <- lapply(parameterList, FUN = function(x) {
   scale(
-    crop(rasterisedVersion,
-         project(regionGeometry_buffer, rasterisedVersion), 
+    crop(x,
+         project(regionGeometry_buffer, x), 
          snap = "out", mask = T)
   )
 })
@@ -70,7 +68,7 @@ parametersCropped <- do.call(c,
                                project(x, parametersCropped[[reference]])
                              }))
 # assign names
-names(parametersCropped) <- parameters
+names(parametersCropped) <- selectedParameters
 
 ###--------------------###
 ### 3. Dataset Upload ####

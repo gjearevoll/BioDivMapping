@@ -53,7 +53,8 @@ for (i in 1:length(speciesGroups)) {
     intensityVector <- intensityList$predictions$mean
     intensityScaled <- (intensityVector - min(intensityVector))/(max(intensityVector)-min(intensityVector))
     intensityList$predictions$mean <- intensityScaled
-    intensityList
+    reprojectedIntensity <- reproject(intensityList$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+    reprojectedIntensity
   })
   
   # Name columns and rescale aggregate for biodiversity metric
@@ -62,13 +63,14 @@ for (i in 1:length(speciesGroups)) {
   # Calculate total metric for biodiversity
   speciesIntensityList <- as.data.frame(sapply(1:length(speciesIntensitiesScaled), FUN = function(x) {
     dataset <- speciesIntensitiesScaled[[x]]
-    dataset$predictions$mean
+    dataset$mean
   }))
   colnames(speciesIntensityList) <- speciesRun
   
   # Get total biodiversity
   totalIntensity <- rowSums(speciesIntensityList)
-  totalIntensityScaled <- (totalIntensity - min(totalIntensity))/(max(totalIntensity)-min(totalIntensity))
+  totalIntensityScaled <- (totalIntensity - min(totalIntensity, na.rm = TRUE))/
+    (max(totalIntensity, na.rm = TRUE)-min(totalIntensity, na.rm = TRUE))
   
   # And red-listed biodiversity
   redListedSpecies <- focalSpecies$species[focalSpecies$taxonomicGroup == focalGroup & 
@@ -76,13 +78,16 @@ for (i in 1:length(speciesGroups)) {
   redListedSpecies <- redListedSpecies[redListedSpecies %in% colnames(speciesIntensityList)]
   redListedSpeciesIntensityList <- speciesIntensityList[,redListedSpecies]
   redListedIntensity <- rowSums(redListedSpeciesIntensityList)
-  redListedIntensityScaled <- (redListedIntensity - min(redListedIntensity))/(max(redListedIntensity)-min(redListedIntensity))
+  redListedIntensityScaled <- (redListedIntensity - min(redListedIntensity, na.rm = TRUE))/
+    (max(redListedIntensity, na.rm = TRUE)-min(redListedIntensity, na.rm = TRUE))
   
   # Save all relevant lists
   biodivPredictions <- readRDS(paste0(list.dirs(path = groupFolderLocation, recursive = FALSE)[1], "/Predictions.rds"))
-  biodivPredictions$predictions$mean <- totalIntensityScaled
+  biodivPredictions <- reproject(biodivPredictions$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  biodivPredictions$mean <- totalIntensityScaled
   redListPredictions <- readRDS(paste0(list.dirs(path = groupFolderLocation, recursive = FALSE)[1], "/Predictions.rds"))
-  redListPredictions$predictions$mean <- redListedIntensityScaled
+  redListPredictions <- reproject(redListPredictions$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  redListPredictions$mean <- redListedIntensityScaled
   saveRDS(biodivPredictions, file = paste0(groupFolderLocation, "/biodiversityMetric.RDS"))
   saveRDS(redListPredictions, file = paste0(groupFolderLocation, "/biodiversityMetric.RDS"))
   outputList[[focalGroup]] <- list(biodiversity = biodivPredictions, redListBiodiversity = redListPredictions,

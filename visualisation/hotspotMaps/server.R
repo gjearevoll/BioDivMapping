@@ -25,6 +25,7 @@ processedDataList <- readRDS("data/processedDataList.RDS")
 regionGeometry <- readRDS("data/regionGeometry.RDS")
 covariateData <- readRDS("data/covariateDataList.RDS")
 creditList <- readRDS("data/imageCredit.RDS")
+speciesRichness <- rast("data/speciesRichnessData.tiff")
 
 # Reorganise occurrence data to read directly into plot
 processedDataCompiled <- do.call(rbind, lapply(1:length(processedDataList), FUN = function(x) {
@@ -228,6 +229,31 @@ shinyServer(function(input, output, session) {
                 imageURL, ">", imageUser, "<a/>"))
   })
   
+  output$speciesRichnessMap <- renderPlot({
+    taxaData <- speciesRichness[[input$taxa2]]
+    test_df <- as.data.frame(taxaData, xy = TRUE)
+    colnames(test_df) <- c("x", "y", "value")
+    
+    maxScale <- max(test_df$value)
+    
+    scaleFill <-  scale_fill_gradient2(low = "white",
+                                       mid = "blue",
+                                       high = "red",
+                                       limits = c(0,maxScale),
+                                       midpoint = maxScale/2,
+                                       space = "Lab",
+                                       na.value = "grey50",
+                                       guide = "colourbar",
+                                       aesthetics = "fill")
+    ggplot(regionGeometry) + 
+      geom_tile(test_df, mapping = aes(x = x, y = y, fill = value)) + 
+      geom_sf(fill = NA, lwd = 0.7, colour = "black") +
+      theme_classic() + 
+      scaleFill +
+      labs(fill = "Species\nrichness") + 
+      theme(axis.title.x = element_blank(),
+            axis.title.y = element_blank())
+  }, height = 500)
   
   
 })

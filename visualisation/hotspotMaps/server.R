@@ -79,7 +79,6 @@ shinyServer(function(input, output, session) {
   output$speciesMap <- renderPlot({
     taxaData <- dataList[[input$taxa]]
     fillData <- taxaData$speciesIntensities[[input$species]]
-    fillDataTransformed <- reproject(fillData$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
     
     scaleFill <-  scale_fill_gradient2(low = "darkblue",
                                        mid = "white",
@@ -92,7 +91,7 @@ shinyServer(function(input, output, session) {
                                        aesthetics = "fill")
     
     intensityPlot <- ggplot(regionGeometry) + 
-      gg(fillDataTransformed) + 
+      gg(fillData) + 
       geom_sf(fill = NA, lwd = 0.7, colour = "black") +
       scaleFill + 
       theme_classic() + 
@@ -118,8 +117,6 @@ shinyServer(function(input, output, session) {
       fillData <- taxaData$biodiversity
     }
     
-    fillDataTransformed <- reproject(fillData$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
-    
     scaleFill <-  scale_fill_gradient2(low = "darkblue",
                                        mid = "white",
                                        high = "red",
@@ -131,7 +128,7 @@ shinyServer(function(input, output, session) {
                                        aesthetics = "fill")
     
     ggplot(regionGeometry) + 
-      gg(fillDataTransformed) + 
+      gg(fillData) + 
       geom_sf(fill = NA, lwd = 0.7, colour = "black") +
       scaleFill + 
       theme_classic() + 

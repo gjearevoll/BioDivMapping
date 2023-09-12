@@ -121,10 +121,16 @@ write.csv(focalSpecies, "visualisation/hotspotMaps/data/focalSpecies.csv", row.n
 
 # We need to download photos from iNaturalist, including their URL and the user name of the individual
 # who took the photo to give appropriate credit
-imageCredit <- data.frame(species = focalSpecies$species,
-                          credit = NA,
-                          url = NA,
-                          stringsAsFactors = FALSE)
+
+# Check if there is already an image credit file
+if (file.exists("visualisation/hotspotMaps/data/imageCredit.RDS")) {
+  imageCredit <- readRDS("visualisation/hotspotMaps/data/imageCredit.RDS")
+} else {
+  imageCredit <- data.frame(species = focalSpecies$species,
+                            credit = NA,
+                            url = NA,
+                            stringsAsFactors = FALSE)
+}
 
 for (taxa in focalTaxa) {
   speciesImaged <- focalSpecies$species[focalSpecies$taxonomicGroup == taxa]

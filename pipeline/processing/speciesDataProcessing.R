@@ -31,14 +31,17 @@ speciesData <- speciesDataList[["species"]]
 metadata <- speciesDataList$metadata$metadata
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 
+# Get list of processing util scripts
+processingScripts <- gsub(".R", "", gsub("process", "", list.files("utils/dataProcessing")))
+
 ###----------------###
 ### 2. Processing ####
 ###----------------###
 
 # Loop through and apply different processing scripts to various data types based on rules
 # For now we only have three rules
-# 1. Is it presence/absence? (but not ANO data)
-# 2. Is it ANO Data?
+# 1. Is there a pre-set script for its processing?
+# 2. Is it presence/absence?
 # 3. Is it presence only?
 
 # Start a processed data list
@@ -52,23 +55,25 @@ for (ds in 1:length(speciesData)) {
   
   dataType <- unique(focalData$dataType)
   datasetName <- names(speciesData)[ds]
-  if (dataType == "PA" & datasetName != "ANOData") { 
+  
+  # 1. First condition - is there a pre-set script for this dataset?
+  if (gsub(" ","",datasetName) %in% processingScripts) {
+    source(paste0("utils/dataProcessing/process", gsub(" ","",datasetName),".R"))
+  } else if (dataType == "PA") { 
+  # 2. Second condition - is it presence-absence?
     # Here we apply our conversion script for presence/absence data - tryCatch is for if any links to endpoints are broken
     tryCatch(
       {
         newDataset <- NULL
-        source("utils/presenceAbsenceConversion.R")
+        source("utils/dataProcessing/presenceAbsenceConversion.R")
       },
       error=function(e) {
         message(paste0('An error occurred and dataset ', datasetName, ' was not produced.'))
       }
     )
-  } else if (datasetName == "ANOData") {
-    # ANO data has a different nedpoint and has already been taken care of in the utils/ANOIntegration scropt
-    newDataset <- focalData[,c("simpleScientificName", "SHAPE", "individualCount", "dataType")]
-    newDataset$taxa <- focalSpecies$taxonomicGroup[match(newDataset$simpleScientificName, focalSpecies$species)]
-    newDataset <- rename(newDataset, geometry = SHAPE)
   } else {
+  # 3. Doesn't satisfy the other two, which means it must be presence only 
+    
     # No need to do anything to presence only data (yet) except add individualCount column
     newDataset <- focalData[,c("simpleScientificName", "geometry", "dataType", "taxa")]
   }

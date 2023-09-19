@@ -18,6 +18,7 @@ library(inlabru)
 library(randomcoloR)
 library(plotKML)
 library(raster)
+library(terra)
 
 # Import all necessary data
 dataList <- readRDS("data/outputData.RDS")

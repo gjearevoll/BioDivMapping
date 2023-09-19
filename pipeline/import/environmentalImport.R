@@ -28,6 +28,11 @@ regionGeometry <- readRDS(paste0("data/run_", dateAccessed, "/regionGeometry.RDS
 parameters <- read.csv("data/external/focalCovariates.csv")
 selectedParameters <- parameters$parameters[parameters$selected]
 
+# Check that any parameters we're downloading externally have a source
+emptyParameters <- parameters$dataSource[parameters$external & parameters$dataSource == ""]
+if (!rlang::is_empty(emptyParameters)) {stop(paste0("You have indicated an external import for ", emptyParameters$parameters,
+                                                    " but have not indicated a source."))}
+
 # Correct crs
 newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
 
@@ -40,8 +45,8 @@ regionGeometry_buffer <- vect(st_buffer(regionGeometry, 20000))
 
 parameterList <- list()
 
-for (par in 1:length(selectedParameters)) {
-  focalParameter <- selectedParameters[par]
+for (parameter in 1:length(selectedParameters)) {
+  focalParameter <- selectedParameters[parameter]
   external <- parameters$external[parameters$parameters == focalParameter]
   
   if (external == FALSE) {
@@ -51,7 +56,7 @@ for (par in 1:length(selectedParameters)) {
     dataSource <- parameters$dataSource[parameters$parameters == focalParameter]
     source(paste0("utils/environmentalImport/get_", dataSource, ".R"))
   }
-  parameterList[[par]] <- rasterisedVersion
+  parameterList[[parameter]] <- rasterisedVersion
 }
 
 

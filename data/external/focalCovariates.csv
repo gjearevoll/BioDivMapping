@@ -1,6 +1,6 @@
 parameters,selected,external,dataSource
-aspect,TRUE,FALSE,
-elevation,TRUE,FALSE,
+aspect,TRUE,TRUE,geonorge
+elevation,TRUE,TRUE,geonorge
 forest_agb.tif,FALSE,FALSE,
 forest_basisdensity.tif,FALSE,FALSE,
 forest_basisyear.tif,FALSE,FALSE,
@@ -20,10 +20,10 @@ forest_NATD7.tif,FALSE,FALSE,
 forest_treeheight.tif,FALSE,FALSE,
 land.tif,FALSE,FALSE,
 precipitation,TRUE,FALSE,
-slope,FALSE,FALSE,
+slope,FALSE,TRUE,geonorge
 soil_coarse_fraction,FALSE,FALSE,
 soil_moisture,TRUE,FALSE,
 soil_organic_carbon,FALSE,FALSE,
 soil_ph,FALSE,FALSE,
 solar_radiation,FALSE,FALSE,
-temperature,TRUE,TRUE,worldClim
+temperature,TRUE,TRUE,worldclim

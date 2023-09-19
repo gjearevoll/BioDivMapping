@@ -29,9 +29,17 @@ parameters <- read.csv("data/external/focalCovariates.csv")
 selectedParameters <- parameters$parameters[parameters$selected]
 
 # Check that any parameters we're downloading externally have a source
-emptyParameters <- parameters$dataSource[parameters$external & parameters$dataSource == ""]
-if (!rlang::is_empty(emptyParameters)) {stop(paste0("You have indicated an external import for ", emptyParameters$parameters,
-                                                    " but have not indicated a source."))}
+emptyParameters <- parameters$parameters[parameters$external & parameters$dataSource == ""]
+if (length(emptyParameters) > 0) {
+  stop(sprintf("You have indicated an external import for %s but have not indicated %s.",
+               {
+                 vec <- paste0("'", emptyParameters, "'")
+                 if (length(vec) == 1) { as.character(vec)
+                   } else if (length(vec) == 2) { paste(vec[1], "and", vec[2])
+                     } else { paste0(paste(vec[-length(vec)], collapse = ", "), ", and ", vec[length(vec)])
+                       }
+                 },
+               if (length(vec) == 1) "a source" else "sources"))}
 
 # Correct crs
 newproj <- "+proj=longlat +ellps=WGS84 +no_defs"

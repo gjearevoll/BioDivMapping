@@ -24,7 +24,7 @@ library(terra)
 dataList <- readRDS("data/outputData.RDS")
 processedDataList <- readRDS("data/processedDataList.RDS")
 regionGeometry <- readRDS("data/regionGeometry.RDS")
-covariateData <- readRDS("data/covariateDataList.RDS")
+covariateData <- rast("data/covariateDataList.tiff")
 creditList <- readRDS("data/imageCredit.RDS")
 speciesRichness <- rast("data/speciesRichnessData.tiff")
 

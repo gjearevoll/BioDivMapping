@@ -64,9 +64,8 @@ if (externalImport == TRUE) {
   speciesData <- readRDS(paste0(tempFolderName, "/speciesDataProcessed.RDS"))
 }
 
-
-
-source("utils/modelPreparation.R")
+# Prepare models
+workflowList <- modelPreparation(focalSpecies, regionGeometry, modelFolderName, environmentalDataList)
 
 ###----------------###
 ### 2. Run models ####
@@ -93,4 +92,16 @@ for (i in 1:length(focalTaxa)) {
   sdmWorkflow(workflow)
 }
 
+###------------------------------###
+### 3. Get biodiversity metrics ####
+###------------------------------###
+
+# Create list to save data in for easy access for visualisations
+outputList <- list()
+source("pipeline/models/utils/biodiversityMetricEstimation.R")
+
+
+# Save visualisation data with species data
+saveRDS(outputList, file=paste0(folderName, "/outputData.RDS"))
+saveRDS(outputList, file="visualisation/hotspotMaps/data/outputData.RDS")
 

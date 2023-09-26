@@ -3,34 +3,13 @@
 
 # The following script converts our series of point data into a species richness raster field
 
-library(dplyr)
-library(sf)
-library(raster)
-library(terra)
-
-###-----------------###
-### 1. Preparation ####
-###-----------------###
-
-# First thing is to bring in imported data
-if (!exists("dateAccessed")) {
-  dateAccessed <- as.character(Sys.Date())
-}
-
-# Get folder names
-folderName <- paste0("data/run_", dateAccessed)
-tempFolderName <- paste0(folderName, "/temp")
-
-processedDataList <- readRDS(paste0("data/run_", dateAccessed, "/temp/speciesDataProcessed.RDS"))
-regionGeometry <- readRDS(paste0("data/run_", dateAccessed, "/regionGeometry.RDS"))
-
 
 regionGeometry_buffer <- vect(st_buffer(regionGeometry, 1))
 
 # Edit data frames to have same number of columns
-processedDataForCompilation <- lapply(1:length(processedDataList), FUN = function(x) {
-  dataset <- processedDataList[[x]]
-  datasetName <- names(processedDataList)[x]
+processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x) {
+  dataset <- processedData[[x]]
+  datasetName <- names(processedData)[x]
   datasetType <- unique(dataset$dataType)
   if (datasetType == "PO") {
     dataset$individualCount <- 1
@@ -87,10 +66,6 @@ taxaRasterStack <- do.call(c,
                              project(x, taxaRasters[[reference]])
                            }))
 names(taxaRasterStack) <- focalTaxa
-
-# For now we're just savign this in visualisation data
-writeRaster(taxaRasterStack, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
-
 
 
 

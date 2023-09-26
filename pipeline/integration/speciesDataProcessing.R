@@ -32,7 +32,9 @@ metadata <- speciesDataList$metadata$metadata
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 
 # Get list of processing util scripts
-processingScripts <- gsub(".R", "", gsub("process", "", list.files("utils/dataProcessing")))
+processingScripts <- gsub(".R", "", gsub("process", "", list.files("functions/integration")))
+# Import local functions
+sapply(list.files("functions/integration", full.names = TRUE), source)
 
 ###----------------###
 ### 2. Processing ####
@@ -58,14 +60,15 @@ for (ds in 1:length(speciesData)) {
   
   # 1. First condition - is there a pre-set script for this dataset?
   if (gsub(" ","",datasetName) %in% processingScripts) {
-    source(paste0("utils/dataProcessing/process", gsub(" ","",datasetName),".R"))
-  } else if (dataType == "PA") { 
+    source("pipeline/integration/utils/defineProcessing.R")
+  } else if (dataType == "PA" & datasetName != "ANOData") { 
   # 2. Second condition - is it presence-absence?
     # Here we apply our conversion script for presence/absence data - tryCatch is for if any links to endpoints are broken
+    focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
     tryCatch(
       {
         newDataset <- NULL
-        source("utils/dataProcessing/presenceAbsenceConversion.R")
+        newDataset <- presenceAbsenceConversion(focalEndpoint, tempFolderName, datasetName, focalSpecies, regionGeometry)
       },
       error=function(e) {
         message(paste0('An error occurred and dataset ', datasetName, ' was not produced.'))
@@ -84,7 +87,7 @@ names(processedData) <- namesProcessedData
 
 # Save for use in model construction
 processedData <- processedData[lapply(processedData,length)>0]
-saveRDS(processedData, paste0(tempFolderName, "/speciesDataProcessed.RDS"))
+saveRDS(processedData, paste0(folderName, "/speciesDataProcessed.RDS"))
 saveRDS(processedData, "visualisation/hotspotMaps/data/processedDataList.RDS")
 
 ###----------------------###
@@ -92,43 +95,20 @@ saveRDS(processedData, "visualisation/hotspotMaps/data/processedDataList.RDS")
 ###----------------------###
 
 # To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
-
-# Edit data frames to have same number of columns
-processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x) {
-  dataset <- processedData[[x]]
-  datasetName <- names(processedData)[x]
-  datasetType <- unique(dataset$dataType)
-  if (datasetType == "PO") {
-    dataset$individualCount <- 1
-  }
-  datasetShort <- dataset[,c("simpleScientificName", "dataType", "individualCount", "geometry", "taxa")]
-  datasetShort$datasetName <- datasetName
-  datasetShort
-}
-)
-
-# Combine into one data frame and add date accessed
-processedDataCompiled <- do.call(rbind, processedDataForCompilation)
-processedDataCompiled$dateAccessed <- Sys.Date()
-
-# Turn geometry column to latitude and longitude
-processedDataDF <- st_drop_geometry(processedDataCompiled)
-processedDataDF[,c("decimalLongitude", "decimalLatitude")] <- st_coordinates(processedDataCompiled)
-
-rmarkdown::render("utils/metadataProduction.Rmd", output_file = paste0("../",folderName, "/speciesMetadata.html"))
-
+rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
 
 ###-----------------------###
 ### 4. Upload to Wallace ####
 ###-----------------------###
 
 if (uploadToWallace == TRUE) {
-  
-  # Connect to database
-  targetDatabase <- "species_occurrences"
-  source("utils/initiateWallaceConnection.R")
-  
-  # Upload
-  dbAppendTable(con, name = "processed_species_data", value = processedDataDF)
+  source("pipeline/integration/uploadToWallace.R")
 }
+
+###-----------------------------------###
+### 5. Produce species richness data ####
+###-----------------------------------###
+
+source("pipeline/integration/utils/speciesRichnessConversion.R")
+writeRaster(taxaRasterStack, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
 

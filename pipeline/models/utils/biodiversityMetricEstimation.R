@@ -1,37 +1,18 @@
 
 
-### BIODIVERSITY METRIC ESTIMATION ###
-
-# This script takes our data for different species groups and creates a biodiversity metric for the same regions
-
-###-----------------###
-### 1. Preparation ####
-###-----------------###
-
-# Define the folder where we find our data
-if (!exists("dateAccessed")) {
-  dateAccessed <- as.character(Sys.Date())
-}
-folderName <- paste0("data/run_", dateAccessed, "/modelOutputs")
-
-# Define species groups and import focal species
-speciesGroups <- gsub(paste0(folderName, "/"), "", list.dirs(path = folderName, recursive = FALSE))
-focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
-focalSpecies <- focalSpecies[focalSpecies$selected,]
-
-# Create list to save data in for easy access for visualisations
-outputList <- list()
 
 ###-----------------------###
 ### 2. Compiling Species ####
 ###-----------------------###
 
+library(plotKML)
+
 # Begin compilation
-for (i in 1:length(speciesGroups)) {
+for (i in 1:length(focalTaxa)) {
   
   # Define species group folder
-  focalGroup <- speciesGroups[i]
-  groupFolderLocation <- paste0(folderName, "/", focalGroup)
+  focalGroup <- focalTaxa[i]
+  groupFolderLocation <- paste0(modelFolderName, "/", focalGroup)
   
   # Print warning if there are any species listed for which we don't have a model
   speciesRun <- gsub(paste0(groupFolderLocation, "/"), "", list.dirs(path = groupFolderLocation, recursive = FALSE))
@@ -92,8 +73,7 @@ for (i in 1:length(speciesGroups)) {
   saveRDS(redListPredictions, file = paste0(groupFolderLocation, "/biodiversityMetric.RDS"))
   outputList[[focalGroup]] <- list(biodiversity = biodivPredictions, redListBiodiversity = redListPredictions,
                                    speciesIntensities = speciesIntensitiesScaled)
+  
+  print(paste0("Finished running ", focalGroup))
+  
 }
-
-# Save visualisation data with species data
-saveRDS(outputList, file=paste0(folderName, "/outputData.RDS"))
-saveRDS(outputList, file="visualisation/hotspotMaps/data/outputData.RDS")

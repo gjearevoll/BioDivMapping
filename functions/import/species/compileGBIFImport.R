@@ -4,7 +4,7 @@
 # Function that cuts down the GBIF Import to only necessary columns
 
 
-CompileGBIFImport <- function(z) {
+compileGBIFImport <- function(z) {
   dataSubset <- z$data
   
   # datasetName does not exist in some species for some reason. In these cases, let it equal NA

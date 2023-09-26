@@ -1,40 +1,26 @@
 
-### GeoNorge Import Script ###
+# load necessary libraries
+library(rvest)  # web scraping
+library(httr)  # making HTTP requests
+library(utils)  # various utility functions, including `unzip`
+library(dplyr)
 
-# This script imports elevation data from GBIF and converts it to a usable tiff file
+# Check out the full list of data repositories here: https://nedlasting.geonorge.no/geonorge/
+# See available data sources: https://nedlasting.geonorge.no/geonorge/Basisdata/
 
-# First check to see if geonorge elevation data has already been imported. If not, import.
+get_geonorge <- function(repo = "Basisdata", dataName = "DTM10UTM33", targetDir) {
 
-if (file.exists("data/temp/geonorge/elevationRaster.tiff")) { 
-  elevation <- rast("data/temp/geonorge/elevationRaster.tiff")
-} else {
-  
-  # load necessary libraries
-  library(rvest)  # web scraping
-  library(httr)  # making HTTP requests
-  library(utils)  # various utility functions, including `unzip`
-  library(dplyr)
-  
-  # define the data repository 
-  # see others: https://nedlasting.geonorge.no/geonorge/
-  repo <- "Basisdata"
-  # specify the data source of interest
-  # see available: https://nedlasting.geonorge.no/geonorge/Basisdata/
-  data_name <- "DTM10UTM33"
-  # specify the target directory for storing raw data
-  target_dir <- paste0("data/temp/geonorge/")
-  
   # extend the target directory path with the data name
-  target_dir <- paste0(target_dir, data_name, "/") 
+  targetDirExt <- paste0(targetDir, dataName, "/") 
   
   # create the target directory if it doesn't exist
-  if (!dir.exists(target_dir)) {
-    dir.create(target_dir, recursive = TRUE)
+  if (!dir.exists(targetDirExt)) {
+    dir.create(targetDirExt, recursive = TRUE)
   }
   
   # construct the base URL for the specified data repository and data name
   base_url <- paste0("https://nedlasting.geonorge.no/geonorge/", repo, "/", 
-                     data_name, "/")
+                     dataName, "/")
   
   # scrape the base URL to obtain a list of available data formats (directories)
   formats <- base_url %>%
@@ -49,11 +35,8 @@ if (file.exists("data/temp/geonorge/elevationRaster.tiff")) {
   # print the list of available data formats
   print(formats)
   
-  # specify the desired data format
-  format <- "TIFF"
-  
   # construct the URL containing the list of zip files for the selected format
-  url <- paste0(base_url, format, "/")
+  url <- paste0(base_url, "TIFF/")
   
   # scrape the data URL to obtain a list of zip files
   zip_links <- url %>%
@@ -65,32 +48,26 @@ if (file.exists("data/temp/geonorge/elevationRaster.tiff")) {
   # (quietly) download each zip file, unzip it, and then delete the zip file
   invisible(lapply(zip_links, function(link) {
     # specify the temporary zip file name
-    zip_name <- paste0(target_dir, "temp.zip")
+    zip_name <- paste0(targetDirExt, "temp.zip")
     
     # download the zip file to the specified location
     download.file(link, destfile = zip_name, mode = "wb")
     
     # unzip the downloaded file to the target directory
-    unzip(zip_name, exdir = target_dir)
+    unzip(zip_name, exdir = targetDirExt)
     
     # delete the zip file
     file.remove(zip_name)
   }))
   
-  dirNames <- list.files("data/temp/geonorge/DTM10UTM33", full.names = TRUE)
+  dirNames <- list.files(targetDirExt, full.names = TRUE)
   
   # Aggregate each file to 100m and add to list, then merge
   DTMList <- lapply(dirNames, FUN = function(x) {
     aggregate(rast(x), fact = 10)
   })
   elevation <- do.call(mosaic, DTMList)
-  writeRaster(elevation, "data/temp/geonorge/elevationRaster.tiff", overwrite=TRUE)
+  return(elevation)
 }
 
-# Now get the raster you're actually looking for
-if (focalParameter == 'elevation') {
-  rasterisedVersion <- elevation
-} else {
-  rasterisedVersion <- terra::terrain(elevation, v=focalParameter, unit='degrees', neighbors=8)
-}
 

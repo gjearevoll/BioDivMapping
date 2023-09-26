@@ -6,22 +6,7 @@
 
 library(csmaps)
 
-# Figure out if region and level are supplied. If they are not, check whether a speciesDataList exists in the
-# environment, and use the attributes to automatically find these parameters.
-if (!exists("region") | !exists("level")) {
-  if (!exists("speciesDataList")) {
-    stop("You have not defined a region and/or level")
-  } else {
-    warning("You have not provided a region and/or level. These are being pulled from the speciesDataList currently loaded.")
-    missingValues <- c("region", "level")[c("region", "level") %in% attributes(speciesDataList$species)]
-    if (length(missingValues) > 0) {
-      stop(paste0("You need to define the following: ", paste(missingValues, sep = ", ")))
-    } else {
-      region <- attr(speciesDataList$species, "region")
-      level <- attr(speciesDataList$species, "level")
-    }
-  }
-}
+defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, extentCoords = NA) {
 
 # Now assign a region geometry based on the Norwegian political maps found in the package csmaps.
 if (level == "municipality") {
@@ -36,11 +21,11 @@ if (level == "municipality") {
   regionGeometry <- st_union(st_make_valid(regionGeometry))
 } else {
     ## create a matrix of coordinates that also 'close' the polygon
-    res <- matrix(c(points['north'], points['west'],
-                    points['north'], points['east'],
-                    points['south'], points['east'],
-                    points['south'], points['west'],
-                    points['north'], points['west'])  ## need to close the polygon
+    res <- matrix(c(extentCoords['north'], extentCoords['west'],
+                    extentCoords['north'], extentCoords['east'],
+                    extentCoords['south'], extentCoords['east'],
+                    extentCoords['south'], extentCoords['west'],
+                    extentCoords['north'], extentCoords['west'])  ## need to close the polygon
                   , ncol =2, byrow = T
     )
     ## create polygon objects
@@ -54,3 +39,6 @@ if (runBuffer == TRUE) {
 
 # Align project coordinates with the rest of our polygons.
 regionGeometry <- st_transform(regionGeometry, crs =  "+proj=longlat +ellps=WGS84")
+
+return(regionGeometry)
+}

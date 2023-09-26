@@ -97,8 +97,8 @@ biodiversity metrics. The output can be previewed in the
     * modelOutputs - This contains a nested list of all species model outputs before they have been processed and formatted for the ODBM
 - pipeline - this folder contains all scripts which need to be run annually from the command line
   + imports - contains the scripts necessary for importing species and environmental data
+  + integration - contains scripts that process data for input or output
   + models - contains scripts relevant to running integrated species distribution models
-  + processing - contains scripts that process data for input or output
     * utils - each of the above folder contain a utils fodler for processes that are one-off actions that further process our data but do not fall into the class of functions.
 - functions - contains scripts which perform actions that are either a) useful for people outside of the project or b) repeated throughout the script or workflow.
 - visualisations - contains the shiny app (hotspotMaps) which visualises biodiversity, species intensities and species occurrences

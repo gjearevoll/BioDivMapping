@@ -110,5 +110,4 @@ if (uploadToWallace == TRUE) {
 ###-----------------------------------###
 
 source("pipeline/integration/utils/speciesRichnessConversion.R")
-writeRaster(taxaRasterStack, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
-
+writeRaster(taxaRasters, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)

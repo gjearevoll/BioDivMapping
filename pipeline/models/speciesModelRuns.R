@@ -13,6 +13,7 @@ print("Preparing data for model run.")
 
 library(intSDM)
 library(rgbif)
+library(terra)
 
 externalImport <- FALSE
 
@@ -35,7 +36,7 @@ focalTaxa <- unique(focalSpecies$taxonomicGroup)
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 # environmentalDataList <- readRDS(paste0(tempFolderName, "/environmentalDataImported.RDS"))
-environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
+environmentalDataList <- rast(paste0(folderName, "/environmentalDataImported.tiff"))
 
 if (externalImport == TRUE) {
   
@@ -61,7 +62,7 @@ if (externalImport == TRUE) {
   names(speciesData) <- allSpeciesGroups
   
 } else {
-  speciesData <- readRDS(paste0(tempFolderName, "/speciesDataProcessed.RDS"))
+  speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 }
 
 # Prepare models

@@ -38,7 +38,7 @@ source("pipeline/import/environmentalImport.R")
 
 # Next we start on data processing, which adds extra information to our datasets.
 
-source("pipeline/processing/speciesDataProcessing.R")
+source("pipeline/integration/speciesDataProcessing.R")
 
 # We then run our models. NOTE: This is the point where defining a Mesh becomes important. You can read
 # more about what a Mesh is, and how it works in the README.md file in the head of the repository, or in the

@@ -5,12 +5,14 @@
 # various sources. It relies on the functions found in fucntions/import/environment.
 
 ### 1. geonorge ####
-if (dataSource == "geonorge") {
-  
+if (dataSource == "geonorge") { 
   if (file.exists("data/temp/geonorge/elevationRaster.tiff")) { 
     elevation <- rast("data/temp/geonorge/elevationRaster.tiff")
   } else {
-    elevation <- get_geonorge(targetDir = "data/run_2023-09-21/temp/")
+    if (!dir.exists("data/temp/geonorge")) {
+      dir.create("data/temp/geonorge", recursive = TRUE)
+    }
+    elevation <- get_geonorge(targetDir = tempFolderName)
     writeRaster(elevation, "data/temp/geonorge/elevationRaster.tiff", overwrite=TRUE)
   }
   

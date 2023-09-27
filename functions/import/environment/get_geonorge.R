@@ -11,7 +11,7 @@ library(dplyr)
 get_geonorge <- function(repo = "Basisdata", dataName = "DTM10UTM33", targetDir) {
 
   # extend the target directory path with the data name
-  targetDirExt <- paste0(targetDir, dataName, "/") 
+  targetDirExt <- file.path(targetDir, dataName)
   
   # create the target directory if it doesn't exist
   if (!dir.exists(targetDirExt)) {
@@ -48,7 +48,7 @@ get_geonorge <- function(repo = "Basisdata", dataName = "DTM10UTM33", targetDir)
   # (quietly) download each zip file, unzip it, and then delete the zip file
   invisible(lapply(zip_links, function(link) {
     # specify the temporary zip file name
-    zip_name <- paste0(targetDirExt, "temp.zip")
+    zip_name <- file.path(targetDirExt, "temp.zip")
     
     # download the zip file to the specified location
     download.file(link, destfile = zip_name, mode = "wb")

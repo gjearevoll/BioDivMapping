@@ -36,7 +36,7 @@ modelPreparation <- function(focalSpecies, regionGeometry, modelFolderName, envi
       Species = focalGroupSpecies,
       saveOptions = list(projectDirectory = modelFolderName, projectName =  focalGroup), Save = TRUE
     )
-    workflow$addArea(Object = st_sf(regionGeometry), resolution = '60')
+    workflow$addArea(Object = st_sf(regionGeometry))
     
     # Add datasets - note that for the moment this excludes the NTNU field notes and ANO,
     # the model will currently not run with these involved

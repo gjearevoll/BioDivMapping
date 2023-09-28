@@ -12,17 +12,20 @@ library(stringr)
 library(dplyr)
 library(rinat)
 
+# Import local functions
+sapply(list.files("functions/import/species", full.names = TRUE), source)
+
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###
 
+
 # Run script to define geographical region and resolution we are working with 
+#extentCoords <- c(4.641979, 57.97976, 31.05787, 71.18488)
+#names(extentCoords) <- c("north", "south", "east", "west")
 if (!exists("level")) {level <- "county"}  # level can be country, county, municipality, or points (examples of points given below)
 if (!exists("region")) {region <- "50"}
-runBuffer <- FALSE
-#points <- c(4.641979, 57.97976, 31.05787, 71.18488)
-#names(points) <- c("north", "south", "east", "west")
-source("utils/defineRegion.R")
+regionGeometry <- defineRegion(level, region)
 
 # Define initial species list.
 focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
@@ -34,17 +37,15 @@ if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
 }
 folderName <- paste0("data/run_", dateAccessed)
+tempFolderName <- paste0(folderName, "/temp")
 if (!file.exists(folderName)) {
   dir.create(folderName)
-  dir.create(paste0(folderName, "/temp"))
+  dir.create(tempFolderName)
 }
 
 ###-----------------###
 ### 2. GBIF Import ####
 ###-----------------###
-
-# Import GBIF compilation function
-source("utils/compileGBIFImport.R")
   
 # Import GBIF Data
 gbifImportsPerTaxa <- lapply(focalTaxa, FUN = function(x) {
@@ -53,9 +54,9 @@ gbifImportsPerTaxa <- lapply(focalTaxa, FUN = function(x) {
                          geometry = st_bbox(regionGeometry), coordinateUncertaintyInMeters = '0,500')
   # compile import 
   if(all(names(GBIFImport) == c("meta", "data"))){  # if only one species selected
-    GBIFImportCompiled <- CompileGBIFImport(GBIFImport)
+    GBIFImportCompiled <- compileGBIFImport(GBIFImport)
   } else if(any(names(GBIFImport) %in% focalSpeciesImport)){  # if multiple species 
-    GBIFImportCompiled <- do.call(rbind, lapply(GBIFImport, CompileGBIFImport))
+    GBIFImportCompiled <- do.call(rbind, lapply(GBIFImport, compileGBIFImport))
   }
   GBIFImportCompiled$simpleScientificName <- gsub(" ", "_", word(GBIFImportCompiled$acceptedScientificName, 1,2, sep=" "))
   GBIFImportCompiled
@@ -68,9 +69,7 @@ GBIFImportCompiled$taxa <- focalSpecies$taxonomicGroup[match(GBIFImportCompiled$
 ###------------------------------###
 
 # Now we import metadata related to GBIF data
-fullMeta <- TRUE
-metaSummary <- TRUE
-source("utils/metadataPrep.R")
+metadataList <- metadataPrep(GBIFImportCompiled, metaSummary = TRUE)
 
 # Import dataset type based on dataset name
 GBIFImportCompiled <- merge(GBIFImportCompiled, metadataList$metadata, all.x=TRUE, by = "datasetKey")
@@ -96,9 +95,7 @@ names(GBIFLists) <- unique(GBIFImportCompiled$name)
 ### 4. ANO Import ####
 ###----------------###
 
-source("utils/importANOData.R")
-if(exists("ANOData")) {GBIFLists[["ANOData"]] <- ANOData}
-
+GBIFLists[["ANOData"]] <- importANOData(focalSpecies, tempFolderName, regionGeometry)
 
 ###--------------------###
 ### 5. Dataset Upload ####
@@ -109,7 +106,7 @@ if(exists("ANOData")) {GBIFLists[["ANOData"]] <- ANOData}
 dataList <- list(species = GBIFLists, metadata = metadataList, projcrs = projcrs)
 attr(dataList, "level") <- level
 attr(dataList, "region") <- region
-saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
+saveRDS(dataList, paste0(tempFolderName, "/speciesDataImported.RDS"))
 saveRDS(regionGeometry, paste0(folderName, "/regionGeometry.RDS"))
 saveRDS(regionGeometry, "visualisation/hotspotMaps/data/regionGeometry.RDS")
 write.csv(focalSpecies, "visualisation/hotspotMaps/data/focalSpecies.csv", row.names = FALSE)

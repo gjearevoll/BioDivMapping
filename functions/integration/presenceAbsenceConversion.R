@@ -1,0 +1,62 @@
+
+###--------------------------------------------###
+### PROCESSING FUNCTION PRESENCE/ABSENCE DATA ####
+###--------------------------------------------###
+
+# This script downloads the datasets of presence/absence data directly from the endpoint supplied
+# to GBIF. THis way we can figure out which species were NOT found.
+
+library(sf)
+
+presenceAbsenceConversion <- function(focalEndpoint, tempFolderName, datasetName, focalSpecies, regionGeometry) {
+  
+  # Get the relevant endpoint
+  
+  # Download and unzip file in temp folder
+  options(timeout=100)
+  download.file(focalEndpoint, paste0(tempFolderName,"/", datasetName ,".zip"), mode = "wb")
+  unzip(paste0(tempFolderName,"/", datasetName ,".zip"), exdir = paste0(tempFolderName,"/",  datasetName))
+  
+  # Function to change file names
+  foo = function(x){
+    paste(toupper(substring(x, 1, 1)),
+          tolower(substring(x, 2, nchar(x))),
+          sep = "")
+  }
+  
+  # Load in event and occurrence data
+  events <- read.delim(paste0(tempFolderName,"/", datasetName ,"/event.txt"))
+  occurrence <- read.delim(paste0(tempFolderName,"/", datasetName ,"/occurrence.txt"))
+  occurrence$species <- gsub(" ", "_", foo(occurrence$scientificName))
+  surveyedSpecies <- unique(occurrence$species)
+  ourSurveyedSpecies <- focalSpecies$species[focalSpecies$species %in% surveyedSpecies]
+  
+  # Create table with all data combinations that we can match to
+  allSpecies <- expand.grid(simpleScientificName = ourSurveyedSpecies,
+                            eventID = unique(occurrence$eventID))
+  allSpecies$longitude <- events$decimalLongitude[match(allSpecies$eventID, events$eventID)]
+  allSpecies$latitude <- events$decimalLatitude[match(allSpecies$eventID, events$eventID)]
+  allSpecies$dataType <- dataType
+  
+  # Create an individual count if the species/event combination are found in our original data. If they aren't
+  # the species was absent.
+  mergedSpecies <- merge(allSpecies, occurrence[,c("eventID", "species", "occurrenceID")], all.x = TRUE,
+                         by.x = c("simpleScientificName", "eventID"), by.y = c("species", "eventID"))
+  mergedSpecies$individualCount <- ifelse(is.na(mergedSpecies$occurrenceID), 0, 1)
+  mergedSpecies <- mergedSpecies[!is.na(mergedSpecies$longitude),]
+  
+  # New dataset is ready!
+  newDataset <- st_as_sf(mergedSpecies,                         
+                               coords = c("longitude", "latitude"),
+                               crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  
+  # Now just cut out all observations outside our region
+  st_crs(newDataset) <- "+proj=longlat +ellps=WGS84"
+  
+  # Crop to relevant region
+  newDataset <- st_intersection(newDataset, regionGeometry)
+  newDataset <- st_transform(newDataset, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
+  newDataset$taxa <- focalSpecies$taxonomicGroup[match(newDataset$simpleScientificName, focalSpecies$species)]
+  newDataset <- newDataset[,c("simpleScientificName", "individualCount", "geometry", "dataType", "taxa")]
+  return(newDataset)
+}

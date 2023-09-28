@@ -65,8 +65,12 @@ if (externalImport == TRUE) {
   speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 }
 
+# Import local functions
+sapply(list.files("functions/models", full.names = TRUE), source)
+
 # Prepare models
 workflowList <- modelPreparation(focalSpecies, regionGeometry, modelFolderName, environmentalDataList)
+
 
 ###----------------###
 ### 2. Run models ####

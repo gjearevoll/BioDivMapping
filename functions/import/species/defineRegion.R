@@ -16,9 +16,9 @@ if (level == "municipality") {
   regionCode <- paste0("county_nor", region)
   regionGeometry <- nor_county_map_b2020_default_sf$geometry[nor_county_map_b2020_default_sf$location_code == regionCode]
 } else if (level == "country") {
-  regionGeometry <- st_combine(nor_county_map_b2020_default_sf$geometry)
-  # ALso need to remove internal borders
-  regionGeometry <- st_union(st_make_valid(regionGeometry))
+  world <- giscoR::gisco_get_countries()
+  Norway <- world[world$NAME_ENGL == 'Norway',]
+  regionGeometry <- st_transform(Norway$geometry,crs = "+proj=longlat +datum=WGS84 +no_defs")
 } else {
     ## create a matrix of coordinates that also 'close' the polygon
     res <- matrix(c(extentCoords['north'], extentCoords['west'],

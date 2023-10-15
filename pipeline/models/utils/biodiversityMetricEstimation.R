@@ -72,7 +72,6 @@ for (i in 1:length(focalTaxa)) {
     redListPredictions <- readRDS(paste0(list.dirs(path = groupFolderLocation, recursive = FALSE)[1], "/Predictions.rds"))
     redListPredictions <- reproject(redListPredictions$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
     redListPredictions$mean <- redListedIntensityScaled
-    saveRDS(redListPredictions, file = paste0(groupFolderLocation, "/biodiversityMetric.RDS"))
   } else {
     redListPredictions <- NA
   }

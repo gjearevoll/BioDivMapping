@@ -52,5 +52,5 @@ if (dataSource == "geonorge") {
   
 ### 3. SSB ####
 } else if (dataSource == "ssb") {
-    rasterisedVersion <- get_ssb(focalParameter, regionGeometry)
+    rasterisedVersion <- get_ssb(focalParameter, regionGeometry, resolution = "250")
 }

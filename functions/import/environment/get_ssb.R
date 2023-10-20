@@ -17,7 +17,8 @@ get_ssb <- function(focalParameter, resolution = "1000") {
   
   # Project onto our rasters
   R0 <- rast("data/external/environmentalCovariates/aspect.tiff")
-  R2 <- terra::rasterize(project(V0,R0), R0, field = "bui0all")
+  parameterField <- ifelse(focalParameter == "human_density", "popTot", "bui0all")
+  R2 <- terra::rasterize(project(V0,R0), R0, field = parameterField)
   R3 <- lapp(R2, function(x) ifelse(is.na(x), 0, x))
   
   return(R3)

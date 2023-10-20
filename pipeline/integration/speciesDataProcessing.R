@@ -111,3 +111,4 @@ if (uploadToWallace == TRUE) {
 
 source("pipeline/integration/utils/speciesRichnessConversion.R")
 writeRaster(taxaRasters, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
+saveRDS(richnessSF, paste0(folderName, "/speciesRichnessData.RDS"))

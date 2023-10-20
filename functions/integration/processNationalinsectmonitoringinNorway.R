@@ -47,12 +47,13 @@ processNationalInsectMonitoring <- function(endpoint, tempFolderName, focalSpeci
   occurrencesWithEvent$exactDate <- as.Date(substr(occurrencesWithEvent$eventDate,1,10))
   occurrencesMostRecent <- occurrencesWithEvent %>%
     group_by(scientificName, locationID) %>%
-    slice_max(exactDate, n = 1) %>% 
+    slice_max(exactDate, n = 1,na_rm = TRUE) %>% 
     ungroup()
   occurrencesMostRecent <- occurrencesMostRecent[!duplicated(occurrencesMostRecent[,c("scientificName", "locationID")]),]
+  occurrencesMostRecent$year <- substr(occurrencesMostRecent$exactDate, 1, 4)
   
   # The resulting data frame gives you results for the most recent individual insect abundances at each site
-  ourDataset <- occurrencesMostRecent[,c("scientificName", "organismQuantity", "decimalLatitude", "decimalLongitude", "locationID")]
+  ourDataset <- occurrencesMostRecent[,c("scientificName", "organismQuantity", "decimalLatitude", "decimalLongitude", "locationID", "year")]
   ourDataset <- ourDataset %>% 
     mutate(simpleScientificName = gsub(" ", "_", scientificName)) %>%
     filter(simpleScientificName %in% ourSurveyedSpecies)
@@ -64,7 +65,7 @@ processNationalInsectMonitoring <- function(endpoint, tempFolderName, focalSpeci
   # as used in the presenceAbsenceCOnversion.R script.
   allSpecies <- expand.grid(simpleScientificName = ourSurveyedSpecies,
                             locationID = unique(ourDataset$locationID))
-  mergedDataset <- merge(allSpecies, ourDataset[,c("locationID", "simpleScientificName", "organismQuantity")], 
+  mergedDataset <- merge(allSpecies, ourDataset[,c("locationID", "simpleScientificName", "organismQuantity", "year")], 
                          all.x = TRUE, by = c("locationID", "simpleScientificName"))
   mergedDataset <- merge(mergedDataset, locations,
                          all.x = TRUE, by = "locationID")
@@ -77,7 +78,7 @@ processNationalInsectMonitoring <- function(endpoint, tempFolderName, focalSpeci
                          crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
   
   
-  newDataset <- newDataset[c("simpleScientificName", "organismQuantity")] %>%
+  newDataset <- newDataset[c("simpleScientificName", "organismQuantity", "year")] %>%
     rename(individualCount = organismQuantity)
   
   

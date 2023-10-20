@@ -10,7 +10,7 @@ processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x)
   if (datasetType == "PO") {
     dataset$individualCount <- 1
   }
-  datasetShort <- dataset[dataset$individualCount == 1,c("simpleScientificName", "individualCount", "geometry", "taxa")]
+  datasetShort <- dataset[dataset$individualCount == 1,c("simpleScientificName", "individualCount", "geometry", "taxa", "year")]
   datasetShort
 })
 
@@ -35,7 +35,10 @@ taxaRasters <- list()
 
 # Stack the rasters for each taxa
 taxaRasters <- lapply(focalTaxa, FUN = function(x) {
-  processedTaxaData <- processedDataCompiled[processedDataCompiled$taxa == x,]
+  processedTaxaData <- processedDataCompiled[processedDataCompiled$taxa == x,] %>%
+    group_by(simpleScientificName, taxa) %>%
+    summarise(individualCount = sum(individualCount))
+  processedTaxaData$individualCount <- ifelse(processedTaxaData$individualCount > 0, 1, 0)
   processedPoints <- vect(processedTaxaData)
   speciesNames <- unique(processedPoints$simpleScientificName)
   
@@ -56,3 +59,6 @@ taxaRasters <- lapply(focalTaxa, FUN = function(x) {
 # combine and assign name
 taxaRasters <- rast(taxaRasters)
 names(taxaRasters) <- focalTaxa
+
+richnessSF <- st_as_sf(raster::as.data.frame(taxaRasters$vascularPlants,xy=TRUE), coords = c("x", "y"), 
+                       crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")

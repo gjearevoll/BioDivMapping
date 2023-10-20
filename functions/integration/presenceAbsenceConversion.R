@@ -44,6 +44,7 @@ presenceAbsenceConversion <- function(focalEndpoint, tempFolderName, datasetName
                          by.x = c("simpleScientificName", "eventID"), by.y = c("species", "eventID"))
   mergedSpecies$individualCount <- ifelse(is.na(mergedSpecies$occurrenceID), 0, 1)
   mergedSpecies <- mergedSpecies[!is.na(mergedSpecies$longitude),]
+  mergedSpecies$year <- events$year[match(mergedSpecies$eventID, events$id)]
   
   # New dataset is ready!
   newDataset <- st_as_sf(mergedSpecies,                         
@@ -57,6 +58,6 @@ presenceAbsenceConversion <- function(focalEndpoint, tempFolderName, datasetName
   newDataset <- st_intersection(newDataset, regionGeometry)
   newDataset <- st_transform(newDataset, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
   newDataset$taxa <- focalSpecies$taxonomicGroup[match(newDataset$simpleScientificName, focalSpecies$species)]
-  newDataset <- newDataset[,c("simpleScientificName", "individualCount", "geometry", "dataType", "taxa")]
+  newDataset <- newDataset[,c("simpleScientificName", "individualCount", "geometry", "dataType", "taxa", "year")]
   return(newDataset)
 }

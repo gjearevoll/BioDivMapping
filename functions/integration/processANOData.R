@@ -21,6 +21,6 @@ processANOData <- function(ANODataset, regionGeometry, focalSpecies) {
   
   
   ANODataset$taxa <- focalSpecies$taxonomicGroup[match(ANODataset$simpleScientificName, focalSpecies$species)]
-  ANODataset <- ANODataset[,c("simpleScientificName", "individualCount", "geometry", "dataType", "taxa")]
+  ANODataset <- ANODataset[,c("simpleScientificName", "individualCount", "geometry", "dataType", "taxa", "year")]
   return(ANODataset)
 }

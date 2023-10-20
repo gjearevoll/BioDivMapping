@@ -37,16 +37,17 @@ importANOData <- function(focalSpecies, destinationFolder, regionGeometry,
                                       substring(ANOSpeciesFull$art_navn, 2), 
                                       sep="")
   ANOSpeciesFull$simpleScientificName <- gsub(" ", "_", word(ANOSpeciesFull$SpeciesName, 1,2, sep=" "))
-  ANOSpeciesFull <- ANOSpeciesFull[,c("GlobalID", "ParentGlobalID", "simpleScientificName")]
+  ANOSpeciesFull$year <- format(ANOSpeciesFull$EditDate, format="%Y")
+  ANOSpeciesFull <- ANOSpeciesFull[,c("GlobalID", "ParentGlobalID", "simpleScientificName", "year")]
   
   # Narrow down to only species we are looking for
   ANOSpecies <- ANOSpeciesFull[ANOSpeciesFull$simpleScientificName %in% focalSpecies$species,]
   
-  ANOSpeciesTable <- as.data.frame(table(ANOSpecies$ParentGlobalID, ANOSpecies$simpleScientificName), 
+  ANOSpeciesTable <- as.data.frame(table(ANOSpecies$ParentGlobalID, ANOSpecies$simpleScientificName, ANOSpecies$year), 
                                    stringsAsFactors = FALSE)
   # Convert anything more than 2 to a presence
   ANOSpeciesTable$Freq[ANOSpeciesTable$Freq > 0] <- 1
-  colnames(ANOSpeciesTable) <- c("GlobalID", "simpleScientificName", "individualCount")
+  colnames(ANOSpeciesTable) <- c("GlobalID", "simpleScientificName", "year", "individualCount")
   
   # Add geometry data
   ANOData <- merge(ANOSpeciesTable, ANOPoints[,c("GlobalID")], 

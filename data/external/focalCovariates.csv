@@ -27,3 +27,5 @@ soil_organic_carbon,FALSE,FALSE,
 soil_ph,FALSE,FALSE,
 solar_radiation,FALSE,FALSE,
 temperature,TRUE,TRUE,worldclim
+human_density,TRUE,TRUE,ssb
+building_density,FALSE,FALSE,

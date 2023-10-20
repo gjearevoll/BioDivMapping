@@ -49,4 +49,16 @@ if (dataSource == "geonorge") {
   
   # average
   rasterisedVersion <- mean(annualStack)
+  
+### 3. SSB ####
+} else if (dataSource == "ssb") {
+  if (file.exists("data/temp/ssb/rutenett.RDS")) { 
+    rutenett <- readRDS("data/temp/ssb/rutenett.RDS")
+    rasterisedVersion <- get_ssb(focalParameter, getRutenett = FALSE, rutenett = rutenett)
+  } else {
+    if (!dir.exists("data/temp/ssb")) {
+      dir.create("data/temp/ssb", recursive = TRUE)
+    }
+    rasterisedVersion <- get_ssb(focalParameter, regionGeometry)    
+  }
 }

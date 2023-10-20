@@ -10,6 +10,7 @@
 library(raster)
 library(terra)
 library(sf)
+library(fasterize)
 
 # Import local functions
 sapply(list.files("functions/import/environment", full.names = TRUE), source)

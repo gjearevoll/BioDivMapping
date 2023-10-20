@@ -61,7 +61,7 @@ for (ds in 1:length(speciesData)) {
   # 1. First condition - is there a pre-set script for this dataset?
   if (gsub(" ","",datasetName) %in% processingScripts) {
     source("pipeline/integration/utils/defineProcessing.R")
-  } else if (dataType == "PA" & datasetName != "ANOData") { 
+  } else if (dataType == "PA") { 
   # 2. Second condition - is it presence-absence?
     # Here we apply our conversion script for presence/absence data - tryCatch is for if any links to endpoints are broken
     focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
@@ -78,7 +78,7 @@ for (ds in 1:length(speciesData)) {
   # 3. Doesn't satisfy the other two, which means it must be presence only 
     
     # No need to do anything to presence only data (yet) except add individualCount column
-    newDataset <- focalData[,c("simpleScientificName", "geometry", "dataType", "taxa")]
+    newDataset <- focalData[,c("simpleScientificName", "geometry", "dataType", "taxa", "year")]
   }
   processedData[[ds]] <- newDataset
   namesProcessedData[ds] <- datasetName

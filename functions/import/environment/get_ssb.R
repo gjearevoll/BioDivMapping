@@ -11,6 +11,8 @@ get_ssb <- function(focalParameter, resolution = "1000") {
                                     row.names = c("250", "1000"))
   focalEndpoint <- resolutionFileCheck[resolution, focalParameter]
   
+  message(paste0("Currently downloading ", gsub("_", " ", focalParameter), " at resolution of ", resolution, " from SSB"))
+  
   V0 <- vect(paste0("WFS:", focalEndpoint))
   
   # Project onto our rasters

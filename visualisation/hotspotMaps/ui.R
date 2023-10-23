@@ -211,7 +211,8 @@ shinyUI(
                                                        "Elevation" = "elevation",
                                                        "Precipitation" = "precipitation",
                                                        "Soil moisture" = "soil_moisture",
-                                                       "Temperature" = "temperature"
+                                                       "Temperature" = "temperature",
+                                                       "Human density" = "human_density"
                                            )
                                )
                            )

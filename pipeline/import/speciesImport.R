@@ -12,17 +12,20 @@ library(stringr)
 library(dplyr)
 library(rinat)
 
+# Import local functions
+sapply(list.files("functions/import/species", full.names = TRUE), source)
+
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###
 
+
 # Run script to define geographical region and resolution we are working with 
-if (!exists(level)) {level <- "county"}  # level can be country, county, municipality, or points (examples of points given below)
-if (!exists(region)) {region <- "50"}
-runBuffer <- FALSE
-#points <- c(4.641979, 57.97976, 31.05787, 71.18488)
-#names(points) <- c("north", "south", "east", "west")
-source("utils/defineRegion.R")
+#extentCoords <- c(4.641979, 57.97976, 31.05787, 71.18488)
+#names(extentCoords) <- c("north", "south", "east", "west")
+if (!exists("level")) {level <- "county"}  # level can be country, county, municipality, or points (examples of points given below)
+if (!exists("region")) {region <- "50"}
+regionGeometry <- defineRegion(level, region)
 
 # Define initial species list.
 focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
@@ -34,33 +37,30 @@ if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
 }
 folderName <- paste0("data/run_", dateAccessed)
+tempFolderName <- paste0(folderName, "/temp")
 if (!file.exists(folderName)) {
   dir.create(folderName)
-  dir.create(paste0(folderName, "/temp"))
+  dir.create(tempFolderName)
 }
 
 ###-----------------###
 ### 2. GBIF Import ####
 ###-----------------###
-
+  
 # Import GBIF Data
 gbifImportsPerTaxa <- lapply(focalTaxa, FUN = function(x) {
   focalSpeciesImport <- focalSpecies$species[focalSpecies$taxonomicGroup == x]
   GBIFImport <- occ_data(scientificName = focalSpeciesImport, hasCoordinate = TRUE, limit = 3000, 
                          geometry = st_bbox(regionGeometry), coordinateUncertaintyInMeters = '0,500')
-  GBIFImportCompiled <- do.call(rbind, lapply(GBIFImport, FUN = function(z) {
-    dataSubset <- z$data
-    
-    # datasetName does not exist in some species for some reason. In these cases, let it equal NA
-    if (!("datasetName" %in% colnames(dataSubset))) {
-      dataSubset$datasetName <- NA
-    }
-    dataSubset[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord", "year", 
-                  "datasetKey", "coordinateUncertaintyInMeters", "datasetName")]
-  }))
+  # compile import 
+  if(all(names(GBIFImport) == c("meta", "data"))){  # if only one species selected
+    GBIFImportCompiled <- compileGBIFImport(GBIFImport)
+  } else if(any(names(GBIFImport) %in% focalSpeciesImport)){  # if multiple species 
+    GBIFImportCompiled <- do.call(rbind, lapply(GBIFImport, compileGBIFImport))
+  }
   GBIFImportCompiled$simpleScientificName <- gsub(" ", "_", word(GBIFImportCompiled$acceptedScientificName, 1,2, sep=" "))
   GBIFImportCompiled
-} )
+})
 GBIFImportCompiled <- do.call(rbind, gbifImportsPerTaxa)
 GBIFImportCompiled$taxa <- focalSpecies$taxonomicGroup[match(GBIFImportCompiled$simpleScientificName, focalSpecies$species)]
 
@@ -69,9 +69,7 @@ GBIFImportCompiled$taxa <- focalSpecies$taxonomicGroup[match(GBIFImportCompiled$
 ###------------------------------###
 
 # Now we import metadata related to GBIF data
-fullMeta <- TRUE
-metaSummary <- TRUE
-source("utils/metadataPrep.R")
+metadataList <- metadataPrep(GBIFImportCompiled, metaSummary = TRUE)
 
 # Import dataset type based on dataset name
 GBIFImportCompiled <- merge(GBIFImportCompiled, metadataList$metadata, all.x=TRUE, by = "datasetKey")
@@ -97,9 +95,7 @@ names(GBIFLists) <- unique(GBIFImportCompiled$name)
 ### 4. ANO Import ####
 ###----------------###
 
-source("utils/importANOData.R")
-GBIFLists[["ANOData"]] <- ANOData
-
+GBIFLists[["ANOData"]] <- importANOData(focalSpecies, tempFolderName, regionGeometry)
 
 ###--------------------###
 ### 5. Dataset Upload ####
@@ -110,7 +106,7 @@ GBIFLists[["ANOData"]] <- ANOData
 dataList <- list(species = GBIFLists, metadata = metadataList, projcrs = projcrs)
 attr(dataList, "level") <- level
 attr(dataList, "region") <- region
-saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
+saveRDS(dataList, paste0(tempFolderName, "/speciesDataImported.RDS"))
 saveRDS(regionGeometry, paste0(folderName, "/regionGeometry.RDS"))
 saveRDS(regionGeometry, "visualisation/hotspotMaps/data/regionGeometry.RDS")
 write.csv(focalSpecies, "visualisation/hotspotMaps/data/focalSpecies.csv", row.names = FALSE)
@@ -122,10 +118,16 @@ write.csv(focalSpecies, "visualisation/hotspotMaps/data/focalSpecies.csv", row.n
 
 # We need to download photos from iNaturalist, including their URL and the user name of the individual
 # who took the photo to give appropriate credit
-imageCredit <- data.frame(species = focalSpecies$species,
-                          credit = NA,
-                          url = NA,
-                          stringsAsFactors = FALSE)
+
+# Check if there is already an image credit file
+if (file.exists("visualisation/hotspotMaps/data/imageCredit.RDS")) {
+  imageCredit <- readRDS("visualisation/hotspotMaps/data/imageCredit.RDS")
+} else {
+  imageCredit <- data.frame(species = focalSpecies$species,
+                            credit = NA,
+                            url = NA,
+                            stringsAsFactors = FALSE)
+}
 
 for (taxa in focalTaxa) {
   speciesImaged <- focalSpecies$species[focalSpecies$taxonomicGroup == taxa]

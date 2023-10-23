@@ -18,8 +18,11 @@ listed in GBIF (if you're unsure of the accepted scientific name, [**GBIF has a 
 stating whether they should be used or not. Check the [**FAQ section of the ODBM**](https://swp-data-projects.shinyapps.io/odbm/) for
 information on finding GBIF dataset codes.
 
-You'll also need to edit the focalCovariates.csv folder, however this is simply a matter of deciding which
-covariates you'd like to use by editing the TRUE/FALSE column.
+You'll also need to edit the focalCovariates.csv folder, however unless you're doing this for a novel region (ie. outside of Norway),
+here you should not need to insert your own variables. You can simply select which environmental variables you'd like to use. You can
+also select to switch on external data sources, if you're not satisfied with the 1km squared versions that we've provided from the
+[sources underlined here](https://github.com/gjearevoll/BioDivMapping/tree/main/data/external/environmentalCovariates). External data sources
+currently available for aspect, elevation and slope are 'geonorge', and 'worldclim' for temeprature and precipitation.
 
 The following 6 scripts can all be run through the masterScript.R script at the head of the repository, and there are detailed comments
 throughout each script to help the reader. However a brief technical description of each script is contained below.
@@ -44,11 +47,12 @@ who took the photo. This is later used in the ODBM to provide extra species info
 
 **Outputs**: Full species data list (sf class), regional geometry file (sf class), png files of each species.
 
-### [environmentalImport.R](https://github.com/gjearevoll/BioDivMapping/blob/main/pipeline/import/environmentalImport.R)
+### [import/environmentalImport.R](https://github.com/gjearevoll/BioDivMapping/blob/main/pipeline/import/environmentalImport.R)
 
 The environmentalImport.R script is then used to import environmental data across the same region. The focalCovariates.csv file defines which 
-covariates we are using in the model. The environmental data has been provided by Dr. Ron Togunov. Data is imported as a raster class at 1 x 1km
-resolution Further information on the data sources used can be found in the 
+covariates we are using in the model. The environmental data has been provided by Dr. Ron Togunov. The file also defines which data should be
+externally imported, and which can simply be imported locally as a raster class at 1 x 1km resolution. Further information on the data sources used 
+for the local import can be found in the 
 [**external/data/environmentalCovariates**](https://github.com/gjearevoll/BioDivMapping/tree/main/data/external/environmentalCovariates) description.
 
 **Outputs**: List of environmental datasets (raster class).
@@ -78,12 +82,6 @@ master script, you can also construct a mesh with a bit of trial and error using
 
 **Outputs**: Each species run through the model gets its own folder with a map and set of predictions for the entire region.
 
-### [biodiversityMetricEstimation.R](https://github.com/gjearevoll/BioDivMapping/blob/main/pipeline/processing/biodiversityMetricEstimation.R)
-
-The biodiversityMetricEstimation.R script is then used to aggregate the results of the integrated species models to a biodiversity 
-metric. This, along with the results from individual species models, is saved in the data folder, as well as directly into the
-visualisation folder.
-
 ### [visualisation/hotspotMaps](https://github.com/gjearevoll/BioDivMapping/tree/main/visualisation/hotspotMaps)
 
 The visualisation/hotspotMap folder contains a shiny app which shows species occurrence data, modelled species intensity data, and
@@ -96,12 +94,14 @@ biodiversity metrics. The output can be previewed in the
   + external - This repository contains any data which needs to be inputted manually, including our species, dataset and covariate list, as well as the environmental covariate folder.
   + run_xxxx-xx-xx - Model output data for each species group. This folder is created automatically when models are initiated.
     * temp - This is where all data that is required during the pipeline but not required for the ODBM resides, such as our unzipped endpoint data files and GBIF lists
+  + temp - This is a separate temporary folder, used to store large environmental datasets locally to avoid having to constantly download them (eg. large elevation rasters or the rutenett for SSB data)
     * modelOutputs - This contains a nested list of all species model outputs before they have been processed and formatted for the ODBM
 - pipeline - this folder contains all scripts which need to be run annually from the command line
   + imports - contains the scripts necessary for importing species and environmental data
+  + integration - contains scripts that process data for input or output
   + models - contains scripts relevant to running integrated species distribution models
-  + processing - contains scripts that process data for input or output
-- utils - contains scripts which perform action that do not require manual inputs. Will be turned into functions in the future.
+    * utils - each of the above folder contain a utils fodler for processes that are one-off actions that further process our data but do not fall into the class of functions.
+- functions - contains scripts which perform actions that are either a) useful for people outside of the project or b) repeated throughout the script or workflow.
 - visualisations - contains the shiny app (hotspotMaps) which visualises biodiversity, species intensities and species occurrences
   + data - contains all data necessary for production of the ODBM
   + www - contains all one-off multimedia files for the ODMB

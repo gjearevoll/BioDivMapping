@@ -13,7 +13,9 @@
 # of which there are quite a few. Luckily, we've set up this utils file for just that purpose (although since R
 # doesn't always automatically acquiesce when setting up new packages you may need to go through it yourself).
 
-source("utils/installAllPackages.R")
+source("functions/installAllPackages.R")
+
+sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 
 # Let's get started! The first script to run is the speciesImport.R script, which requires that you
 # define a spatial level on which to run the pipeline, as well as a region within Norway. The options are
@@ -36,26 +38,20 @@ source("pipeline/import/environmentalImport.R")
 
 # Next we start on data processing, which adds extra information to our datasets.
 
-source("pipeline/processing/speciesDataProcessing.R")
+source("pipeline/integration/speciesDataProcessing.R")
 
 # We then run our models. NOTE: This is the point where defining a Mesh becomes important. You can read
 # more about what a Mesh is, and how it works in the README.md file in the head of the repository, or in the
 # FAQ page of the shiny app. If you want to try out some potential meshes, you can do so using the
 # util file and editing the default list below.
 
-myMesh <- list(cutoff = 11000, max.edge=c(39000, 46000), offset= 80000)
-source("utils/meshTest.R")
+myMesh <- list(cutoff = 11000, max.edge=c(42000, 49000), offset= 80000)
+meshTest(myMesh, regionGeometry)
 
 # Once you've figured that out, you can start running the models. Remember that this script is the one that's 
 # likely to take the longest, so grab a coffee or other beverage of choice.
 
 source("pipeline/models/speciesModelRuns.R")
-
-# Now that your models are done, there's some final processing that needs to be completed before you can
-# run your own version of the app. This last script prooduces some very basic biodiversity metrics, both for
-# all species and red-listed species only.
-
-source("pipeline/processing/biodiversityMetricEstimation.R")
 
 # And you're done! Now all that's left to do is to open up the app, which you can do by opening either the
 # server.R or ui.R file in the visualisation/hotspotMaps folder and hitting "Run App".

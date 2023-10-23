@@ -156,7 +156,8 @@ shinyServer(function(input, output, session) {
     
     if (input$dataClassification == "dataSource") {
       fullPlot <- basePlot + geom_sf(data = dataToPlot, aes(colour = colours1, labels = name)) +
-        scale_colour_identity(guide = "legend", breaks = colourFrame1$colour, labels = colourFrame1$name, name = "Data source")
+        scale_colour_identity(guide = "legend", breaks = colourFrame1$colour, 
+                              labels = str_wrap(colourFrame1$name, width = 50))
     } else {
       fullPlot <- basePlot + geom_sf(data = dataToPlot, aes(colour = colours2, labels = dataType)) +
         scale_colour_identity(guide = "legend", breaks = colourFrame2$colour, labels = colourFrame2$dataTypeFull, name = "Data source")

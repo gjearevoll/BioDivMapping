@@ -7,9 +7,9 @@
 # 1. The national insect Monitoring in Norway dataset
 if (datasetName == "National insect monitoring in Norway") {
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
-  newDataset <- processNationalInsectMonitoring(focalEndpoint, tempFolderName, focalSpecies)
+  newDataset <- processNationalInsectMonitoring(focalData, focalEndpoint, tempFolderName)
   
 # 2. ANO Data
 } else if (datasetName == "ANOData") {
-  newDataset <- processANOData(focalData, regionGeometry, focalSpecies)
+  newDataset <- processANOData(focalData)
 }

@@ -6,12 +6,10 @@
 # This script downloads the datasets of the National insect monitoring study directly from the endpoint supplied
 # to GBIF. The study is stored differently to others and requires unique processing.
 
-processNationalInsectMonitoring <- function(endpoint, tempFolderName, focalSpecies) {
+processNationalInsectMonitoring <- function(focalData, endpoint, tempFolderName) {
   
   library(sf)
-  
-  # Get the relevant endpoint
-  
+  library(stringr)
   
   # Download and unzip file in temp folder
   options(timeout=100)
@@ -29,9 +27,16 @@ processNationalInsectMonitoring <- function(endpoint, tempFolderName, focalSpeci
   # Level 3 - Multiple traps within a sampling period
   # Level 4 - Multiple sampling periods within a sampling season
   
-  # First, get a list of all species samples
-  surveyedSpecies <- gsub(" ", "_",unique(occurrence$scientificName))
-  ourSurveyedSpecies <- focalSpecies$species[focalSpecies$species %in% surveyedSpecies]
+  # First, get a list of all species samples and create a legend for them
+  surveyedSpecies <- unique(occurrence$scientificName)
+  legendTable <- data.frame(scientificName = surveyedSpecies, genus = word(surveyedSpecies,1))
+  
+  # Narrow it down to the same genus we're looking for
+  legendTable <- legendTable[legendTable$genus %in% word(unique(focalData$acceptedScientificName), 1),]
+  legendTable$acceptedScientificName <- sapply(legendTable$scientificName, FUN = findGBIFName)
+  
+  # And now narrow it down to species
+  legendTable <- legendTable[legendTable$acceptedScientificName %in% focalData$acceptedScientificName,]
   
   # Here I've taken level 1 events and linked them to level 2. Each location has a separate date for the trap sampling.
   occurrencesWithEvent <- occurrence[occurrence$eventID %in% events$eventID,]
@@ -45,51 +50,48 @@ processNationalInsectMonitoring <- function(endpoint, tempFolderName, focalSpeci
   
   # Take only most recent event from a location
   occurrencesWithEvent$exactDate <- as.Date(substr(occurrencesWithEvent$eventDate,1,10))
-  occurrencesMostRecent <- occurrencesWithEvent %>%
-    group_by(scientificName, locationID) %>%
+  mostRecentSample <- occurrencesWithEvent %>%
+    dplyr::select(parentEventID, locationID, exactDate) %>%
+    group_by(locationID) %>%
     slice_max(exactDate, n = 1,na_rm = TRUE) %>% 
+    distinct() %>%
     ungroup()
-  occurrencesMostRecent <- occurrencesMostRecent[!duplicated(occurrencesMostRecent[,c("scientificName", "locationID")]),]
-  occurrencesMostRecent$year <- substr(occurrencesMostRecent$exactDate, 1, 4)
+  mostRecentSample$year <- substr(mostRecentSample$exactDate, 1, 4)
   
-  # The resulting data frame gives you results for the most recent individual insect abundances at each site
-  ourDataset <- occurrencesMostRecent[,c("scientificName", "organismQuantity", "decimalLatitude", "decimalLongitude", "locationID", "year")]
-  ourDataset <- ourDataset %>% 
-    mutate(simpleScientificName = gsub(" ", "_", scientificName)) %>%
-    filter(simpleScientificName %in% ourSurveyedSpecies)
+  # Now add a line for every species
+  ourDataset <- merge(mostRecentSample, legendTable["scientificName"], all = TRUE)
+  ourDataset$acceptedScientificName <- legendTable$acceptedScientificName[match(ourDataset$scientificName, legendTable$scientificName)]
+  ourDataset <- ourDataset[!is.na(ourDataset$acceptedScientificName),]
   
-  locations <- ourDataset[!duplicated(ourDataset[,c("locationID", "decimalLatitude", "decimalLongitude")]),
-                          c("locationID", "decimalLatitude", "decimalLongitude")]
+  # Now get abundances for those specie that have them
+  ourDatasetAbundance <- merge(ourDataset, occurrencesWithEvent[,c("scientificName", "organismQuantity", "parentEventID",
+                                                                   "locationID")], all.x = TRUE, 
+                               by = c("parentEventID", "locationID", "scientificName"))
   
-  # We now need to fill in the absences - any species which were looked for but not found. THis si the same technique
-  # as used in the presenceAbsenceCOnversion.R script.
-  allSpecies <- expand.grid(simpleScientificName = ourSurveyedSpecies,
-                            locationID = unique(ourDataset$locationID))
-  mergedDataset <- merge(allSpecies, ourDataset[,c("locationID", "simpleScientificName", "organismQuantity", "year")], 
-                         all.x = TRUE, by = c("locationID", "simpleScientificName"))
-  mergedDataset <- merge(mergedDataset, locations,
-                         all.x = TRUE, by = "locationID")
+  # Now create a locations table to get location data
+  locations <- distinct(occurrencesWithEvent[,c("locationID", "decimalLatitude", "decimalLongitude")])
+  ourDatasetLocated <- merge(ourDatasetAbundance, locations, all.x = TRUE, by = "locationID")
   
   # Convert all NAs to 0
-  mergedDataset$organismQuantity[is.na(mergedDataset$organismQuantity)] <- 0
+  ourDatasetLocated$organismQuantity[is.na(ourDatasetLocated$organismQuantity)] <- 0
   
   # Convert this into an sf object
-  newDataset <- st_as_sf(mergedDataset, coords = c("decimalLongitude", "decimalLatitude"),
+  newDataset <- st_as_sf(ourDatasetLocated, coords = c("decimalLongitude", "decimalLatitude"),
                          crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
   
-  
-  newDataset <- newDataset[c("simpleScientificName", "organismQuantity", "year")] %>%
+  # Cut down set
+  newDataset <- newDataset[c("acceptedScientificName", "organismQuantity", "year")] %>%
     rename(individualCount = organismQuantity)
-  
   
   # Crop to relevant region
   st_crs(newDataset) <- "+proj=longlat +ellps=WGS84"
   newDataset <- st_intersection(newDataset, regionGeometry)
   newDataset <- st_transform(newDataset, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
-  
   newDataset$dataType <- "Counts"
   
-  newDataset$taxa <- focalSpecies$taxonomicGroup[match(newDataset$simpleScientificName, focalSpecies$species)]
+  taxaLegend <- distinct(st_drop_geometry(focalData[,c("taxa", "acceptedScientificName")]))
+  
+  newDataset$taxa <- taxaLegend$taxa[match(newDataset$acceptedScientificName, taxaLegend$acceptedScientificName)]
   return(newDataset)
   
   

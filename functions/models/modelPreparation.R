@@ -5,9 +5,7 @@
 # The following script imports our various forms of environmental data and processes them, based on the type of data
 # and other specifications related to the source.
 
-modelPreparation <- function(focalSpecies, regionGeometry, modelFolderName, environmentalDataList) {
-  
-  focalTaxa <- unique(focalSpecies$taxonomicGroup)
+modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeometry, modelFolderName, environmentalDataList) {
   
   workflowList <- list()
   
@@ -16,13 +14,10 @@ modelPreparation <- function(focalSpecies, regionGeometry, modelFolderName, envi
     
     # Define species group to create
     focalGroup <- focalTaxa[i]
-    focalGroupSpecies <- focalSpecies$species[focalSpecies$taxonomicGroup %in% focalGroup]
-    
-    focalSpeciesData <- speciesData
     
     # We need to remove all unnecessary species datasets from the species data
-    focalSpeciesDataRefined <- lapply(focalSpeciesData, FUN = function(x) {
-      focalDataset <- x[x$simpleScientificName %in% focalGroupSpecies,]
+    focalSpeciesDataRefined <- lapply(speciesData, FUN = function(x) {
+      focalDataset <- x[x$taxa %in% focalGroup & x$acceptedScientificName %in% redListModelled & !is.na(x$acceptedScientificName),]
       if (nrow(focalDataset) == 0) {
         focalDataset <- NA
       }
@@ -30,10 +25,22 @@ modelPreparation <- function(focalSpecies, regionGeometry, modelFolderName, envi
     })
     focalSpeciesDataRefined <- focalSpeciesDataRefined[!is.na(focalSpeciesDataRefined)]
     
+    if (length(focalSpeciesDataRefined) == 0) {
+      print(paste0("No data at all for ", focalGroup))
+      next
+    }  
+    
+    
+    # Get species list
+    speciesList <- lapply(focalSpeciesDataRefined, FUN = function(x) {
+      unique(x$acceptedScientificName)
+    })
+    speciesList <- unique(do.call(c, speciesList))
+    
     # Initialise workflow, creating folder for model result storage
     workflow <- startWorkflow(
       Projection = '+proj=utm +zone=32 +ellps=WGS84 +datum=WGS84 +units=m +no_defs',
-      Species = focalGroupSpecies,
+      Species = speciesList,
       saveOptions = list(projectDirectory = modelFolderName, projectName =  focalGroup), Save = TRUE
     )
     workflow$addArea(Object = st_sf(regionGeometry))
@@ -43,7 +50,6 @@ modelPreparation <- function(focalSpecies, regionGeometry, modelFolderName, envi
     for (l in c(1:length(focalSpeciesDataRefined))) {
       dataset <- focalSpeciesDataRefined[[l]]
       
-      if (nrow(dataset) < 5) next
       
       dataType <- unique(dataset$dataType)
       datasetName <- gsub(" ", "", gsub("[[:punct:]]", "", names(focalSpeciesDataRefined)[l]))
@@ -52,7 +58,7 @@ modelPreparation <- function(focalSpecies, regionGeometry, modelFolderName, envi
                              datasetType = dataType,
                              datasetName = datasetName,
                              responseName = 'individualCount',
-                             speciesName = 'simpleScientificName')
+                             speciesName = 'acceptedScientificName')
     }
     
     # Add environmental characteristics

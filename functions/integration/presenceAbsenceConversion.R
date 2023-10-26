@@ -8,7 +8,7 @@
 
 library(sf)
 
-presenceAbsenceConversion <- function(focalEndpoint, tempFolderName, datasetName, focalSpecies, regionGeometry) {
+presenceAbsenceConversion <- function(focalEndpoint, tempFolderName, datasetName, focalData, regionGeometry, focalTaxon) {
   
   # Get the relevant endpoint
   
@@ -28,24 +28,27 @@ presenceAbsenceConversion <- function(focalEndpoint, tempFolderName, datasetName
   events <- read.delim(paste0(tempFolderName,"/", datasetName ,"/event.txt"))
   occurrence <- read.delim(paste0(tempFolderName,"/", datasetName ,"/occurrence.txt"))
   occurrence$species <- gsub(" ", "_", foo(occurrence$scientificName))
-  surveyedSpecies <- unique(occurrence$species)
-  ourSurveyedSpecies <- focalSpecies$species[focalSpecies$species %in% surveyedSpecies]
+  speciesLegend <- data.frame(surveyedSpecies = unique(occurrence$species), 
+                              acceptedScientificName = sapply(unique(occurrence$species), FUN = findGBIFName),
+                              taxonKey = sapply(unique(occurrence$species), FUN = function(x) {taxaCheck(x, focalTaxon$key)})) %>%
+    filter(!is.na(taxonKey))
   
   # Create table with all data combinations that we can match to
-  allSpecies <- expand.grid(simpleScientificName = ourSurveyedSpecies,
-                            eventID = unique(occurrence$eventID))
+  allSpecies <- merge(speciesLegend, data.frame(eventID = unique(occurrence$eventID)), all = TRUE) %>%
+    filter(!is.na(acceptedScientificName))
   allSpecies$longitude <- events$decimalLongitude[match(allSpecies$eventID, events$eventID)]
   allSpecies$latitude <- events$decimalLatitude[match(allSpecies$eventID, events$eventID)]
-  allSpecies$dataType <- dataType
+  allSpecies$dataType <- "PA"
+  allSpecies$taxa <- focalTaxon$taxa[match(allSpecies$taxonKey, focalTaxon$key)]
   
   # Create an individual count if the species/event combination are found in our original data. If they aren't
   # the species was absent.
   mergedSpecies <- merge(allSpecies, occurrence[,c("eventID", "species", "occurrenceID")], all.x = TRUE,
-                         by.x = c("simpleScientificName", "eventID"), by.y = c("species", "eventID"))
+                         by.x = c("surveyedSpecies", "eventID"), by.y = c("species", "eventID"))
   mergedSpecies$individualCount <- ifelse(is.na(mergedSpecies$occurrenceID), 0, 1)
   mergedSpecies <- mergedSpecies[!is.na(mergedSpecies$longitude),]
   mergedSpecies$year <- events$year[match(mergedSpecies$eventID, events$id)]
-  
+
   # New dataset is ready!
   newDataset <- st_as_sf(mergedSpecies,                         
                                coords = c("longitude", "latitude"),
@@ -57,7 +60,6 @@ presenceAbsenceConversion <- function(focalEndpoint, tempFolderName, datasetName
   # Crop to relevant region
   newDataset <- st_intersection(newDataset, regionGeometry)
   newDataset <- st_transform(newDataset, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
-  newDataset$taxa <- focalSpecies$taxonomicGroup[match(newDataset$simpleScientificName, focalSpecies$species)]
-  newDataset <- newDataset[,c("simpleScientificName", "individualCount", "geometry", "dataType", "taxa", "year")]
+  newDataset <- newDataset[,c("acceptedScientificName", "individualCount", "geometry", "dataType", "taxa", "year")]
   return(newDataset)
 }

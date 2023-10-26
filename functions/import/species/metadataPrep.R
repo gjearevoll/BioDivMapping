@@ -53,7 +53,7 @@ metadataPrep <- function(GBIFDataFrame, fullMeta = FALSE, metaSummary = FALSE) {
   
   # create a summary of the amount of data each set is providing, if it is requested
   if (metaSummary == TRUE) {
-    GBIFDataByDataset <- GBIFImportCompiled %>%
+    GBIFDataByDataset <- GBIFDataFrame %>%
       group_by(datasetKey, datasetName) %>% tally() %>% arrange(-n) %>%
       as.data.frame()
     GBIFWithMeta <- merge(GBIFDataByDataset, metadataAddition, all.x = TRUE, by = "datasetKey")

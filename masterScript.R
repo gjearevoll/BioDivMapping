@@ -29,7 +29,13 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 
 level <- "county"
 region <- "50"
-source("pipeline/import/speciesImport.R")
+
+# You also need to define whether or not you want to use a scheduled download. Scheduled downloads produce a DOI,
+# and enable handling of much larger datasets. If you're playing around with a small dataset, you can probably hit 
+# FALSE here.
+
+scheduledDownload <- TRUE
+source("pipeline/import/taxaImport.R")
 
 # Next we run the environmental import script, which brings in a set of rasters that apply to the region
 # we defined in the last step.

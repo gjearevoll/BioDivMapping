@@ -13,7 +13,7 @@
 # of which there are quite a few. Luckily, we've set up this utils file for just that purpose (although since R
 # doesn't always automatically acquiesce when setting up new packages you may need to go through it yourself).
 
-source("functions/installAllPackages.R")
+source("pipeline/installAllPackages.R")
 
 sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 

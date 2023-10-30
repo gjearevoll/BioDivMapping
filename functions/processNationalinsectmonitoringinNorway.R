@@ -1,15 +1,19 @@
 
-###----------------------------------------###
-### PROCESSING FUNCTION INSECT MONITORING ####
-###----------------------------------------###
+#' @title \emph{processNationalInsectMonitoring}: Process data given by the National insect Monitoring survey from NINA.
 
-# This script downloads the datasets of the National insect monitoring study directly from the endpoint supplied
-# to GBIF. The study is stored differently to others and requires unique processing.
+#' @description The National Insect Monitoring Survey by NINA has a very specific data format (read more in its page on the GBIF website). As such, it needs to be processed ina  particular way.
+# '
+#' @param focalData The Insect monitoring dataset as imported by the GBIF download.
+#' @param endpoint The endpoint for this dataset.
+#' @param tempFolderName The temporary folder in which we save the data.
+#' 
+#' @return A new, processed dataset
+#'
+#' @import sf
+#' @import stringr
+
 
 processNationalInsectMonitoring <- function(focalData, endpoint, tempFolderName) {
-  
-  library(sf)
-  library(stringr)
   
   # Download and unzip file in temp folder
   options(timeout=100)

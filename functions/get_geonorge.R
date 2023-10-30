@@ -1,9 +1,19 @@
 
-# load necessary libraries
-library(rvest)  # web scraping
-library(httr)  # making HTTP requests
-library(utils)  # various utility functions, including `unzip`
-library(dplyr)
+#' @title \emph{get_geonorge}: This function downloads geographical data directly from Geonorge
+
+#' @description This function downloads geographical data direct from geonorge to be used in calculating slope, elevation and aspect across Norway
+#'
+#' @param repo The geonorge repo containing our data.
+#' @param dataName Name of the data we want to download.
+#' @param targetDir The directory we want to save the new data in.
+#' 
+#' @return An aggregated raster containing elevation data for Norway.
+#'
+#' @import rvest
+#' @import httr
+#' @import utils
+#' @import dplyr 
+#' 
 
 # Check out the full list of data repositories here: https://nedlasting.geonorge.no/geonorge/
 # See available data sources: https://nedlasting.geonorge.no/geonorge/Basisdata/

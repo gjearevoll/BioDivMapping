@@ -1,10 +1,17 @@
 
-#### SPECIES RICHNESS CONVERSION ####
-library(terra)
-library(plotKML)
+#' @title \emph{speciesRichnessConverter}: Cinverts a list of presence datasets from GBIF into a species richness raster
+
+#' @description We have a huge list of different species presences, this takes them and figures out the species richness over a given raster at different pixels.
+#'
+#' @param regionGeometry An sf object encompassing our region of study, as produced by defineRegion.
+#' @param presenceData An sf dataset containing all presences for a given group of species at different points.
+#' @param blankRaster A blank raster with the appropriate resolution on which to project the species richness.
+#' 
+#' @return A stackted raster with a species richness raster for each taxonomic group.
+#'
 
 
-speciesRichnessConverter <- function(regionGeometry, presenceData, blankRaster, asCompiledFrame = FALSE) {
+speciesRichnessConverter <- function(regionGeometry, presenceData, blankRaster) {
   
   
   # project regionGeometry to match target raster

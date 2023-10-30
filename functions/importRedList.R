@@ -1,5 +1,12 @@
-library(httr)
-library(jsonlite)
+
+#' @title \emph{importRedList}: Import species from the Artsdatabanken red list
+
+#' @description This function pulls a species dataframe from the AArrtsdatabanken red list going by the category of threat they are facing.
+#'
+#' @param categories A vector of character codes dictating which categories of species (by threatened status) should be downloaded.
+#' 
+#' @return A dataframe with all red-listed species in the given categories.
+#' 
 
 importRedList <- function(categories) {
   redListCategories <- lapply(categories, FUN = function(x) {

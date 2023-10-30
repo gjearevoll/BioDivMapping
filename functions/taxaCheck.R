@@ -1,4 +1,14 @@
 
+#' @title \emph{taxaCheck}: Check which of our taxa this species belongs to
+#' 
+#' @description This function looks at a species accepted scientific name in GBIF and checks whether it belongs to any of our taxonomic groups.
+#'
+#' @param scientificName A species name which must be foudn in GBIFs list of accepted scientific name (use findGBIFName to check this)
+#' @param taxaKeys A list of taxonomic keys for the taxa we're importing.
+#' 
+#' @return The corresponding taxonomic key. If none - we get an NA.
+#'
+#'
 taxaCheck <- function(scientificName, taxaKeys) {
   
   speciesNameTable <- as.data.frame(rgbif::name_backbone(scientificName))

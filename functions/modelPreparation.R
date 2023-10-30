@@ -1,9 +1,16 @@
 
+#' @title \emph{getDownloadKey}: Get a download key for a scheduled GBIF download
 
-#### MODEL DATA PREPARATION ####
-
-# The following script imports our various forms of environmental data and processes them, based on the type of data
-# and other specifications related to the source.
+#' @description This function initiates a download of a given group of taxa through GBIF.
+#'
+#' @param focalTaxa A vector of the taxonomic groups we are modelling.
+#' @param speciesData A list of processed datasets to be used in the intSDM models.
+#' @param redListModelled A vector of red listed species found in the datasets with enough occurrences for a decent model.
+#' @param regionGeometry An sf object encompassing our region of study, as produced by defineRegion.
+#' @param modelFolderName The directory where model outputs should be saved.
+#' @param environmentalDataList A list of raster giving relevant environmental variables.
+#' 
+#' @return An R6 environment object with enough information to run an intSDM model.
 
 modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeometry, modelFolderName, environmentalDataList) {
   
@@ -32,7 +39,7 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeom
     
     
     # Get species list
-    speciesList <- lapply(focalSpeciesDataRefined, FUN = function(x) {
+    speciesList <- lapplA download key for a GBIF download.y(focalSpeciesDataRefined, FUN = function(x) {
       unique(x$acceptedScientificName)
     })
     speciesList <- unique(do.call(c, speciesList))

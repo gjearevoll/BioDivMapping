@@ -1,12 +1,14 @@
-###------------------------------###
-### 2. Attach relevant metadata ####
-###------------------------------###
 
-# This script can return up to three objects
+#' @title \emph{metadataPrep}: Prepare metadata to accompany an complement GBIF data
 
-# 1. A shortened data frame giving key info regarding each unique dataset - this is mandatory
-# 1. A full list of all metadata associated with each unique dataset in the GBIF import - this is optional
-# 3. A table giving an overview of the amoutn of data located in each different dataset - also optional
+#' @description This function downloads metadata directly from GBIF to provide information on the taxon-based datasets that have been downloaded.
+#'
+#' @param GBIFDataFrame A dataframe containing species data from GBIF - it must contain a column names 'datasetKey' which contains datasetKeys for all datasets downloaded.
+#' @param fullMeta Whether or not you want to download full list of all metadata associated with each unique dataset in the GBIF import.
+#' @param metaSummary Whether or not you want to download a table giving an overview of the amoutn of data located in each different dataset.
+#' 
+#' @return A list of datasets - at the minimum one dataset containing information on the type of data and the dataset name we're using. Can also return additional datasets (described above).
+#'
 
 metadataPrep <- function(GBIFDataFrame, fullMeta = FALSE, metaSummary = FALSE) {
   # Start on data frame 1

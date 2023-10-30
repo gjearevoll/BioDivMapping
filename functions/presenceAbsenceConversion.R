@@ -1,13 +1,20 @@
 
-###--------------------------------------------###
-### PROCESSING FUNCTION PRESENCE/ABSENCE DATA ####
-###--------------------------------------------###
+#' @title \emph{presenceAbsenceConversion}: Turns a presence only dataset into a presence absence dataset for surveyed data.
 
-# This script downloads the datasets of presence/absence data directly from the endpoint supplied
-# to GBIF. THis way we can figure out which species were NOT found.
-
-library(sf)
-
+#' @description Some datasets have been reduced by GBIF to presence-only, despite the fact they are in fact presence-absence datastes. This function downloads these datasets directly from the source and adds the absences back in.
+#'
+#' @param focalEndpoint An endpoint through which the original dataset can be downloaded.
+#' @param tempFolderName A directory in which to save the data downloaded directly from the source.
+#' @param datasetName The name of the dataset to be downloaded.
+#' @param focalData The dataset downloaded from GBIF.
+#' @param regionGeometry An sf object encompassing our region of study, as produced by defineRegion.
+#' @param focalTaxon A dataframe giving the key and names of each taxonomic group we are downloading.
+#' 
+#' @return A new dataset with absences added back in.
+#'
+#' @import sf
+#' 
+#' 
 presenceAbsenceConversion <- function(focalEndpoint, tempFolderName, datasetName, focalData, regionGeometry, focalTaxon) {
   
   # Get the relevant endpoint

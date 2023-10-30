@@ -1,4 +1,14 @@
 
+#' @title \emph{getDownloadKey}: Get a download key for a scheduled GBIF download
+
+#' @description This function initiates a download of a given group of taxa through GBIF.
+#'
+#' @param taxa A vector of GBIF taxon keys.
+#' @param regionGeometry An sf object encompassing our region of study, as produced by defineRegion.
+#' 
+#' @return A download key for a GBIF download.
+#'
+
 getDownloadKey <- function(taxa, regionGeometry) {
   
   # Log in to GBIF

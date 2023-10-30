@@ -1,10 +1,20 @@
 
-### IMPORT ANO Data ###
+#' @title \emph{importANOData}: Import a dataset of species from the ANO database.
+
+#' @description This function downloads data relating to a given list of taxonomicgroups from the Arealrepresentativ naturovervåking (ANO) dataset.
+#'
+#' @param destinationFolder A character string giving the folder in which your ANO data should be saved,
+#' @param regionGeometry An sf object encompassing our region of study, as produced by defineRegion.
+#' @param focalTaxon A table containing all taxonomic groups we want to download.
+#' @param ANOEndpoint The URL link to the ANO database endpoint.
+#' 
+#' @return An sf dataframe containing all observations for relevant species in ANO.
+#'
 
 # This source file is activated after line 74 of the speciesImport.R script
 
 # Create destination folder for ANO data
-importANOData <- function(occurrences, destinationFolder, regionGeometry, focalTaxon,
+importANOData <- function(destinationFolder, regionGeometry, focalTaxon,
                           ANOEndpoint = "https://nedlasting.miljodirektoratet.no/naturovervaking/naturovervaking_eksport.gdb.zip") {
   
   if (!file.exists(destinationFolder)) {

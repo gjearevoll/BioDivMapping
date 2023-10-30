@@ -1,4 +1,7 @@
-#' Download and merge WorldClim data for study area
+
+#' @title \emph{get_worldclim}: This function downloads and merges worldClim data for a study area
+
+#' @description This function downloads and merges worldClim data for a study area
 #'
 #' @param coords Dataframe with x and y sample coordinates.
 #' @param var character. One of variable names provided by worldclim. Valid varnames are "tmin", "tmax", "tavg", "prec", "wind", "vapr", and "bio"
@@ -12,7 +15,6 @@
 #' Code adapted from https://github.com/TheWangLab/algatr
 #' 
 #' @return A SpatRaster of WorldClim layers.
-#' @export
 
 get_worldclim <- function(coords, var, res = 0.5, buff = 0.1, path = NA) {
   # stop if variable not provided

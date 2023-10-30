@@ -1,4 +1,14 @@
 
+#' @title \emph{processANOData}: Standardises an ANO dataset for use in species models.
+
+#' @description This function takes our ANO dataset and standardises it for use alongside the other datasets downloaded from GBIF.
+#'
+#' @param ANODataset A dataset as downloaded using the importANO function
+#' 
+#' @return A new processed dataset, standardised for further use.
+#'
+#' @import sf
+#' 
 
 
 processANOData <- function(ANODataset) {

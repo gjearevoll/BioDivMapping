@@ -1,5 +1,13 @@
-# function derives values found on this page: https://www.ssb.no/natur-og-miljo/geodata and 
-# at https://kartkatalog.geonorge.no/metadata/befolkning-paa-rutenett-1000m-2016-2019-wfs/20d06bca-484c-4353-a24b-61046296f5da
+
+#' @title \emph{get_ssb}: This function downloads human and building density data from SSB
+
+#' @description This function downloads human and building density directly from the Statistisk Sentralbyraa.
+#'
+#' @param focalParameter The parameter to download - either "human_density" or "building_density".
+#' @param resolution The data resolution in metres, either "250" or "1000".
+#' 
+#' @return An aggregated raster containing anthropogenic data for Norway.
+#'
 
 get_ssb <- function(focalParameter, resolution = "1000") {
   

@@ -1,11 +1,14 @@
 
+#' @title \emph{meshTest}: Visualise an INLA mesh before starting a model run
 
-### Create and test Mesh ###
-
-# THis file creates and visualises a very quick INLA Mesh
-
-
-# myMesh <- list(cutoff = 11000, max.edge=c(39000, 46000), offset= 80000)
+#' @description This function allows you to visualise an INLA mesh to check its parameters before using it in a model run.
+#'
+#' @param meshList A vector of GBIF taxon keys.
+#' @param regionGeometry An sf object encompassing our region of study, as produced by defineRegion.
+#' @param print Whether or not you want to plot the mesh automatically
+#' 
+#' @return A ggplot of an INLA mesh
+#'
 
 meshTest <- function(meshList, regionGeometry, print = TRUE) {
   modelCRS <- "Proj.4 +proj=utm +zone=32 +datum=WGS84 +units=m +no_defs +type=crs" # 32632  # epsg code corresponding to same projection

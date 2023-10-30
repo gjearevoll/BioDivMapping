@@ -13,7 +13,7 @@ library(dplyr)
 library(rinat)
 
 # Import local functions
-sapply(list.files("functions/import/species", full.names = TRUE), source)
+sapply(list.files("functions", full.names = TRUE), source)
 
 ###-----------------###
 ### 1. Preparation ####
@@ -51,8 +51,6 @@ redList$taxa <- focalTaxon$taxa[match(redList$taxaKey, focalTaxon$key)]
 redList <- redList[!is.na(redList$taxa),]
 redList$GBIFName <- sapply(redList$species, FUN = findGBIFName)
 
-# Import relevant datasets
-dataTypes <- read.csv("data/external/metadataSummary.csv")
 
 ###-----------------###
 ### 2. GBIF Import ####
@@ -97,9 +95,18 @@ if (scheduledDownload == TRUE) {
 # Now we import metadata related to GBIF data
 metadataList <- metadataPrep(occurrences, metaSummary = TRUE)
 
-# Import dataset type based on dataset name
+# Import dataset type based on dataset name. If no dataset information is provided, all data will be downloaded and assumed to
+# be presence only data
+
+
+# Import relevant datasets
+if ("metadataSummary.csv" %in% list.files("data/external")) {
+  dataTypes <- read.csv("data/external/metadataSummary.csv")
+  GBIFImportCompiled$dataType <- dataTypes$dataType[match(GBIFImportCompiled$datasetKey, dataTypes$datasetKey)]
+} else {
+  GBIFImportCompiled$dataType <- "PO"  
+}
 GBIFImportCompiled <- merge(occurrences, metadataList$metadata, all.x=TRUE, by = "datasetKey")
-GBIFImportCompiled$dataType <- dataTypes$dataType[match(GBIFImportCompiled$datasetKey, dataTypes$datasetKey)]
 GBIFImportCompiled <- GBIFImportCompiled[!is.na(GBIFImportCompiled$dataType),]
 
 # Narrow down to known data types and split into data frames

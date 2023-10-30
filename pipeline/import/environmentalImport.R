@@ -13,7 +13,7 @@ library(sf)
 library(fasterize)
 
 # Import local functions
-sapply(list.files("functions/import/environment", full.names = TRUE), source)
+sapply(list.files("functions", full.names = TRUE), source)
 
 ###-----------------###
 ### 1. Preparation ####

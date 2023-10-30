@@ -27,7 +27,7 @@ if (!file.exists(modelFolderName)) {
 }
 
 # Import local functions
-sapply(list.files("functions/models", full.names = TRUE), source)
+sapply(list.files("functions", full.names = TRUE), source)
 
 # Import species list
 focalTaxon <- read.csv("data/external/focalTaxa.csv")

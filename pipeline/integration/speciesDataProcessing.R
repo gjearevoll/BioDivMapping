@@ -35,9 +35,7 @@ regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 processingScripts <- gsub(".R", "", gsub("process", "", list.files("functions/integration")))
 
 # Import local functions
-sapply(list.files("functions/integration", full.names = TRUE), source)
-source("functions/import/species/findGBIFName.R")
-source("functions/import/species/taxaCheck.R")
+sapply(list.files("functions", full.names = TRUE), source)
 
 ###----------------###
 ### 2. Processing ####

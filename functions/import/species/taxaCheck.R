@@ -13,7 +13,8 @@ taxaCheck <- function(scientificName, taxaKeys) {
                                                ifelse(speciesNameTable$classKey %in% taxaKeys, speciesNameTable$classKey,
                                                       ifelse(speciesNameTable$orderKey %in% taxaKeys, speciesNameTable$orderKey,
                                                              ifelse(speciesNameTable$familyKey %in% taxaKeys, speciesNameTable$familyKey,
-                                                                    ifelse(speciesNameTable$genusKey %in% taxaKeys, speciesNameTable$genusKey, NA))))))
+                                                                    ifelse(speciesNameTable$genusKey %in% taxaKeys, speciesNameTable$genusKey,
+                                                                           ifelse(speciesNameTable$speciesKey %in% taxaKeys, speciesNameTable$speciesKey, NA)))))))
   
   }
   

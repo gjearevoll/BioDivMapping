@@ -21,6 +21,7 @@ if (!exists("dateAccessed")) {
 
 # Import taxa list
 focalTaxon <- read.csv("data/external/focalTaxa.csv")
+focalTaxon <- focalTaxon[focalTaxon$include,]
 
 # Import datasets
 folderName <- paste0("data/run_", dateAccessed)

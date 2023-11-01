@@ -32,7 +32,7 @@ metadata <- speciesDataList$metadata$metadata
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 
 # Get list of processing util scripts
-processingScripts <- gsub(".R", "", gsub("process", "", list.files("functions/integration")))
+processingScripts <- gsub(".R", "", gsub("process", "", list.files("functions")[grepl("process", list.files("functions"))]))
 
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
@@ -105,7 +105,7 @@ processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x)
   if (datasetType == "PO") {
     dataset$individualCount <- 1
   }
-  datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year")]
+  datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType")]
   datasetShort$dsName <- datasetName
   datasetShort
 })
@@ -154,5 +154,4 @@ saveRDS(redListRichness$richness, paste0(folderName, "/redListRichnessData.RDS")
 
 # To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
 rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
-
 

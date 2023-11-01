@@ -75,7 +75,7 @@ for (i in 1:length(names(workflowList))) {
 
 # Create list to save data in for easy access for visualisations
 outputList <- list()
-source("pipeline/models/utils/biodiversityMetricEstimation.R")
+source("pipeline/models/utils/modelResultsCompilation.R")
 
 # Save visualisation data with species data
 saveRDS(outputList, file=paste0(folderName, "/outputData.RDS"))

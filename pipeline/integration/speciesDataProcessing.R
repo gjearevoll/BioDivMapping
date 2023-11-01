@@ -141,13 +141,14 @@ saveRDS(redListSpecies, paste0(folderName, "/redList.RDS"))
 blankRaster <- project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]],
                        "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs")
 allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, blankRaster)
-redListRichness <- speciesRichnessConverter(regionGeometry, processedRedListPresenceData, blankRaster)
-
 writeRaster(allSpeciesRichness$rasters, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
-writeRaster(redListRichness$rasters, "visualisation/hotspotMaps/data/redListRichnessData.tiff", overwrite=TRUE)
 saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))
-saveRDS(redListRichness$richness, paste0(folderName, "/redListRichnessData.RDS"))
 
+if(nrow(processedRedListPresenceData) > 0){
+  redListRichness <- speciesRichnessConverter(regionGeometry, processedRedListPresenceData, blankRaster)
+  writeRaster(redListRichness$rasters, "visualisation/hotspotMaps/data/redListRichnessData.tiff", overwrite=TRUE)
+  saveRDS(redListRichness$richness, paste0(folderName, "/redListRichnessData.RDS"))
+}
 
 ###----------------------###
 ### 7. Produce metadata ####

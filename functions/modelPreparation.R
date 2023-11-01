@@ -1,5 +1,5 @@
 
-#' @title \emph{getDownloadKey}: Get a download key for a scheduled GBIF download
+#' @title \emph{modelPreparation}: Get a download key for a scheduled GBIF download
 
 #' @description This function initiates a download of a given group of taxa through GBIF.
 #'
@@ -39,7 +39,7 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeom
     
     
     # Get species list
-    speciesList <- lapplA download key for a GBIF download.y(focalSpeciesDataRefined, FUN = function(x) {
+    speciesList <- lapply(focalSpeciesDataRefined, FUN = function(x) {
       unique(x$acceptedScientificName)
     })
     speciesList <- unique(do.call(c, speciesList))

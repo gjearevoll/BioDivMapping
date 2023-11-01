@@ -22,12 +22,13 @@ sapply(list.files("functions", full.names = TRUE), source)
 # Run script to define geographical region and resolution we are working with 
 #extentCoords <- c(4.641979, 57.97976, 31.05787, 71.18488)
 #names(extentCoords) <- c("north", "south", "east", "west")
-if (!exists("level")) {level <- "county"}  # level can be country, county, municipality, or points (examples of points given below)
-if (!exists("region")) {region <- "50"}
+if (!exists("level")) {level <- "country"}  # level can be country, county, municipality, or points (examples of points given below)
+if (!exists("region")) {region <- "Norway"}
 regionGeometry <- defineRegion(level, region)
 
 # Define initial species list.
 focalTaxon <- read.csv("data/external/focalTaxa.csv")
+focalTaxon <- focalTaxon[focalTaxon$include,]
 focalTaxa <- focalTaxon$taxa
 
 # Initialise folders for storage of all run data
@@ -51,6 +52,10 @@ redList$taxa <- focalTaxon$taxa[match(redList$taxaKey, focalTaxon$key)]
 redList <- redList[!is.na(redList$taxa),]
 redList$GBIFName <- sapply(redList$species, FUN = findGBIFName)
 
+# Import metadata information
+if ("metadataSummary.csv" %in% list.files("data/external")) {
+  dataTypes <- read.csv("data/external/metadataSummary.csv")
+} 
 
 ###-----------------###
 ### 2. GBIF Import ####
@@ -97,16 +102,14 @@ metadataList <- metadataPrep(occurrences, metaSummary = TRUE)
 
 # Import dataset type based on dataset name. If no dataset information is provided, all data will be downloaded and assumed to
 # be presence only data
-
+GBIFImportCompiled <- merge(occurrences, metadataList$metadata, all.x=TRUE, by = "datasetKey")
 
 # Import relevant datasets
 if ("metadataSummary.csv" %in% list.files("data/external")) {
-  dataTypes <- read.csv("data/external/metadataSummary.csv")
   GBIFImportCompiled$dataType <- dataTypes$dataType[match(GBIFImportCompiled$datasetKey, dataTypes$datasetKey)]
 } else {
   GBIFImportCompiled$dataType <- "PO"  
 }
-GBIFImportCompiled <- merge(occurrences, metadataList$metadata, all.x=TRUE, by = "datasetKey")
 GBIFImportCompiled <- GBIFImportCompiled[!is.na(GBIFImportCompiled$dataType),]
 
 # Narrow down to known data types and split into data frames
@@ -126,7 +129,7 @@ names(GBIFLists) <- unique(GBIFImportCompiled$name)
 ### 4. ANO Import ####
 ###----------------###
 
-GBIFLists[["ANOData"]] <- importANOData(occurrences, tempFolderName, regionGeometry, focalTaxon)
+GBIFLists[["ANOData"]] <- importANOData(tempFolderName, regionGeometry, focalTaxon)
 
 ###--------------------###
 ### 5. Dataset Upload ####

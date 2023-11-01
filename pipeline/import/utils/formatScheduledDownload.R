@@ -23,7 +23,9 @@ occurrences$taxonKeyProject <- ifelse(occurrences$kingdomKey %in% focalTaxon$key
                                       ifelse(occurrences$phylumKey %in% focalTaxon$key, occurrences$phylumKey,
                                              ifelse(occurrences$classKey %in% focalTaxon$key, occurrences$classKey,
                                                     ifelse(occurrences$orderKey %in% focalTaxon$key, occurrences$orderKey,
-                                                           ifelse(occurrences$familyKey %in% focalTaxon$key, occurrences$familyKey, NA)))))
+                                                           ifelse(occurrences$familyKey %in% focalTaxon$key, occurrences$familyKey,
+                                                                  ifelse(occurrences$familyKey %in% focalTaxon$key, occurrences$genusKey,
+                                                                         ifelse(occurrences$familyKey %in% focalTaxon$key, occurrences$speciesKey, NA)))))))
 
 # Add taxa and reduce to relevant columns
 occurrences$taxa <- focalTaxon$taxa[match(occurrences$taxonKeyProject, focalTaxon$key)]

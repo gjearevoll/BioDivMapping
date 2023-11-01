@@ -15,8 +15,6 @@ library(intSDM)
 library(rgbif)
 library(terra)
 
-externalImport <- FALSE
-
 # Initialise folders for storage of all run data
 if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
@@ -28,49 +26,23 @@ if (!file.exists(modelFolderName)) {
   dir.create(modelFolderName)
 }
 
+# Import local functions
+sapply(list.files("functions", full.names = TRUE), source)
+
 # Import species list
-focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
-focalSpecies <- focalSpecies[focalSpecies$selected,]
-focalTaxa <- unique(focalSpecies$taxonomicGroup)
+focalTaxon <- read.csv("data/external/focalTaxa.csv")
+redList <- readRDS(paste0(folderName, "/redList.RDS"))
+redListFull <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))[["redList"]]
 
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
-# environmentalDataList <- readRDS(paste0(tempFolderName, "/environmentalDataImported.RDS"))
 environmentalDataList <- rast(paste0(folderName, "/environmentalDataImported.tiff"))
-
-if (externalImport == TRUE) {
-  
-  # When importing externally we need to take steps to transform this back into a series of nested lists
-  targetDatabase <- "species_occurrences"
-  source("utils/initiateWallaceConnection.R")
-  allSpeciesData <- dbReadTable(con, "processed_species_data")
-  
-  # Now convert data into nested lists
-  allSpeciesGroups <- unique(allSpeciesData$taxa)
-  speciesData <- lapply(allSpeciesGroups, FUN = function(x) {
-    speciesSubset <- allSpeciesData[allSpeciesData$taxa == x,]
-    allDatasets <- unique(speciesSubset$datasetName)
-    speciesByDataset <- lapply(allDatasets, FUN = function(y) {
-      dataSubset <- speciesSubset[speciesSubset$datasetName == y,]
-      geometrisedDataSubset <- st_as_sf(dataSubset, coords = c("decimalLongitude", "decimalLatitude"))
-      st_crs(geometrisedDataSubset) <- st_crs(regionGeometry)
-      geometrisedDataSubset
-    })
-    names(speciesByDataset) <- allDatasets
-    speciesByDataset
-  })
-  names(speciesData) <- allSpeciesGroups
-  
-} else {
-  speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
-}
-
-# Import local functions
-sapply(list.files("functions/models", full.names = TRUE), source)
+speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 
 # Prepare models
-workflowList <- modelPreparation(focalSpecies, regionGeometry, modelFolderName, environmentalDataList)
-
+workflowList <- modelPreparation(focalTaxon$taxa, speciesData, redList$validSpecies, 
+                                 regionGeometry, modelFolderName, environmentalDataList)
+focalTaxaRun <- names(workflowList)
 
 ###----------------###
 ### 2. Run models ####
@@ -79,10 +51,10 @@ workflowList <- modelPreparation(focalSpecies, regionGeometry, modelFolderName, 
 print("Starting model run.")
 
 # Begin running different species groups
-for (i in 1:length(focalTaxa)) {
+for (i in 1:length(names(workflowList))) {
   
   # Define species group to create
-  focalGroup <- focalTaxa[i]
+  focalGroup <- names(workflowList)[i]
   workflow <- workflowList[[focalGroup]]
 
   # Add model characteristics (mesh, priors, output)
@@ -103,8 +75,7 @@ for (i in 1:length(focalTaxa)) {
 
 # Create list to save data in for easy access for visualisations
 outputList <- list()
-source("pipeline/models/utils/biodiversityMetricEstimation.R")
-
+source("pipeline/models/utils/modelResultsCompilation.R")
 
 # Save visualisation data with species data
 saveRDS(outputList, file=paste0(folderName, "/outputData.RDS"))

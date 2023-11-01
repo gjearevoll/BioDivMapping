@@ -19,22 +19,24 @@ if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
 }
 
-# Import species list
-focalSpecies <- read.csv("data/external/focalSpecies.csv", header = T)
-focalSpecies <- focalSpecies[focalSpecies$selected,]
+# Import taxa list
+focalTaxon <- read.csv("data/external/focalTaxa.csv")
+focalTaxon <- focalTaxon[focalTaxon$include,]
 
 # Import datasets
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 speciesDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))
 speciesData <- speciesDataList[["species"]]
+redList <- speciesDataList[["redList"]]
 metadata <- speciesDataList$metadata$metadata
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 
 # Get list of processing util scripts
-processingScripts <- gsub(".R", "", gsub("process", "", list.files("functions/integration")))
+processingScripts <- gsub(".R", "", gsub("process", "", list.files("functions")[grepl("process", list.files("functions"))]))
+
 # Import local functions
-sapply(list.files("functions/integration", full.names = TRUE), source)
+sapply(list.files("functions", full.names = TRUE), source)
 
 ###----------------###
 ### 2. Processing ####
@@ -68,7 +70,7 @@ for (ds in 1:length(speciesData)) {
     tryCatch(
       {
         newDataset <- NULL
-        newDataset <- presenceAbsenceConversion(focalEndpoint, tempFolderName, datasetName, focalSpecies, regionGeometry)
+        newDataset <- presenceAbsenceConversion(focalEndpoint, tempFolderName, datasetName, focalData, regionGeometry, focalTaxon)
       },
       error=function(e) {
         message(paste0('An error occurred and dataset ', datasetName, ' was not produced.'))
@@ -78,11 +80,12 @@ for (ds in 1:length(speciesData)) {
   # 3. Doesn't satisfy the other two, which means it must be presence only 
     
     # No need to do anything to presence only data (yet) except add individualCount column
-    newDataset <- focalData[,c("simpleScientificName", "geometry", "dataType", "taxa", "year")]
+    newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year")]
   }
   processedData[[ds]] <- newDataset
   namesProcessedData[ds] <- datasetName
 }
+
 names(processedData) <- namesProcessedData
 
 # Save for use in model construction
@@ -90,12 +93,29 @@ processedData <- processedData[lapply(processedData,length)>0]
 saveRDS(processedData, paste0(folderName, "/speciesDataProcessed.RDS"))
 saveRDS(processedData, "visualisation/hotspotMaps/data/processedDataList.RDS")
 
-###----------------------###
-### 3. Produce metadata ####
-###----------------------###
 
-# To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
-rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
+###--------------------------------###
+### 3. COmpile into one dataframe ####
+###--------------------------------###
+
+# Edit data frames to have the same number of columns
+processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x) {
+  dataset <- processedData[[x]]
+  datasetName <- names(processedData)[x]
+  datasetType <- unique(dataset$dataType)
+  if (datasetType == "PO") {
+    dataset$individualCount <- 1
+  }
+  datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType")]
+  datasetShort$dsName <- datasetName
+  datasetShort
+})
+
+# Remove absences, combine into one data frame and add date accessed
+processedDataCompiled <- do.call(rbind, processedDataForCompilation)
+processedPresenceData <- processedDataCompiled[processedDataCompiled$individualCount > 0,]
+processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
+
 
 ###-----------------------###
 ### 4. Upload to Wallace ####
@@ -105,10 +125,35 @@ if (uploadToWallace == TRUE) {
   source("pipeline/integration/uploadToWallace.R")
 }
 
+###----------------------------###
+### 5. Produce red list check ####
+###----------------------------###
+
+# Here we see which species have sufficient presence/count data to actually run an individual species model
+redListSpecies <- filterByRedList(redList$GBIFName, processedPresenceData, 5)
+saveRDS(redListSpecies, paste0(folderName, "/redList.RDS"))
+
 ###-----------------------------------###
-### 5. Produce species richness data ####
+### 6. Produce species richness data ####
 ###-----------------------------------###
 
-source("pipeline/integration/utils/speciesRichnessConversion.R")
-writeRaster(taxaRasters, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
-saveRDS(richnessSF, paste0(folderName, "/speciesRichnessData.RDS"))
+# Provide empty raster
+blankRaster <- project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]],
+                       "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs")
+allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, blankRaster)
+writeRaster(allSpeciesRichness$rasters, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
+saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))
+
+if(nrow(processedRedListPresenceData) > 0){
+  redListRichness <- speciesRichnessConverter(regionGeometry, processedRedListPresenceData, blankRaster)
+  writeRaster(redListRichness$rasters, "visualisation/hotspotMaps/data/redListRichnessData.tiff", overwrite=TRUE)
+  saveRDS(redListRichness$richness, paste0(folderName, "/redListRichnessData.RDS"))
+}
+
+###----------------------###
+### 7. Produce metadata ####
+###----------------------###
+
+# To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
+rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
+

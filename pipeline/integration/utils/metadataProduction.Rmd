@@ -8,11 +8,13 @@ library(dplyr)
 library(ggplot2)
 library(sf)
 library(inlabru)
+library(gridExtra)
+library(tidyterra)
 
 
 # Combine into one data frame and add date accessed
-processedDataCompiled <- do.call(rbind, processedDataForCompilation)
 processedDataCompiled$dateAccessed <- Sys.Date()
+processedDataCompiled$redListStatus <- ifelse(processedDataCompiled$acceptedScientificName %in% redListSpecies$validSpecies, TRUE, FALSE)
 
 # Turn geometry column to latitude and longitude
 processedDataDF <- st_drop_geometry(processedDataCompiled)
@@ -54,22 +56,31 @@ In addition to the above, data was downloaded with a maximum uncertainty regardi
 The following shows total number of species per taxa and per dataset from the initial download from GBIF and ANO.
 Note that only the top 10 datasets are shown. A full list of observations per dataset per taxa as well as observations per species can be found in the appendices.
 
-``` {r, dataTables, echo = FALSE}
+``` {r, dataTables, echo = FALSE, message = FALSE}
 # Get number of species per taxa
 taxaTable <- processedDataDF %>%
-  dplyr::select(taxa, acceptedScientificName) %>%
+  dplyr::select(taxa, acceptedScientificName, redListStatus) %>%
   distinct() %>%
+  group_by(taxa, redListStatus) %>%
+  tally()
+taxaTable2 <- taxaTable %>%
   group_by(taxa) %>%
-  tally(name = "Total species")
+  summarise(species = sum(n),
+            redListedSpecies = sum(n[redListStatus == TRUE]))
+
 datasetTable <- processedDataDF %>%
-  group_by(dsName) %>%
-  tally(name = "Observations") %>%
-  arrange(-Observations) %>%
-  slice(1:10)
+  group_by(dsName, dataType, redListStatus) %>%
+  tally()
+datasetTable2 <- datasetTable %>%
+  group_by(dsName, dataType) %>%
+  summarise(observations = sum(n),
+            redListedObservations = sum(n[redListStatus == TRUE])) %>%
+  arrange(-observations)
+
 
 knitr::kable(
-  list(taxaTable
-       ,datasetTable
+  list(taxaTable2
+       ,datasetTable2[1:10,]
   ), 
   valign = 't'
 )
@@ -78,11 +89,20 @@ knitr::kable(
 
 The following gives species richness for observations across the surveyed region by taxa.
 
-``` {r, maps, echo = FALSE, message = FALSE}
-regionGeometry <- readRDS(paste0("../../../", folderName, "/regionGeometry.RDS"))
+``` {r, maps, echo = FALSE, message = FALSE, fig.fullwidth=TRUE}
+plotList <- list()
 for (i in 1:length(focalTaxa)) {
-  plot(allSpeciesRichness$richness[[i]])
+  speciesRichnessAggregated <- aggregate(allSpeciesRichness$rasters[[focalTaxa[i]]], fact = 4)
+  
+  speciesRichnessPlot <- ggplot(regionGeometry) +
+    geom_spatraster(data = speciesRichnessAggregated) +
+    geom_sf(fill = "NA") +
+    scale_fill_gradient(low = 'white', high = 'red', na.value=NA) +
+    theme_bw() +
+    ggtitle(focalTaxa[i])
+  print(speciesRichnessPlot)
 }
+
 
 ```
 
@@ -97,15 +117,26 @@ The tables below give further information on the observations used for our pipel
 
 
 ``` {r, appendix, echo = FALSE}
-
 datasetTaxaTable <- processedDataDF %>%
   group_by(taxa, dsName) %>%
   tally(name = "Observations") %>%
   arrange(taxa, -Observations)
+
+datatypeTable <- processedDataDF %>%
+  group_by(taxa, dataType) %>%
+  tally(name = "Observations") %>%
+  arrange(taxa, -Observations)
+
 knitr::kable(
   datasetTaxaTable, 
   valign = 't',
   caption = 'Total numbers of observations used in pipeline run for each dataset by taxa.'
+)
+
+knitr::kable(
+  datatypeTable, 
+  valign = 't',
+  caption = 'Total numbers of observations used in pipeline run for each data type by taxa.'
 )
 
 ```

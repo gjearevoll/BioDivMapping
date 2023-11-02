@@ -6,6 +6,10 @@
 # they are ready for use in our integrated SDMs.
 
 library(dplyr)
+library(stringr)
+library(sf)
+library(rgdal)
+library(terra)
 
 ###-----------------###
 ### 1. Preparation ####
@@ -32,9 +36,6 @@ redList <- speciesDataList[["redList"]]
 metadata <- speciesDataList$metadata$metadata
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 
-# Get list of processing util scripts
-processingScripts <- gsub(".R", "", gsub("process", "", list.files("functions")[grepl("process", list.files("functions"))]))
-
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
 
@@ -57,31 +58,12 @@ for (ds in seq_along(speciesData)) {
   # If the dataset is empty, skip it
   if (nrow(focalData) == 0) next
   
-  dataType <- unique(focalData$dataType)
+  dataType <- unique(focalData$processing)
   datasetName <- names(speciesData)[ds]
+  newDataset <- NULL
   
-  # 1. First condition - is there a pre-set script for this dataset?
-  if (gsub(" ","",datasetName) %in% processingScripts) {
-    source("pipeline/integration/utils/defineProcessing.R")
-  } else if (dataType == "PA") { 
-  # 2. Second condition - is it presence-absence?
-    # Here we apply our conversion script for presence/absence data - tryCatch is for if any links to endpoints are broken
-    focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
-    tryCatch(
-      {
-        newDataset <- NULL
-        newDataset <- presenceAbsenceConversion(focalEndpoint, tempFolderName, datasetName, focalData, regionGeometry, focalTaxon)
-      },
-      error=function(e) {
-        message(paste0('An error occurred and dataset ', datasetName, ' was not produced.'))
-      }
-    )
-  } else {
-  # 3. Doesn't satisfy the other two, which means it must be presence only 
-    
-    # No need to do anything to presence only data (yet) except add individualCount column
-    newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year")]
-  }
+  source("pipeline/integration/utils/defineProcessing.R")
+  
   newDataset$simpleScientificName <- redList$species[match(newDataset$acceptedScientificName, redList$GBIFName)]
   processedData[[ds]] <- newDataset
   namesProcessedData[ds] <- datasetName

@@ -51,7 +51,7 @@ sapply(list.files("functions", full.names = TRUE), source)
 # Start a processed data list
 processedData <- list()
 namesProcessedData <- c()
-for (ds in 1:length(speciesData)) {
+for (ds in seq_along(speciesData)) {
   focalData <- speciesData[[ds]]
   
   # If the dataset is empty, skip it

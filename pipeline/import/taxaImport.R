@@ -106,11 +106,11 @@ GBIFImportCompiled <- merge(occurrences, metadataList$metadata, all.x=TRUE, by =
 
 # Import relevant datasets
 if ("metadataSummary.csv" %in% list.files("data/external")) {
-  GBIFImportCompiled$dataType <- dataTypes$dataType[match(GBIFImportCompiled$datasetKey, dataTypes$datasetKey)]
+  GBIFImportCompiled$processing <- dataTypes$processing[match(GBIFImportCompiled$datasetKey, dataTypes$datasetKey)]
 } else {
-  GBIFImportCompiled$dataType <- "PO"  
+  GBIFImportCompiled$processing <- "presenceOnly"  
 }
-GBIFImportCompiled <- GBIFImportCompiled[!is.na(GBIFImportCompiled$dataType),]
+GBIFImportCompiled <- GBIFImportCompiled[!is.na(GBIFImportCompiled$processing),]
 
 # Narrow down to known data types and split into data frames
 projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"

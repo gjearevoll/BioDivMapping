@@ -11,7 +11,7 @@ library(plotKML)
 
 
 # Begin compilation
-for (i in 1:length(focalTaxaRun)) {
+for (i in seq_along(focalTaxaRun)) {
   
   # Define species group folder
   focalGroup <- focalTaxaRun[i]
@@ -20,18 +20,17 @@ for (i in 1:length(focalTaxaRun)) {
   # Print warning if there are any species listed for which we don't have a model
   speciesRun <- gsub("_", " ", gsub(paste0(groupFolderLocation, "/"), "", list.dirs(path = groupFolderLocation, recursive = FALSE)))
   speciesStarted <- redListFull$GBIFName[redListFull$taxa == focalGroup]
-  speciesPrepped <- redList$validSpecies[redList$validSpecies %in% speciesStarted]
+  speciesPrepped <- redListFull$species[redListFull$GBIFName %in% redList$validSpecies[redList$validSpecies %in% speciesStarted]]
   speciesMissing <- speciesPrepped[!(speciesPrepped %in% speciesRun)]
   if (length(speciesMissing) > 0) {
     warning(paste0("The following species were not calculated but were in your original list: ", paste0(c(speciesMissing), collapse = ", ")))
   }
   
   # Extract individual species intensities
-  speciesIntensities <- lapply(1:length(speciesRun), FUN = function(x) {
-    dataset <- readRDS(paste0(list.dirs(path = groupFolderLocation, recursive = FALSE)[x], "/Predictions.rds"))
-    dataset
-  })
-  names(speciesIntensities) <- speciesRun
+  predictions <- list.files(groupFolderLocation, 
+                            pattern = ".rds", 
+                            full.names = T, recursive = T)
+  speciesIntensities <- lapply(predictions, readRDS)
   
   # Scale all columns for each species between 0 and 1
   speciesIntensitiesScaled <- lapply(1:length(speciesIntensities), FUN = function(x) {
@@ -39,8 +38,7 @@ for (i in 1:length(focalTaxaRun)) {
     intensityVector <- intensityList$predictions$mean
     intensityScaled <- (intensityVector - min(intensityVector))/(max(intensityVector)-min(intensityVector))
     intensityList$predictions$mean <- intensityScaled
-    reprojectedIntensity <- reproject(intensityList$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
-    # reprojectedIntensity <- sf::st_transform(intensityList$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+    reprojectedIntensity <- suppressMessages(reproject(intensityList$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
     reprojectedIntensity
   })
   

@@ -51,7 +51,7 @@ sapply(list.files("functions", full.names = TRUE), source)
 # Start a processed data list
 processedData <- list()
 namesProcessedData <- c()
-for (ds in 1:length(speciesData)) {
+for (ds in seq_along(speciesData)) {
   focalData <- speciesData[[ds]]
   
   # If the dataset is empty, skip it
@@ -82,6 +82,7 @@ for (ds in 1:length(speciesData)) {
     # No need to do anything to presence only data (yet) except add individualCount column
     newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year")]
   }
+  newDataset$simpleScientificName <- redList$species[match(newDataset$acceptedScientificName, redList$GBIFName)]
   processedData[[ds]] <- newDataset
   namesProcessedData[ds] <- datasetName
 }

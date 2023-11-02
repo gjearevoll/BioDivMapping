@@ -40,7 +40,7 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeom
     
     # Get species list
     speciesList <- lapply(focalSpeciesDataRefined, FUN = function(x) {
-      unique(x$acceptedScientificName)
+      unique(x$simpleScientificName)
     })
     speciesList <- unique(do.call(c, speciesList))
     
@@ -65,7 +65,7 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeom
                              datasetType = dataType,
                              datasetName = datasetName,
                              responseName = 'individualCount',
-                             speciesName = 'acceptedScientificName')
+                             speciesName = 'simpleScientificName')
     }
     
     # Add environmental characteristics

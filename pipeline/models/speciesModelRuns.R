@@ -31,6 +31,7 @@ sapply(list.files("functions", full.names = TRUE), source)
 
 # Import species list
 focalTaxon <- read.csv("data/external/focalTaxa.csv")
+focalTaxon <- focalTaxon[focalTaxon$include,]
 redList <- readRDS(paste0(folderName, "/redList.RDS"))
 redListFull <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))[["redList"]]
 

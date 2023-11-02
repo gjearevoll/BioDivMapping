@@ -9,10 +9,12 @@ library(ggplot2)
 library(sf)
 library(inlabru)
 library(gridExtra)
+library(tidyterra)
 
 
 # Combine into one data frame and add date accessed
 processedDataCompiled$dateAccessed <- Sys.Date()
+processedDataCompiled$redListStatus <- ifelse(processedDataCompiled$acceptedScientificName %in% redListSpecies$validSpecies, TRUE, FALSE)
 
 # Turn geometry column to latitude and longitude
 processedDataDF <- st_drop_geometry(processedDataCompiled)

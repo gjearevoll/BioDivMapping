@@ -73,7 +73,7 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon,
     # Add taxa and accepted scientific name
     ANOSpeciesTable$acceptedScientificName <- GBIFNameTable$GBIFName[match(ANOSpeciesTable$speciesName, GBIFNameTable$speciesName)]
     ANOSpeciesTable$taxa <- taxaLegend$taxa[match(ANOSpeciesTable$speciesName, taxaLegend$speciesName)]
-    ANOSpeciesTable$dataType <- "PA"
+    ANOSpeciesTable$processing <- "ANO"
     
     # Add geometry data
     ANOData <- merge(ANOSpeciesTable, ANOPoints[,c("GlobalID")], 

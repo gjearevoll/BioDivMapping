@@ -70,8 +70,8 @@ if (scheduledDownload == TRUE) {
   if (!file.exists(paste0(folderName, "/downloadKey.RDS"))) {
     downloadKey <- getDownloadKey(focalTaxon$key, regionGeometry)
     saveRDS(downloadKey, file = paste0(folderName, "/downloadKey.RDS"))
-    stop(paste0("Download key has been created and your download is being prepared. View the download at ", downloadKey$doi,
-                ". Come back and start the download in 5-30 minutes."))
+    stop(paste0("Download key has been created and your download is being prepared. View the download at https://www.gbif.org/occurrence/download/", 
+                downloadKey$key, ". Come back and start the download in 5-30 minutes."))
   } else {
     downloadKey <- readRDS(paste0(folderName, "/downloadKey.RDS"))
   }

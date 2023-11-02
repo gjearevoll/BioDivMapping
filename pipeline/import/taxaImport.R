@@ -19,18 +19,6 @@ sapply(list.files("functions", full.names = TRUE), source)
 ### 1. Preparation ####
 ###-----------------###
 
-# Run script to define geographical region and resolution we are working with 
-#extentCoords <- c(4.641979, 57.97976, 31.05787, 71.18488)
-#names(extentCoords) <- c("north", "south", "east", "west")
-if (!exists("level")) {level <- "country"}  # level can be country, county, municipality, or points (examples of points given below)
-if (!exists("region")) {region <- "Norway"}
-regionGeometry <- defineRegion(level, region)
-
-# Define initial species list.
-focalTaxon <- read.csv("data/external/focalTaxa.csv")
-focalTaxon <- focalTaxon[focalTaxon$include,]
-focalTaxa <- focalTaxon$taxa
-
 # Initialise folders for storage of all run data
 if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
@@ -40,6 +28,24 @@ tempFolderName <- paste0(folderName, "/temp")
 if (!file.exists(folderName)) {
   dir.create(folderName)
   dir.create(tempFolderName)
+}
+
+# Run script to define geographical region and resolution we are working with 
+#extentCoords <- c(4.641979, 57.97976, 31.05787, 71.18488)
+#names(extentCoords) <- c("north", "south", "east", "west")
+if (!exists("level")) {level <- "country"}  # level can be country, county, municipality, or points (examples of points given below)
+if (!exists("region")) {region <- "Norway"}
+regionGeometry <- defineRegion(level, region)
+
+# Define initial species list.
+if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
+  focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
+} else {
+  focalTaxon <- read.csv("data/external/focalTaxa.csv", header = T)
+  focalTaxon <- focalTaxon[focalTaxon$include,]
+  focalTaxa <- focalTaxon$taxa
+  # save for reference
+  write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 }
 
 # Import red list

@@ -2,4 +2,4 @@ taxa,key,level,scientificName,include
 spiders,367,class,Arachnida,TRUE
 scorpionflies,1000,order,Mecoptera,FALSE
 beetles,1470,order,Coleoptera,FALSE
-poaSpecies,3073,family,Poaceae,FALSE
+poaSpecies,3073,family,Poaceae,TRUE

@@ -1,5 +1,3 @@
-"taxa","key","level","scientificName"
-"spiders",367,"class","Arachnida"
-"scorpionflies",1000,"order","Mecoptera"
-"beetles",1470,"order","Coleoptera"
-"poaSpecies",3073,"family","Poaceae"
+"taxa","key","level","scientificName","include"
+"spiders",367,"class","Arachnida",TRUE
+"poaSpecies",3073,"family","Poaceae",TRUE

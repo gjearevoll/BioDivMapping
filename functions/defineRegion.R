@@ -14,18 +14,23 @@
 #'
 
 defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, extentCoords = NA) {
-  library(csmaps)
   # Now assign a region geometry based on the Norwegian political maps found in the package csmaps.
   if (level == "municipality") {
+    library(csmaps)
     regionCode <- paste0("municip_nor", region)
-    regionGeometry <- nor_municip_map_b2020_default_sf$geometry[nor_municip_map_b2020_default_sf$location_code == regionCode]
+    regionGeometry <- nor_municip_map_b2020_default_sf$geometry[nor_municip_map_b2020_default_sf$location_code %in% regionCode]
   } else if (level == "county") {
+    library(csmaps)
     regionCode <- paste0("county_nor", region)
-    regionGeometry <- nor_county_map_b2020_default_sf$geometry[nor_county_map_b2020_default_sf$location_code == regionCode]
+    regionGeometry <- nor_county_map_b2020_default_sf$geometry[nor_county_map_b2020_default_sf$location_code %in% regionCode]
   } else if (level == "country") {
-    world <- giscoR::gisco_get_countries()
-    country <- world[world$NAME_ENGL == region,]
-    regionGeometry <- st_transform(country$geometry,crs = "+proj=longlat +datum=WGS84 +no_defs")
+    library(rnaturalearth)
+    regionGeometry <- regionGeometry <- ne_countries("large", type = "map_units", geounit = region, returnclass = "sf")
+    regionGeometry <- st_as_sfc(regionGeometry)
+  } else if (level == "continent") {
+    library(rnaturalearth)
+    regionGeometry <- ne_countries("large", continent = region, returnclass = "sf")
+    regionGeometry <- st_as_sfc(regionGeometry)
   } else {
       ## create a matrix of coordinates that also 'close' the polygon
       res <- matrix(c(extentCoords['north'], extentCoords['west'],
@@ -46,6 +51,9 @@ defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, ext
   
   # Align project coordinates with the rest of our polygons.
   regionGeometry <- st_transform(regionGeometry, crs =  "+proj=longlat +ellps=WGS84")
+  
+  # combine multipolygon into single sf polygon
+  regionGeometry <- st_union(regionGeometry)
   
   return(regionGeometry)
 }

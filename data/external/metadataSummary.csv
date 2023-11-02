@@ -1,37 +1,42 @@
-datasetKey,name,dataType
-b124e1e0-4755-430f-9eab-894f25a9b59c,Norwegian Species Observation Service,PO
-50c9509d-22c7-4a22-a47d-8c48425ef4a7,iNaturalist Research-grade Observations,PO
+datasetKey,name,processing
+b124e1e0-4755-430f-9eab-894f25a9b59c,Norwegian Species Observation Service,presenceOnly
+50c9509d-22c7-4a22-a47d-8c48425ef4a7,iNaturalist Research-grade Observations,presenceOnly
 14d5676a-2c54-4f94-9023-1e8dcd822aa0,Pl@ntNet automatically identified occurrences,NA
 9b6f01f1-9b00-4c39-ae14-6ee552988ce9,Occurrence data from various smaller projects in Norway,NA
-d29d79fd-2dc4-4ef5-89b8-cdf66994de0d,"Vascular plant herbarium TRH, NTNU University Museum",PO
+d29d79fd-2dc4-4ef5-89b8-cdf66994de0d,"Vascular plant herbarium TRH, NTNU University Museum",presenceOnly
 5af4f4e2-9e95-4374-b4f6-b1f2adf357ff,Nature type mapping for the Norwegian Environment Agency 2018,NA
 6db17e9d-47d8-459e-8173-2d32ffa99470,Miljodir_naturtypekartlegging_2017,NA
-09c38deb-8674-446e-8be8-3347f6c094ef,Jordal,PO
-f06ed729-104f-4e51-9db3-dfd9b228a1be,"Vascular plant field notes, NTNU University Museum",PA
-e45c7d91-81c6-4455-86e3-2965a5739b1f,"Vascular Plant Herbarium, Oslo (O) UiO",PO
-38b4c89f-584c-41bb-bd8f-cd1def33e92f,Artportalen (Swedish Species Observation System),PO
+09c38deb-8674-446e-8be8-3347f6c094ef,Jordal,presenceOnly
+f06ed729-104f-4e51-9db3-dfd9b228a1be,"Vascular plant field notes, NTNU University Museum",fieldNotesEvent
+e45c7d91-81c6-4455-86e3-2965a5739b1f,"Vascular Plant Herbarium, Oslo (O) UiO",presenceOnly
+38b4c89f-584c-41bb-bd8f-cd1def33e92f,Artportalen (Swedish Species Observation System),presenceOnly
 7a3679ef-5582-4aaa-81f0-8c2545cafc81,Pl@ntNet observations,NA
 4a832966-48ad-4d83-858c-044705f74cac,NINA Artskart data,NA
 6ac3f774-d9fb-4796-b3e9-92bf6c81c084,naturgucker,NA
-d34ed8a4-d3cb-473c-a11c-79c5fec4d649,"Vascular Plants, Field notes, Oslo (O)",NA
-b629d029-4243-4dce-a384-31864debda48,Overvåking av semi-naturlig eng (ASO),PA
+d34ed8a4-d3cb-473c-a11c-79c5fec4d649,"Vascular Plants, Field notes, Oslo (O)",fieldNotes
+b629d029-4243-4dce-a384-31864debda48,Overvåking av semi-naturlig eng (ASO),NA
 8a863029-f435-446a-821e-275f4f641165,"Observation.org, Nature data from around the World",NA
 f8f35535-8c10-43fc-89dc-eb0843f25394,"Herbarium GB, University of Gothenburg",NA
-4db619a6-9429-4bef-90c9-06cc90c39552,"Vascular Plant Herbarium, UiB",NA
+4db619a6-9429-4bef-90c9-06cc90c39552,"Vascular Plant Herbarium, UiB",presenceOnly
 3cf0df27-6416-46a2-ad5e-7d970e5d1a19,Stabbetorp - Floristiske registreringer 2016,NA
-78c1a71e-abb2-49cf-abc8-efafb981b0e4,"Lichen herbarium TRH, NTNU University Museum",PO
-7948250c-6958-4a29-a670-ed1015b26252,"Lichen herbarium, Oslo (O) UiO",PO
-fb1ecd28-f09e-4747-8bde-0b3d7a6f78d1,"Lichen herbarium, UiB",PO
+78c1a71e-abb2-49cf-abc8-efafb981b0e4,"Lichen herbarium TRH, NTNU University Museum",presenceOnly
+7948250c-6958-4a29-a670-ed1015b26252,"Lichen herbarium, Oslo (O) UiO",presenceOnly
+fb1ecd28-f09e-4747-8bde-0b3d7a6f78d1,"Lichen herbarium, UiB",presenceOnly
 53f2cda4-a2fd-49f0-b3e5-0782c9770e7c,Norwegian specimens stored in Herb. Klepsland (pre 2022),NA
-d74d5b23-922d-40ff-9120-eb742d1d66f6,"Lichen field notes, Oslo (O)",PO
-e4deab67-0998-4140-b573-0ba1f624eb3e,"Fungarium, Oslo (O) UiO",PO
-7eb54e10-fd36-4139-8764-1fd8abc2bd67,"Mycology herbarium TRH, NTNU University Museum",PO
+d74d5b23-922d-40ff-9120-eb742d1d66f6,"Lichen field notes, Oslo (O)",fieldNotes
+e4deab67-0998-4140-b573-0ba1f624eb3e,"Fungarium, Oslo (O) UiO",presenceOnly
+7eb54e10-fd36-4139-8764-1fd8abc2bd67,"Mycology herbarium TRH, NTNU University Museum",presenceOnly
 1939e560-d089-44b5-99fb-3ff15e4d34be,"Notes from the Mycology Herbarium, Oslo (O)",NA
-695de7d9-e608-49fd-8fe2-dafb59810784,"Fungi field notes, Oslo (O)",PO
+695de7d9-e608-49fd-8fe2-dafb59810784,"Fungi field notes, Oslo (O)",fieldNotes
 8904724a-8de2-41cf-848f-e6af7a80a2d3,"Red list project inventory, lichens",NA
-19fe96b0-0cf3-4a2e-90a5-7c1c19ac94ee,National insect monitoring in Norway,PA
-1bec5de3-758c-4ed2-ab13-1597601ad07a,"Terrestrial and limnic invertebrates systematic collection, NTNU University Museum",PO
-346a9b13-5c96-4793-bcd7-d6614950e726,NINA insect database,PO
+19fe96b0-0cf3-4a2e-90a5-7c1c19ac94ee,National insect monitoring in Norway,insectMonitoring
+1bec5de3-758c-4ed2-ab13-1597601ad07a,"Terrestrial and limnic invertebrates systematic collection, NTNU University Museum",presenceOnly
+346a9b13-5c96-4793-bcd7-d6614950e726,NINA insect database,presenceOnly
 f2e389da-39c3-4f21-8d72-b7d574d924a9,Kastikka Floristic Archives (Kastikka Ark),NA
-26f5b360-8770-4d54-9c2d-397798a5e513,"Entomology, Oslo (O) UiO",PO
-2d4d4edb-4a78-4855-909e-56dd4c6dfe38,"Coleoptera, NEF",PO
+26f5b360-8770-4d54-9c2d-397798a5e513,"Entomology, Oslo (O) UiO",presenceOnly
+2d4d4edb-4a78-4855-909e-56dd4c6dfe38,"Coleoptera, NEF",presenceOnly
+0efbb3b3-6473-414a-af91-cdbcbcd8aba1,"Vascular Plants, Field notes, Agder naturmuseum (KMN)",fieldNotes
+2e4cc37b-302e-4f1b-bbbb-1f674ff90e14,Biofokus,presenceOnly
+d0aa984e-c6d3-45ee-8fc0-df1df8f4126b,"Vascular plant herbarium, The Arctic University Museum of Norway (TROM)",presenceOnly
+88ea9eca-96ad-4a5a-8a01-99a4acabe050,"Vascular Plants, Observations, Oslo (O)",presenceOnly
+30bc94f2-50aa-4688-8e87-a8e11d3d69ff,Vascular plant herbarium (KMN) UiA,presenceOnly

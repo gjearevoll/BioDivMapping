@@ -23,6 +23,7 @@ processNationalInsectMonitoring <- function(focalData, endpoint, tempFolderName)
   
   # Read in occurrence and event data
   events <- read.delim(paste0(tempFolderName, "/NationaInsectMonitoring/event.txt"))
+  events <- events[events$coordinateUncertaintyInMeters <= 100,]
   occurrence <- read.delim(paste0(tempFolderName,"/NationaInsectMonitoring/occurrence.txt"))
   
   # There are four levels to this thing. Level 1 events are linked to level 2 by their parent ID and so forth.

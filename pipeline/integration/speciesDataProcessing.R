@@ -82,6 +82,7 @@ for (ds in 1:length(speciesData)) {
     # No need to do anything to presence only data (yet) except add individualCount column
     newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year")]
   }
+  newDataset$simpleScientificName <- redList$species[match(newDataset$acceptedScientificName, redList$GBIFName)]
   processedData[[ds]] <- newDataset
   namesProcessedData[ds] <- datasetName
 }

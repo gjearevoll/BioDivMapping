@@ -16,7 +16,7 @@ occurrences <- read.delim(paste0(tempFolderName, "/GBIFImport/occurrence.txt"))
 
 # Filter down to relevant datasets
 occurrences <- occurrences %>%
-  filter(datasetKey %in% dataTypes$datasetKey[!is.na(dataTypes$dataType)])
+  filter(datasetKey %in% dataTypes$datasetKey[!is.na(dataTypes$processing)])
 
 # Assign a taxon key based on what level of taxonomy the key is valid for
 occurrences$taxonKeyProject <- ifelse(occurrences$kingdomKey %in% focalTaxon$key, occurrences$kingdomKey,

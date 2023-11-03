@@ -28,7 +28,7 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # names(pointsExample) <- c("north", "south", "east", "west")
 
 level <- "county"
-region <- "50"
+region <- c("50") # can be vector of county/municipality codes, countries, continents, etc.
 
 # You also need to define whether or not you want to use a scheduled download. Scheduled downloads produce a DOI,
 # and enable handling of much larger datasets. If you're playing around with a small dataset, you can probably hit 

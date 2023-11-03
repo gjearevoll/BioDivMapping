@@ -57,7 +57,11 @@ newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
 ###--------------------###
 
 # define region with buffer 
-regionGeometry_buffer <- vect(st_buffer(regionGeometry, 20000))
+if(exists("mesh")){
+  regionGeometry_buffer <- vect(st_buffer(st_union(mesh), 20000))
+} else {
+  regionGeometry_buffer <- vect(st_buffer(regionGeometry, 20000))
+}
 
 parameterList <- list()
 

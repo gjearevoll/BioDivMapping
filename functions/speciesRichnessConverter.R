@@ -10,7 +10,7 @@
 #'
 
 speciesRichnessConverter <- function(regionGeometry, presenceData, blankRaster) {
-
+  
   # project regionGeometry to match target raster
   regionGeometry_buffer <- terra::project(vect(st_buffer(regionGeometry, 1)), blankRaster)
   
@@ -22,16 +22,15 @@ speciesRichnessConverter <- function(regionGeometry, presenceData, blankRaster) 
   
   # Stack the rasters for each taxa
   taxaRasters <- lapply(focalTaxa, FUN = function(x) {
-    processedTaxaData <- presenceData[presenceData$taxa == x,]
-    
-    rs1 <- terra::rasterize(processedTaxaData, blankRaster, 
-                            field = "acceptedScientificName",
-                            fun = n_unique)
-    ifel(is.na(rs1), 0, rs1) |>
-      terra::crop(regionGeometry_buffer, snap = "out", mask = TRUE)
+    rs1 <- presenceData[presenceData$taxa == x,] |>
+      terra::rasterize(blankRaster, 
+                       field = "acceptedScientificName",
+                       fun = n_unique)
+    ifel(is.na(rs1), 0, rs1) 
   }) |> 
     setNames(focalTaxa) |> # assign names
-    rast() # combine into multi-layer raster
+    rast() |> # combine into multi-layer raster
+    terra::crop(regionGeometry_buffer, snap = "out", mask = TRUE)  # crop
 
   # convert to sf data.frame
   taxaDF <- lapply(taxaRasters, FUN = function(taxaLayer) {

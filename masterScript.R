@@ -30,6 +30,7 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 level <- "country"
 region <- "Norway"
 
+
 # You also need to define whether or not you want to use a scheduled download. Scheduled downloads produce a DOI,
 # and enable handling of much larger datasets. If you're playing around with a small dataset, you can probably hit 
 # FALSE here.
@@ -39,6 +40,10 @@ source("pipeline/import/taxaImport.R")
 
 # Next we run the environmental import script, which brings in a set of rasters that apply to the region
 # we defined in the last step.
+
+myMesh <- list(cutoff = 11000, max.edge=c(42000, 49000), offset= 80000)
+mesh <- meshTest(myMesh, regionGeometry, print = F) %>% 
+  inla.mesh_to_sf()
 
 source("pipeline/import/environmentalImport.R")
 
@@ -51,7 +56,6 @@ source("pipeline/integration/speciesDataProcessing.R")
 # FAQ page of the shiny app. If you want to try out some potential meshes, you can do so using the
 # util file and editing the default list below.
 
-myMesh <- list(cutoff = 11000, max.edge=c(42000, 49000), offset= 80000)
 meshTest(myMesh, regionGeometry)
 
 # Once you've figured that out, you can start running the models. Remember that this script is the one that's 

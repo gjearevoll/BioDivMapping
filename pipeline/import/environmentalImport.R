@@ -11,6 +11,7 @@ library(raster)
 library(terra)
 library(sf)
 library(fasterize)
+library(digest)  # create hash of raster CRS and projection for saving
 
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
@@ -56,11 +57,15 @@ newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
 ###--------------------###
 
 # define region with buffer 
-regionGeometry_buffer <- vect(st_buffer(regionGeometry, 20000))
+if(exists("mesh")){
+  regionGeometry_buffer <- vect(st_buffer(st_union(mesh), 20000))
+} else {
+  regionGeometry_buffer <- vect(st_buffer(regionGeometry, 20000))
+}
 
 parameterList <- list()
 
-for (parameter in 1:length(selectedParameters)) {
+for (parameter in seq_along(selectedParameters)) {
   focalParameter <- selectedParameters[parameter]
   external <- parameters$external[parameters$parameters == focalParameter]
   
@@ -68,20 +73,61 @@ for (parameter in 1:length(selectedParameters)) {
     rasterisedVersion <- rast(paste0("data/external/environmentalCovariates/",focalParameter, ".tiff"))
   } else {
     dataSource <- parameters$dataSource[parameters$parameters == focalParameter]
-    source(paste0("pipeline/import/utils/defineEnvSource.R"))
+    # check if data has already been downloaded
+    raster_found <- FALSE
+    if(dir.exists(paste0("data/temp/", dataSource))){
+      ## List all files in the directory that match the parameter
+      file_list <- list.files(path = paste0("data/temp/", dataSource), 
+                              pattern = paste0(focalParameter, "_.*\\.tiff$"), 
+                              full.names = TRUE)
+      # Check files
+      for (file in file_list) {
+        rast <- rast(file)
+        if (is.subset(regionGeometry_buffer, rast)) {
+          rasterisedVersion <- rast
+          raster_found <- TRUE
+          cat("Raster encompassing region found and imported successfully!\n")
+          break
+        } 
+      }   
+    } else {
+      dir.create(paste0("data/temp/", dataSource))
+    }
+    if (!raster_found) {
+      # download file
+      source(paste0("pipeline/import/utils/defineEnvSource.R"))
+      # get info to save
+      info <- crs(rasterisedVersion, describe = T)
+      if(!is.na(info$authority)){
+        ext <- ext(rasterisedVersion)
+        info <- sprintf("%s%s_X%s_%s_Y%s_%s",
+                        info$authority, info$code, 
+                        ext[1], ext[2], ext[3], ext[4])
+      } else {
+        info <- digest(list(crs(rasterisedVersion), ext(rasterisedVersion)))
+      }
+      #  Construct the filename and save with raster information
+      file_path <- sprintf("data/temp/%s/%s_%s.tiff",
+                           dataSource,focalParameter, info)
+      x <- rasterisedVersion
+      if(!file.exists(file_path)){
+        writeRaster(x, filename = file_path, overwrite = TRUE)
+      }
+    }
   }
   parameterList[[parameter]] <- rasterisedVersion
 }
 
 
-# Import and correctly project all covariate data selected in the csv file
+# crop each covariate to extent of regionGeometry_buffer
 parametersCropped <- lapply(parameterList, FUN = function(x) {
   scale(
     crop(x,
-         project(regionGeometry_buffer, x), 
+         project(as.polygons(regionGeometry_buffer, extent = T), x), 
          snap = "out", mask = T)
   )
 })
+
 # project all rasters to the one with the highest resolution and combine 
 reference <- which.min(sapply(parametersCropped, res)[1,])
 parametersCropped <- do.call(c, 

@@ -14,38 +14,66 @@
 #'
 
 defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, extentCoords = NA) {
-  library(csmaps)
   # Now assign a region geometry based on the Norwegian political maps found in the package csmaps.
   if (level == "municipality") {
+    library(csmaps)
     regionCode <- paste0("municip_nor", region)
-    regionGeometry <- nor_municip_map_b2020_default_sf$geometry[nor_municip_map_b2020_default_sf$location_code == regionCode]
+    regionGeometry <- nor_municip_map_b2020_default_sf$geometry[nor_municip_map_b2020_default_sf$location_code %in% regionCode]
   } else if (level == "county") {
+    library(csmaps)
     regionCode <- paste0("county_nor", region)
-    regionGeometry <- nor_county_map_b2020_default_sf$geometry[nor_county_map_b2020_default_sf$location_code == regionCode]
+    regionGeometry <- nor_county_map_b2020_default_sf$geometry[nor_county_map_b2020_default_sf$location_code %in% regionCode]
   } else if (level == "country") {
-    world <- giscoR::gisco_get_countries()
-    country <- world[world$NAME_ENGL == region,]
-    regionGeometry <- st_transform(country$geometry,crs = "+proj=longlat +datum=WGS84 +no_defs")
+    regionGeometry <- subset(giscoR::gisco_get_countries(), 
+                             tolower(NAME_ENGL) %in% tolower(region))
+    
+  } else if (level == "continent") {
+    # define "REG" because "region" is column in countrycode::codelist
+    REG <- tolower(region) 
+    
+    codelist <- countrycode::codelist
+    codelistSub <- subset(codelist, tolower(continent) %in% REG | 
+                            tolower(region) %in% REG | 
+                            tolower(region23) %in% REG)
+    countries <- unique(tolower(c(codelistSub$un.name.en, 
+                                  codelistSub$country.name.en, 
+                                  codelistSub$cow.name)))
+    # add antarctica continent as country
+    if("antarctica" %in% tolower(region)){
+      countries <- c(countries, "antarctica")
+    }
+    
+    if(length(countries) == 0){
+      continents <- unique(c(codelist$region, codelist$continent, codelist$region23))
+      stop(cat("Continents must be one of:\n-", paste(sort(continents[!is.na(continents)]), collapse = "\n- ")))
+    }
+    
+    regionGeometry <- subset(giscoR::gisco_get_countries(), 
+                             tolower(NAME_ENGL) %in% countries)
+    
   } else {
-      ## create a matrix of coordinates that also 'close' the polygon
-      res <- matrix(c(extentCoords['north'], extentCoords['west'],
-                      extentCoords['north'], extentCoords['east'],
-                      extentCoords['south'], extentCoords['east'],
-                      extentCoords['south'], extentCoords['west'],
-                      extentCoords['north'], extentCoords['west'])  ## need to close the polygon
-                    , ncol =2, byrow = T
-      )
-      ## create polygon objects
-      regionGeometry <- st_polygon(list(res))
-      rm('res')
-  }
-  
-  if (runBuffer == TRUE) {
-    regionGeometry <- st_buffer(regionGeometry, dist = 1)
+    ## create a matrix of coordinates that also 'close' the polygon
+    res <- matrix(c(extentCoords['north'], extentCoords['west'],
+                    extentCoords['north'], extentCoords['east'],
+                    extentCoords['south'], extentCoords['east'],
+                    extentCoords['south'], extentCoords['west'],
+                    extentCoords['north'], extentCoords['west'])  ## need to close the polygon
+                  , ncol =2, byrow = T
+    )
+    ## create polygon objects
+    regionGeometry <- st_polygon(list(res))
+    rm('res')
   }
   
   # Align project coordinates with the rest of our polygons.
   regionGeometry <- st_transform(regionGeometry, crs =  "+proj=longlat +ellps=WGS84")
+  
+  # combine multipolygon into single sf polygon
+  regionGeometry <- st_union(regionGeometry)
+  
+  if (runBuffer == TRUE) {
+    regionGeometry <- st_buffer(regionGeometry, dist = 1)
+  }
   
   return(regionGeometry)
 }

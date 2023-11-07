@@ -15,7 +15,7 @@
 #' 
 #' 
 #' 
-processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon) {
+processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon) {
   
   
   # Get the relevant endpoint

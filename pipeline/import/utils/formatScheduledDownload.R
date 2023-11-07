@@ -6,13 +6,13 @@
 # relevant species occurrences.
 
 # Download and unzip the file from GBIF
-download.file(url=downloadKey$downloadLink,
-              destfile=paste0(tempFolderName, "/GBIFImport.zip"),
-              quiet=TRUE, mode="wb")
-unzip(paste0(tempFolderName, "/GBIFImport.zip"), exdir = paste0(tempFolderName, "/GBIFImport"))
+downloadGet <- occ_download_get(key=downloadKey$key, path=paste0(tempFolderName), overwrite=TRUE)
+occurrences <- occ_download_import(downloadGet)
 
-# Import the occurrences
-occurrences <- read.delim(paste0(tempFolderName, "/GBIFImport/occurrence.txt"))
+# Reduce to relevant columns immediately to save space
+occurrences <- occurrences[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord",
+                              "year", "datasetKey", "datasetName", "kingdomKey", "phylumKey", "classKey", "orderKey",
+                              "familyKey", "genusKey", "speciesKey")]
 
 # Filter down to relevant datasets
 occurrences <- occurrences %>%
@@ -24,9 +24,8 @@ occurrences$taxonKeyProject <- ifelse(occurrences$kingdomKey %in% focalTaxon$key
                                              ifelse(occurrences$classKey %in% focalTaxon$key, occurrences$classKey,
                                                     ifelse(occurrences$orderKey %in% focalTaxon$key, occurrences$orderKey,
                                                            ifelse(occurrences$familyKey %in% focalTaxon$key, occurrences$familyKey,
-                                                                  ifelse(occurrences$familyKey %in% focalTaxon$key, occurrences$genusKey,
-                                                                         ifelse(occurrences$familyKey %in% focalTaxon$key, occurrences$speciesKey, NA)))))))
+                                                                  ifelse(occurrences$genusKey %in% focalTaxon$key, occurrences$genusKey,
+                                                                         ifelse(occurrences$speciesKey %in% focalTaxon$key, occurrences$speciesKey, NA)))))))
 
 # Add taxa and reduce to relevant columns
 occurrences$taxa <- focalTaxon$taxa[match(occurrences$taxonKeyProject, focalTaxon$key)]
-occurrences$simpleScientificName <- gsub(" ", "_", word(occurrences$acceptedScientificName, 1,2, sep=" "))

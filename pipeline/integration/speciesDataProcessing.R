@@ -99,7 +99,6 @@ processedDataCompiled <- do.call(rbind, processedDataForCompilation)
 processedPresenceData <- processedDataCompiled[processedDataCompiled$individualCount > 0,]
 processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
 
-
 ###-----------------------###
 ### 4. Upload to Wallace ####
 ###-----------------------###
@@ -121,8 +120,8 @@ saveRDS(redListSpecies, paste0(folderName, "/redList.RDS"))
 ###-----------------------------------###
 
 # Provide empty raster
-blankRaster <- project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]],
-                       "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs")
+blankRaster <- terra::project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]],
+                              "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs")
 allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, blankRaster)
 writeRaster(allSpeciesRichness$rasters, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
 saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))

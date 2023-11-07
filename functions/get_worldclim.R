@@ -24,15 +24,26 @@ get_worldclim <- function(coords, var, res = 0.5, buff = 0.1, path = NA) {
   # Convert coordinates
   if("SpatExtent" %in% class(coords)) { # if terra spatial extent
     ext <- coords
-    coords <- {expand.grid(as.vector(coords)[1:2], as.vector(coords)[3:4])} 
+    if(xmin(ext) < -180 | xmax(ext) >180 | ymin(ext) < -90 | ymax(ext) >90){
+      stop("'coords' not in wgs84 lat/long CRS. Please check CRS of 'coords'.")
+    } else {
+      warning("Assuming 'coords' extent is in WGS84 lat/long CRS.")
+    }
+  } else if("SpatRaster" %in% class(coords)) {
+    ext <- coords |> 
+      as.polygons(extent = T) |>
+      terra::project("epsg:4326") |>
+      ext()
+  } else if("SpatVector" %in% class(coords)) {
+    ext <- ext(terra::project(coords, "epsg:4326"))
   } else if("sf" %in% class(coords)){  # if sf simple feature
     # convert 
     coords <- sf_to_df(st_transform(coords, 4326))[,c("x", "y")]
     # define extent 
-    ext <- terra::ext(c(range(coords[,1]), range(coords[,2]))) |>  
-      # add cropping buffer 
-      buffer(portion = buff, lonlat = T)
-  }
+    ext <- terra::ext(c(range(coords[,1]), range(coords[,2]))) 
+  } 
+  # buffer extent
+  ext <- buffer(ext, portion = buff, lonlat = T)
   
   # define raster of worldclim tiles
   r <- terra::rast(vals = 1:72, nrows = 6, ncols = 12, ext = terra::ext(c(-180, 180, -90, 90))) 

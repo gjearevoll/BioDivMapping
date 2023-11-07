@@ -25,8 +25,6 @@ if (dataSource == "geonorge") {
   
 ### 2. worldclim ####  
 } else if (dataSource == "worldclim") {
-  # Set extent for download
-  regionExtent <- ext(regionGeometry_buffer)
   
   print(paste0("Downloading ", focalParameter," from ", dataSource))
   
@@ -45,7 +43,7 @@ if (dataSource == "geonorge") {
   var <- recode_vector[focalParameter]
   
   # download
-  annualStack <- get_worldclim(regionExtent, var, 0.5)
+  annualStack <- get_worldclim(regionGeometry_buffer, var, 0.5)
   
   # average
   rasterisedVersion <- mean(annualStack)

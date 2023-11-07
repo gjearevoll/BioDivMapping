@@ -27,8 +27,8 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # pointsExample <- c(4.641979, 57.97976, 31.05787, 71.18488)
 # names(pointsExample) <- c("north", "south", "east", "west")
 
-level <- "county"
-region <- "50"
+level <- "country"
+region <- "Norway"
 
 # You also need to define whether or not you want to use a scheduled download. Scheduled downloads produce a DOI,
 # and enable handling of much larger datasets. If you're playing around with a small dataset, you can probably hit 

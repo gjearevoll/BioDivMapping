@@ -28,8 +28,8 @@ speciesRichnessConverter <- function(regionGeometry, presenceData, blankRaster) 
                        fun = n_unique)
     ifel(is.na(rs1), 0, rs1) 
   }) |> 
-    setNames(focalTaxa) |> # assign names
     rast() |> # combine into multi-layer raster
+    setNames(focalTaxa) |> # assign names
     terra::crop(regionGeometry_buffer, snap = "out", mask = TRUE)  # crop
 
   # convert to sf data.frame

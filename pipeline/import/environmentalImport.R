@@ -123,7 +123,7 @@ for (parameter in seq_along(selectedParameters)) {
 parametersCropped <- lapply(parameterList, FUN = function(x) {
   scale(
     crop(x,
-         project(as.polygons(regionGeometry_buffer, extent = T), x), 
+         terra::project(as.polygons(regionGeometry_buffer, extent = T), x), 
          snap = "out", mask = T)
   )
 })
@@ -132,7 +132,7 @@ parametersCropped <- lapply(parameterList, FUN = function(x) {
 reference <- which.min(sapply(parametersCropped, res)[1,])
 parametersCropped <- do.call(c, 
                              lapply(parametersCropped, function(x){
-                               project(x, parametersCropped[[reference]])
+                               terra::project(x, parametersCropped[[reference]])
                              }))
 # assign names
 names(parametersCropped) <- selectedParameters

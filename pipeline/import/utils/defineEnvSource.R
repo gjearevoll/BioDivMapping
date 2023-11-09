@@ -52,3 +52,7 @@ if (dataSource == "geonorge") {
 } else if (dataSource == "ssb") {
     rasterisedVersion <- get_ssb(focalParameter, resolution = "250")
 }
+
+### merge with requested download area to make missing data explicit
+rasterisedVersion <- extend(rasterisedVersion, terra::project(regionGeometry_buffer, rasterisedVersion), snap = "out")
+

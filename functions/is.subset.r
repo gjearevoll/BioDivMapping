@@ -36,8 +36,8 @@ is.subset <- function(x, y){
   }
   # calculate area of x and check overlap
   area_x <- sum(st_area(x))
-  # due to rounding, allow for difference of 0.0001 %
+  # due to rounding, allow for difference of 0.01 %
   return(
-    as.numeric(abs((sum(st_area(x)) - sum(st_area(st_intersection(x, y))))/sum(st_area(x)))) < 1e-6
+    as.numeric(abs((sum(st_area(x)) - sum(st_area(st_intersection(x, y))))/sum(st_area(x)))) < 1e-4
   )
 }

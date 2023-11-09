@@ -73,13 +73,22 @@ if ("metadataSummary.csv" %in% list.files("data/external")) {
 if (scheduledDownload == TRUE) {
   
   # Get download key/initialise GBIF download
-  if (!file.exists(paste0(folderName, "/downloadKey.RDS"))) {
-    downloadKey <- getDownloadKey(focalTaxon$key, regionGeometry)
-    saveRDS(downloadKey, file = paste0(folderName, "/downloadKey.RDS"))
-    stop(paste0("Download key has been created and your download is being prepared. View the download at https://www.gbif.org/occurrence/download/", 
-                downloadKey$key, ". Come back and start the download in 5-30 minutes."))
-  } else {
+  if (file.exists(paste0(folderName, "/downloadKey.RDS"))) {
     downloadKey <- readRDS(paste0(folderName, "/downloadKey.RDS"))
+  } else {
+    downloadKey <- getDownloadKey(focalTaxon$key, regionGeometry)
+    if(waitForGbif){
+      message("Download key has been created and will download once it is ready (5-30 minutes). ",
+              "View the download status at https://www.gbif.org/occurrence/download/", 
+              downloadKey)
+      downloadKey <- occ_download_wait(downloadKey, curlopts = list(), quiet = FALSE)
+      saveRDS(downloadKey, file = paste0(folderName, "/downloadKey.RDS"))
+    } else {
+      downloadKey <- occ_download_meta(downloadKey) 
+      saveRDS(downloadKey, file = paste0(folderName, "/downloadKey.RDS"))
+      stop(paste0("Download key has been created and your download is being prepared. View the download at https://www.gbif.org/occurrence/download/",
+                  downloadKey$key, ". Come back and start the download in 5-30 minutes."))
+    }
   }
   
   # Start GBIF Download  

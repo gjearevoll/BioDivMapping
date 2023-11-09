@@ -34,7 +34,6 @@ getDownloadKey <- function(taxa, regionGeometry) {
     pred("geometry", st_as_text(regionGeometry[[1]])),
     pred_lte("coordinateUncertaintyInMeters", 100),
     type = "and"
-  ) %>% 
-    occ_download_meta
+  ) 
   return(download_key)
 }

@@ -77,7 +77,7 @@ if (scheduledDownload == TRUE) {
     downloadKey <- readRDS(paste0(folderName, "/downloadKey.RDS"))
   } else {
     downloadKey <- getDownloadKey(focalTaxon$key, regionGeometry)
-    if(wait_for_gbif){
+    if(waitForGbif){
       message("Download key has been created and will download once it is ready (5-30 minutes). ",
               "View the download status at https://www.gbif.org/occurrence/download/", 
               downloadKey)

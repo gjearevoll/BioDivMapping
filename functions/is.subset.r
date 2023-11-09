@@ -2,22 +2,12 @@
 #'
 #' @param x a `SpatRaster`, `SpatVector`, or `sf` object
 #' @param y a `SpatRaster`, `SpatVector`, or `sf` object
-#' @return TRUE if the extent of x is subset y, otherwise FALSE
+#' @param dfMaxLength maximum length of a line segment. See `sf::st_segmentize()`.
+#' @return TRUE if the x is a subset of y, otherwise FALSE.
 #' @importFrom terra ext
 #' @importFrom sf st_bbox
-is.subset <- function(x, y){ 
-  # Function to get extent for both terra and sf objects
-  vectorize <- function(obj) {
-    if (inherits(obj, "sf")) {
-      return(obj)
-    } else if (inherits(obj, "SpatVector")) {
-      return(st_as_sf(obj))
-    } else if (inherits(obj, "SpatRaster")) {
-      return(st_as_sf(as.polygons(obj, extent = T)))
-    } else {
-      stop("Invalid input: x and y should be either SpatRaster, SpatVector, or sf objects.")
-    }
-  }
+is.subset <- function(x, y, dfMaxLength){ 
+  
   # vectorise
   x <- vectorize(x)
   y <- vectorize(y)
@@ -32,7 +22,9 @@ is.subset <- function(x, y){
     y <- st_transform(y, st_crs(x))
   } else if(st_crs(x) != st_crs(y)) {
     # match projections
-    x <- st_transform(x, st_crs(y))
+    x <- x |> 
+      st_segmentize(dfMaxLength = 10000) |>
+      st_transform(st_crs(y))
   }
   # calculate area of x and check overlap
   area_x <- sum(st_area(x))
@@ -41,3 +33,17 @@ is.subset <- function(x, y){
     as.numeric(abs((sum(st_area(x)) - sum(st_area(st_intersection(x, y))))/sum(st_area(x)))) < 1e-4
   )
 }
+
+# Function to get extent for both terra and sf objects
+vectorize <- function(obj, dfMaxLength) {
+  if (inherits(obj, c("sf", "sfc"))) {
+    return(obj)
+  } else if (inherits(obj, "SpatVector")) {
+    return(st_as_sf(obj))
+  } else if (inherits(obj, "SpatRaster")) {
+    return(st_as_sf(as.polygons(obj, extent = T)))
+  } else {
+    stop("Invalid input: x and y should be either SpatRaster, SpatVector, or sf objects.")
+  }
+}
+

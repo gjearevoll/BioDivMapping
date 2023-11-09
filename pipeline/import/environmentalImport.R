@@ -78,7 +78,7 @@ for (parameter in seq_along(selectedParameters)) {
       # Check files
       for (file in file_list) {
         rast <- rast(file)
-        if (is.subset(regionGeometryBuffer, rast)) {
+        if (isSubset(regionGeometryBuffer, rast)) {
           rasterisedVersion <- rast
           raster_found <- TRUE
           cat("Raster encompassing region found and imported successfully!\n")

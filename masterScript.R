@@ -36,7 +36,7 @@ region <- "Norway"
 # FALSE here.
 
 scheduledDownload <- TRUE
-wait_for_gbif <- TRUE
+waitForGbif <- TRUE
 source("pipeline/import/taxaImport.R")
 
 # Next we run the environmental import script, which brings in a set of rasters that apply to the region

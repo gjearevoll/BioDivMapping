@@ -3,7 +3,9 @@
 
 # This script defines parameters for extracting the necessary environmental data from their
 # various sources. It relies on the functions found in fucntions/import/environment.
-
+if(inherits(regionGeometryBuffer, c("sf", "sfc"))){
+  regionGeometryBuffer <- terra::vect(regionGeometryBuffer)
+}
 ### 1. geonorge ####
 if (dataSource == "geonorge") { 
   if (file.exists("data/temp/geonorge/elevationRaster.tiff")) { 
@@ -43,7 +45,7 @@ if (dataSource == "geonorge") {
   var <- recode_vector[focalParameter]
   
   # download
-  annualStack <- get_worldclim(regionGeometry_buffer, var, 0.5)
+  annualStack <- get_worldclim(regionGeometryBuffer, var, 0.5)
   
   # average
   rasterisedVersion <- mean(annualStack)
@@ -54,5 +56,5 @@ if (dataSource == "geonorge") {
 }
 
 ### merge with requested download area to make missing data explicit
-rasterisedVersion <- extend(rasterisedVersion, terra::project(regionGeometry_buffer, rasterisedVersion), snap = "out")
+rasterisedVersion <- extend(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion), snap = "out")
 

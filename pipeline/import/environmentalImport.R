@@ -49,17 +49,26 @@ if (length(emptyParameters) > 0) {
 # Define folders for storage of all run data
 tempFolderName <- paste0("data/run_", dateAccessed, "/temp/")
 
-# Correct crs
-newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
-
 ###--------------------###
 ### 2. Dataset Import ####
 ###--------------------###
 
-# define region with buffer 
-regionGeometryBuffer <- vect(st_segmentize(st_as_sfc(st_bbox(st_buffer(st_union(
-  if(exists("mesh")) mesh else regionGeometry), 20000))), dfMaxLength = 10000))
+# convert crs to terra 
+projCRS <- sf::st_crs(crs)$wkt
 
+# define region to download as bounding box of buffered and projected mesh/regionGeometry
+regionGeometryBuffer <- st_union(if(exists("mesh")) mesh else regionGeometry) |>
+  st_buffer(20000) |>
+  st_transform(projCRS) |> 
+  st_bbox() |> 
+  st_as_sfc() |>
+  st_segmentize(dfMaxLength = 10000) |> 
+  vect() 
+
+# define working project raster 
+baseRaster <- terra::rast(extent = ext(regionGeometryBuffer), res = res, crs = projCRS)
+
+# download environmental data
 parameterList <- list()
 
 for (parameter in seq_along(selectedParameters)) {
@@ -115,7 +124,7 @@ for (parameter in seq_along(selectedParameters)) {
   parameterList[[parameter]] <- rasterisedVersion
 }
 
-# crop each covariate to extent of regionGeometryBuffer
+# crop each covariate to extent of regionGeometryBuffer (exclusively for reduced computation)
 parametersCropped <- lapply(parameterList, FUN = function(x) {
   scale(
     crop(x,
@@ -125,10 +134,9 @@ parametersCropped <- lapply(parameterList, FUN = function(x) {
 })
 
 # project all rasters to the one with the highest resolution and combine 
-reference <- which.min(sapply(parametersCropped, res)[1,])
 parametersCropped <- do.call(c, 
                              lapply(parametersCropped, function(x){
-                               terra::project(x, parametersCropped[[reference]])
+                               terra::project(x, baseRaster)
                              }))
 # assign names
 names(parametersCropped) <- selectedParameters

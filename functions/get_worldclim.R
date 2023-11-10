@@ -6,8 +6,9 @@
 #' @param coords Dataframe with x and y sample coordinates.
 #' @param var character. One of variable names provided by worldclim. Valid varnames are "tmin", "tmax", "tavg", "prec", "wind", "vapr", and "bio"
 #' @param res The resolution of WorldClim data to download; options are 0.5, 2.5, 5, and 10 arc-minutes (default = 0.5).
-#' @param buff A buffer area around sample points for cropping the data layers, expressed as a proportion of the spatial extent for the coordinates (default = 0.01).
+#' @param buff A buffer area around sample points for cropping the data layers, expressed as a proportion of the spatial extent for the coordinates (default = 0).
 #' @param path path for where to save downloaded worldclim data (with default = NA, data is downloaded into temporary folder that is later deleted).
+#' @param dfMaxLength maximum length of a line segment. See `sf::st_segmentize()`.
 #'
 #' @details
 #' If res = 0.5 then the individual WorldClim tiles that cover the sample coordinates are downloaded and merged. If res > 2.5 then global layers are downloaded.
@@ -16,7 +17,7 @@
 #' 
 #' @return A SpatRaster of WorldClim layers.
 
-get_worldclim <- function(coords, var, res = 0.5, buff = 0.1, path = NA) {
+get_worldclim <- function(coords, var, res = 0.5, buff = 0, path = NA, dfMaxLength = 10000) {
   # stop if variable not provided
   stopifnot(var %in% c("tavg", "tmin", "tmax", "prec", "bio", 
                        "bioc", "elev", "wind", "vapr", "srad"))
@@ -36,11 +37,13 @@ get_worldclim <- function(coords, var, res = 0.5, buff = 0.1, path = NA) {
       ext()
   } else if("SpatVector" %in% class(coords)) {
     ext <- ext(terra::project(coords, "epsg:4326"))
-  } else if("sf" %in% class(coords)){  # if sf simple feature
+  } else if(inherits(coords, c("sf", "sfc"))){  # if sf simple feature
     # convert 
-    coords <- sf_to_df(st_transform(coords, 4326))[,c("x", "y")]
+    coords <- coords |> 
+      st_segmentize(dfMaxLength = 10000) |>
+      st_transform(4326)
     # define extent 
-    ext <- terra::ext(c(range(coords[,1]), range(coords[,2]))) 
+    ext <- terra::ext(st_bbox(coords)[c(1,3,2,4)]) 
   } 
   # buffer extent
   ext <- buffer(ext, portion = buff, lonlat = T)
@@ -73,9 +76,6 @@ get_worldclim <- function(coords, var, res = 0.5, buff = 0.1, path = NA) {
   } else {
     wclim <- geodata::worldclim_global(var = var, res = res, path = path)
   }
-
-  # Crop raster stack to extent
-  wclim <- terra::crop(wclim, ext)
 
   # # Assign names to bioclim vars
   # names(wclim) <- c(

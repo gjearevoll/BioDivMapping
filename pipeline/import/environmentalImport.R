@@ -57,11 +57,8 @@ newproj <- "+proj=longlat +ellps=WGS84 +no_defs"
 ###--------------------###
 
 # define region with buffer 
-if(exists("mesh")){
-  regionGeometry_buffer <- vect(st_buffer(st_union(mesh), 20000))
-} else {
-  regionGeometry_buffer <- vect(st_buffer(regionGeometry, 20000))
-}
+regionGeometryBuffer <- vect(st_segmentize(st_as_sfc(st_bbox(st_buffer(st_union(
+  if(exists("mesh")) mesh else regionGeometry), 20000))), dfMaxLength = 10000))
 
 parameterList <- list()
 
@@ -69,9 +66,7 @@ for (parameter in seq_along(selectedParameters)) {
   focalParameter <- selectedParameters[parameter]
   external <- parameters$external[parameters$parameters == focalParameter]
   
-  if (external == FALSE) {
-    rasterisedVersion <- rast(paste0("data/external/environmentalCovariates/",focalParameter, ".tiff"))
-  } else {
+  if (external) {
     dataSource <- parameters$dataSource[parameters$parameters == focalParameter]
     # check if data has already been downloaded
     raster_found <- FALSE
@@ -83,7 +78,7 @@ for (parameter in seq_along(selectedParameters)) {
       # Check files
       for (file in file_list) {
         rast <- rast(file)
-        if (is.subset(regionGeometry_buffer, rast)) {
+        if (isSubset(regionGeometryBuffer, rast)) {
           rasterisedVersion <- rast
           raster_found <- TRUE
           cat("Raster encompassing region found and imported successfully!\n")
@@ -114,16 +109,17 @@ for (parameter in seq_along(selectedParameters)) {
         writeRaster(x, filename = file_path, overwrite = TRUE)
       }
     }
+  } else {
+    rasterisedVersion <- rast(paste0("data/external/environmentalCovariates/",focalParameter, ".tiff"))
   }
   parameterList[[parameter]] <- rasterisedVersion
 }
 
-
-# crop each covariate to extent of regionGeometry_buffer
+# crop each covariate to extent of regionGeometryBuffer
 parametersCropped <- lapply(parameterList, FUN = function(x) {
   scale(
     crop(x,
-         terra::project(as.polygons(regionGeometry_buffer, extent = T), x), 
+         as.polygons(terra::project(regionGeometryBuffer, x),  extent = T), 
          snap = "out", mask = T)
   )
 })

@@ -30,10 +30,8 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 level <- "country"
 region <- "Norway"
 
-crs <- 25833  # as accepted by terra::cr
-res <- 10000 # in m
 crs <- 25833  # as accepted by sf::st_crs()
-res <- 10000 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
+res <- 1000 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
 
 # You also need to define whether or not you want to use a scheduled download. Scheduled downloads produce a DOI,
 # and enable handling of much larger datasets. If you're playing around with a small dataset, you can probably hit 

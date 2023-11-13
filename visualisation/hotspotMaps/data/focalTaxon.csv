@@ -1,3 +1,7 @@
 "taxa","key","level","scientificName","include"
+"amphibiansReptiles",11592253,"class","Squamata",TRUE
+"amphibiansReptiles",131,"class","Amphibia",TRUE
 "spiders",367,"class","Arachnida",TRUE
-"poaSpecies",3073,"family","Poaceae",TRUE
+"bugs",809,"order","Hemiptera",TRUE
+"caddislflies",1003,"order","Tricoptera",TRUE
+"dragonflies",789,"order","Odonata",TRUE

@@ -39,10 +39,11 @@ redListFull <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))[["red
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
 speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
+projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 # Prepare models
 workflowList <- modelPreparation(focalTaxa, speciesData, redList$validSpecies, 
-                                 regionGeometry, modelFolderName, environmentalDataList)
+                                 regionGeometry, modelFolderName, environmentalDataList, projCRS)
 focalTaxaRun <- names(workflowList)
 
 ###----------------###

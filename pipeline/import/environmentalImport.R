@@ -53,8 +53,8 @@ tempFolderName <- paste0("data/run_", dateAccessed, "/temp/")
 ### 2. Dataset Import ####
 ###--------------------###
 
-# convert crs to terra 
-projCRS <- sf::st_crs(crs)$wkt
+# convert crs to format accepted by sf, terra, and intSDM (& dependencies) 
+projCRS <- sf::st_crs(crs)$proj4string
 
 # define region to download as bounding box of buffered and projected mesh/regionGeometry
 regionGeometryBuffer <- st_union(if(exists("mesh")) mesh else regionGeometry) |>
@@ -144,6 +144,9 @@ names(parametersCropped) <- selectedParameters
 ###--------------------###
 ### 3. Dataset Upload ####
 ###--------------------###
+
+# save projCRS
+saveRDS(projCRS, paste0(tempFolderName,"/projCRS.RDS"))
 
 # Save both to temp file for model processing and visualisation folder for mapping
 writeRaster(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.tiff"), overwrite=TRUE)

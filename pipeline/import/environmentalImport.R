@@ -141,9 +141,6 @@ names(parametersCropped) <- selectedParameters
 writeRaster(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
 
 # Create aggregated version for visualisation and reference data
-parametersAggregated <- do.call(c, 
-                                lapply(parametersCropped, function(x){
-                                  terra::aggregate(x, fact = 6)
-                                }))
+parametersAggregated <- terra::aggregate(parametersCropped, fact = 6)
 writeRaster(parametersAggregated, "visualisation/hotspotMaps/data/covariateDataList.tiff", overwrite=TRUE)
 writeRaster(parametersAggregated, paste0("data/run_", dateAccessed,"/environmentalDataImported.tiff"), overwrite=TRUE)

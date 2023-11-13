@@ -49,14 +49,20 @@ if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
 focalTaxon <- focalTaxon[focalTaxon$include,]
 
 # Import red list
-redListCategories <- c("VU", "EN", "CR")
-redList <- importRedList(redListCategories)
+if (file.exists(paste0(tempFolderName, "/redList.RDS"))) {
+  redList <- readRDS(paste0(tempFolderName, "/redList.RDS"))
+} else {
+  redListCategories <- c("VU", "EN", "CR")
+  redList <- importRedList(redListCategories)
+  
+  # Match to accepted names
+  redList$taxaKey <- sapply(redList$species, FUN = function(x) {taxaCheck(x, focalTaxon$key)})
+  redList$taxa <- focalTaxon$taxa[match(redList$taxaKey, focalTaxon$key)]
+  redList <- redList[!is.na(redList$taxa),]
+  redList$GBIFName <- sapply(redList$species, FUN = findGBIFName)
+  saveRDS(redList, paste0(tempFolderName, "/redList.RDS"))  
+}
 
-# Match to accepted names
-redList$taxaKey <- sapply(redList$species, FUN = function(x) {taxaCheck(x, focalTaxon$key)})
-redList$taxa <- focalTaxon$taxa[match(redList$taxaKey, focalTaxon$key)]
-redList <- redList[!is.na(redList$taxa),]
-redList$GBIFName <- sapply(redList$species, FUN = findGBIFName)
 
 # Import metadata information
 if ("metadataSummary.csv" %in% list.files("data/external")) {
@@ -70,7 +76,7 @@ if ("metadataSummary.csv" %in% list.files("data/external")) {
 
 # If you want a scheduled download, the script will stop here (unless you've already run the download on GBIF)
 # and you'll have to start again later once the download has completed
-if (scheduledDownload == TRUE) {
+if (scheduledDownload) {
   
   # Get download key/initialise GBIF download
   if (file.exists(paste0(folderName, "/downloadKey.RDS"))) {

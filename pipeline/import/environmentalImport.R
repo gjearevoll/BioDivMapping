@@ -138,5 +138,9 @@ names(parametersCropped) <- selectedParameters
 ###--------------------###
 
 # Save both to temp file for model processing and visualisation folder for mapping
-writeRaster(parametersCropped, paste0("data/run_", dateAccessed,"/environmentalDataImported.tiff"), overwrite=TRUE)
-writeRaster(parametersCropped, "visualisation/hotspotMaps/data/covariateDataList.tiff", overwrite=TRUE)
+writeRaster(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
+
+# Create aggregated version for visualisation and reference data
+parametersAggregated <- terra::aggregate(parametersCropped, fact = 6)
+writeRaster(parametersAggregated, "visualisation/hotspotMaps/data/covariateDataList.tiff", overwrite=TRUE)
+writeRaster(parametersAggregated, paste0("data/run_", dateAccessed,"/environmentalDataImported.tiff"), overwrite=TRUE)

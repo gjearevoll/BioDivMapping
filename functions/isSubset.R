@@ -6,7 +6,7 @@
 #' @return TRUE if the x is a subset of y, otherwise FALSE.
 #' @importFrom terra ext
 #' @importFrom sf st_bbox
-is.subset <- function(x, y, dfMaxLength){ 
+isSubset <- function(x, y, dfMaxLength){ 
   
   # vectorise
   x <- vectorize(x)

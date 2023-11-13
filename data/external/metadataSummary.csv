@@ -1,42 +1,115 @@
 datasetKey,name,processing
 b124e1e0-4755-430f-9eab-894f25a9b59c,Norwegian Species Observation Service,presenceOnly
 50c9509d-22c7-4a22-a47d-8c48425ef4a7,iNaturalist Research-grade Observations,presenceOnly
-14d5676a-2c54-4f94-9023-1e8dcd822aa0,Pl@ntNet automatically identified occurrences,NA
-9b6f01f1-9b00-4c39-ae14-6ee552988ce9,Occurrence data from various smaller projects in Norway,NA
 d29d79fd-2dc4-4ef5-89b8-cdf66994de0d,"Vascular plant herbarium TRH, NTNU University Museum",presenceOnly
-5af4f4e2-9e95-4374-b4f6-b1f2adf357ff,Nature type mapping for the Norwegian Environment Agency 2018,NA
-6db17e9d-47d8-459e-8173-2d32ffa99470,Miljodir_naturtypekartlegging_2017,NA
 09c38deb-8674-446e-8be8-3347f6c094ef,Jordal,presenceOnly
 f06ed729-104f-4e51-9db3-dfd9b228a1be,"Vascular plant field notes, NTNU University Museum",fieldNotesEvent
 e45c7d91-81c6-4455-86e3-2965a5739b1f,"Vascular Plant Herbarium, Oslo (O) UiO",presenceOnly
 38b4c89f-584c-41bb-bd8f-cd1def33e92f,Artportalen (Swedish Species Observation System),presenceOnly
-7a3679ef-5582-4aaa-81f0-8c2545cafc81,Pl@ntNet observations,NA
-4a832966-48ad-4d83-858c-044705f74cac,NINA Artskart data,NA
-6ac3f774-d9fb-4796-b3e9-92bf6c81c084,naturgucker,NA
-d34ed8a4-d3cb-473c-a11c-79c5fec4d649,"Vascular Plants, Field notes, Oslo (O)",fieldNotes
-b629d029-4243-4dce-a384-31864debda48,Overvåking av semi-naturlig eng (ASO),NA
-8a863029-f435-446a-821e-275f4f641165,"Observation.org, Nature data from around the World",NA
-f8f35535-8c10-43fc-89dc-eb0843f25394,"Herbarium GB, University of Gothenburg",NA
+6ac3f774-d9fb-4796-b3e9-92bf6c81c084,naturgucker,presenceOnly
+d34ed8a4-d3cb-473c-a11c-79c5fec4d649,"Vascular Plants, Field notes, Oslo (O)",fieldNotesOslo
+b629d029-4243-4dce-a384-31864debda48,Overvåking av semi-naturlig eng (ASO),fieldNotesEvent
+8a863029-f435-446a-821e-275f4f641165,"Observation.org, Nature data from around the World",presenceOnly
 4db619a6-9429-4bef-90c9-06cc90c39552,"Vascular Plant Herbarium, UiB",presenceOnly
-3cf0df27-6416-46a2-ad5e-7d970e5d1a19,Stabbetorp - Floristiske registreringer 2016,NA
 78c1a71e-abb2-49cf-abc8-efafb981b0e4,"Lichen herbarium TRH, NTNU University Museum",presenceOnly
 7948250c-6958-4a29-a670-ed1015b26252,"Lichen herbarium, Oslo (O) UiO",presenceOnly
 fb1ecd28-f09e-4747-8bde-0b3d7a6f78d1,"Lichen herbarium, UiB",presenceOnly
-53f2cda4-a2fd-49f0-b3e5-0782c9770e7c,Norwegian specimens stored in Herb. Klepsland (pre 2022),NA
-d74d5b23-922d-40ff-9120-eb742d1d66f6,"Lichen field notes, Oslo (O)",fieldNotes
+d74d5b23-922d-40ff-9120-eb742d1d66f6,"Lichen field notes, Oslo (O)",fieldNotesOslo
 e4deab67-0998-4140-b573-0ba1f624eb3e,"Fungarium, Oslo (O) UiO",presenceOnly
 7eb54e10-fd36-4139-8764-1fd8abc2bd67,"Mycology herbarium TRH, NTNU University Museum",presenceOnly
-1939e560-d089-44b5-99fb-3ff15e4d34be,"Notes from the Mycology Herbarium, Oslo (O)",NA
-695de7d9-e608-49fd-8fe2-dafb59810784,"Fungi field notes, Oslo (O)",fieldNotes
-8904724a-8de2-41cf-848f-e6af7a80a2d3,"Red list project inventory, lichens",NA
+695de7d9-e608-49fd-8fe2-dafb59810784,"Fungi field notes, Oslo (O)",fieldNotesOslo
 19fe96b0-0cf3-4a2e-90a5-7c1c19ac94ee,National insect monitoring in Norway,insectMonitoring
 1bec5de3-758c-4ed2-ab13-1597601ad07a,"Terrestrial and limnic invertebrates systematic collection, NTNU University Museum",presenceOnly
 346a9b13-5c96-4793-bcd7-d6614950e726,NINA insect database,presenceOnly
-f2e389da-39c3-4f21-8d72-b7d574d924a9,Kastikka Floristic Archives (Kastikka Ark),NA
 26f5b360-8770-4d54-9c2d-397798a5e513,"Entomology, Oslo (O) UiO",presenceOnly
 2d4d4edb-4a78-4855-909e-56dd4c6dfe38,"Coleoptera, NEF",presenceOnly
-0efbb3b3-6473-414a-af91-cdbcbcd8aba1,"Vascular Plants, Field notes, Agder naturmuseum (KMN)",fieldNotes
+0efbb3b3-6473-414a-af91-cdbcbcd8aba1,"Vascular Plants, Field notes, Agder naturmuseum (KMN)",fieldNotesOslo
 2e4cc37b-302e-4f1b-bbbb-1f674ff90e14,Biofokus,presenceOnly
 d0aa984e-c6d3-45ee-8fc0-df1df8f4126b,"Vascular plant herbarium, The Arctic University Museum of Norway (TROM)",presenceOnly
-88ea9eca-96ad-4a5a-8a01-99a4acabe050,"Vascular Plants, Observations, Oslo (O)",presenceOnly
+88ea9eca-96ad-4a5a-8a01-99a4acabe050,"Vascular Plants, Observations, Oslo (O)",fieldNotesOslo
 30bc94f2-50aa-4688-8e87-a8e11d3d69ff,Vascular plant herbarium (KMN) UiA,presenceOnly
+33591b80-0e31-480c-82ce-2f57211b10e6,Freshwater benthic invertebrates ecological collection NTNU University Museum,fieldNotesEvent
+6ce9819a-d82b-41e1-9059-0dd201f15993,"Entomological collections, UiB",presenceOnly
+edd9b710-f3bb-4c49-9fa5-724cd4ecfc7d,Freshwater pelagic invertebrates ecological collection NTNU University Museum,fieldNotesEvent
+c5fe763f-6851-4610-bdc3-67143540be67,Effects of vegetation clearing and dead wood on beetles in power line clearings southeast Norway,fieldNotesEvent
+67780c67-2157-4809-8b51-0b47a7ae8d3b,Beetles from Old Spruce Forests in Southern Norway 2019,NA
+fbcbdda3-abc2-47ae-9b8e-b75ab1128d54,Saproxylic and herbivorous beetle species in old near-natural and old managed forests in south-eastern Norway,fieldNotesEvent
+7ee98521-4558-4edd-b241-edef8e1ebf62,"Coleoptera collection, NHM",presenceOnly
+c035cdf1-7d8b-4e5b-9c2f-a687a5b54317,Beetles in previous clear-cut and near natural mature spruce forests in southern Norway,fieldNotesEvent
+2d674c8e-958a-486a-a130-250af425c222,Beetles from old forest (Quercus robur) at Larvik,NA
+2af62ff7-0608-462e-a8f8-798e323bbd71,"Reptilia notes, NTNU University Museum",presenceOnly
+8a863029-f435-446a-821e-275f4f641165,"Observation.org, Nature data from around the World",presenceOnly
+fcb19622-6d6d-470f-9371-86e1210f9ee3,Herpetile collection NTNU University Museum,presenceOnly
+0dac68d7-afad-4710-a871-3233ffe0c0d3,ANM Zoological vertebrate collection,presenceOnly
+492d63a8-4978-4bc7-acd8-7d0e3ac0e744,Norwegian Biodiversity Information Centre - Other datasets,presenceOnly
+a307e4d7-1de2-4adc-95d5-a0a8d5f57236,Natural History Museum Rotterdam - Specimens,presenceOnly
+ce697b4c-7803-47d8-81bd-5a172f4960b5,"Invertebrate collections, UiB",presenceOnly
+f2a77c80-1e74-4c23-a3c9-c52cede89434,"Entomology collection, UiT Tromsø Museum",presenceOnly
+ed527c71-23aa-40cf-b16b-1a5b8ec6770a,"Arthropod collection, UiT Tromsø Museum",presenceOnly
+3ce58192-816c-48d2-8fa0-1f62648526ce,"Kick samples of the shallow water benthos of Øvre Heimdalsvatn, Norway, 1972, 1985 and 2000",NA
+4cfd80a7-d630-4d7f-89fb-d2d1e749a418,"Collection of various insect orders, Natural History Museum, University of Oslo",presenceOnly
+aea17af8-5578-4b04-b5d3-7adf0c5a1e60,Bumblebees and butterflies in Norway,fieldNotesEvent
+f1af1d2b-2d22-48e5-857c-0048710e0c16,Mapping and monitoring of the Chequered Blue Butterfly Scolitantides orion 2010-2020,NA
+d4376e59-65a7-4931-a4aa-7ba2d2f0b514,"Lepidoptera collection, South Norway",presenceOnly
+d170a453-02dc-46d9-993b-41582343187b,Mapping and monitoring of the Glanville fritillary Melitaea cinxia,presenceOnly
+edaf95d8-2c34-4792-8170-04d7c79a5a89,Tidlig oppdagelse og varsling av fremmede arter 2019,NA
+39df870d-a03d-434a-a30f-c21f82f2bcba,Tidlig oppdagelse og varsling av fremmede arter 2021,NA
+23264cb3-b606-475d-81fb-5f22de3c2368,Tidlig oppdagelse og varsling av fremmede arter 2020,NA
+36526979-9f6a-47c3-8ca8-b286b8899729,Tidlig oppdagelse og varsling av fremmede arter 2018,NA
+88fd0226-d867-4946-be8b-31f584f2201d,"NORSC - Sciaroidea, UiT Tromsø Museum",presenceOnly
+bb39604c-3731-49ce-a9dc-f3617d3d0d15,"Diptera collection, Natural History Museum, University of Oslo",presenceOnly
+b581fcfa-9f31-431a-8431-1800ef8a554b,"Insect collection, UiT, University Museum (TSZ). Insect labeling project and PhD-duty-work",presenceOnly
+78822c79-7646-448d-aac2-35700498c147,"Bumble bees collected in a large-scale field experiment in power line clearings, southeast Norway",fieldNotesEvent
+2d6e90e5-b171-48d9-8487-4bdbcf57f81b,"Solitary bees collected in a large-scale field experiment in power line clearings, southeast Norway",fieldNotesEvent
+a4e7ff0a-f9c0-481a-88ed-5986ec86b24a,"Hymenoptera collection, Natural History Museum, University of Oslo",presenceOnly
+83bf1012-38d7-4260-8d3a-866516c65c82,Insects of the Forest-Tundra Ecotone (ForTunE),presenceOnly
+04930329-93ce-4f80-8d67-423a526a736b,Saproxylic insects caught in window traps and hatched from polypores in small and large old forests in southern Norway,fieldNotesEvent
+9cc95cb1-d97a-4c35-9d0e-5de8a6e2f134,"Hymenoptera, NEF",presenceOnly
+a01f491f-5807-4044-9613-04d1c8c7c5f4,artsprosjektet_53-12_enchytraeidae,NA
+6728c42d-c4b6-4fda-a211-5ad1bb59cda4,"Bryophyte herbarium TRH, NTNU University Museum",presenceOnly
+68a0650f-96ae-499c-8b2a-a4f92c01e4b3,"Bryophyte Herbarium, Oslo (O) UiO",presenceOnly
+d7e36e03-340d-4cba-904c-a2a3e662d3cd,Ecofact,presenceOnly
+0f061eff-6854-4bb3-abe2-acb184ea3ab7,"Bryophyte herbarium, The Arctic University Museum of Norway (TROM)",presenceOnly
+ec1922d6-292e-4443-8bae-deba1092856b,"Bryophyte herbarium, UiB",presenceOnly
+9678e1a6-b1c4-4e86-9d26-ebb169338655,"Vascular plants in power line clearings and the nearby forest, southeast Norway",fieldNotesEvent
+0db86a4c-5b10-4a39-b81d-15e1525bb27f,"Presence data for vascular plant, bryophyte and lichen species in 100 vegetation plots (each 1 m2) from 32 shell-beds at Akerøya, Hvaler, SE Norway",NA
+53f2cda4-a2fd-49f0-b3e5-0782c9770e7c,Norwegian specimens stored in Herb. Klepsland (pre 2022),presenceOnly
+5113877b-3da2-4ac2-a7cb-58f67da66228,"Monitoring data of natural and man-made semi-natural meadows in and around Oslo, Norway 2018-2021",fieldNotesEvent
+2ce085b1-f05e-4bb9-8a3b-0ae583f3a58d,Bryophytes from a study of primary producer traits across an altitudinal gradient in alpine Finse,fieldNotesEvent
+f8f35535-8c10-43fc-89dc-eb0843f25394,"Herbarium GB, University of Gothenburg",presenceOnly
+c6f8c4f2-31aa-4ea8-9668-985e40496698,Villreinobservasjoner,presenceOnly
+44ff990f-945e-4b37-9060-fc7de856b1ea,Mammal collection NTNU University Museum,presenceOnly
+0dac68d7-afad-4710-a871-3233ffe0c0d3,ANM Zoological vertebrate collection,presenceOnly
+b5390d05-5699-4c46-a8a4-1b12aa2aac5b,Population research on small rodents (Rodentia) and shrews (Soricidae) in Lierne Municipality – Norway; 2018-2021 based on systematic catches with ordinary mouse traps in traplines,NA
+07d699bc-469b-4b2d-99a7-363c45fbe325,Population research on small rodents (Rodentia) and shrews (Soricidae) in Steinkjer Municipality – Norway; 2018-2021 based on systematic catches with ordinary mouse traps in traplines,NA
+92272f64-30e8-4d9d-80bc-c79465d4e667,Mammal collection (TSZM) The Arctic University Museum of Norway,presenceOnly
+1939e560-d089-44b5-99fb-3ff15e4d34be,"Notes from the Mycology Herbarium, Oslo (O)",presenceOnly
+7eb54e10-fd36-4139-8764-1fd8abc2bd67,"Mycology herbarium TRH, NTNU University Museum",presenceOnly
+e87a12af-fc4c-4315-bff7-c7b827379aca,"Lichen herbarium, The Arctic University Museum of Norway (TROM)",presenceOnly
+39a80c99-56c2-482c-beef-fa960a8eec4d,"The importance of host tree age, size and growth rate as determinants of epiphytic lichen diversity in boreal spruce forest.",NA
+c89f43c2-98cf-4c60-ad53-ddf7127bb9d5,"Lichen herbarium, NMBU",presenceOnly
+4dac6899-124a-40fc-90d3-aa5a872c99c0,Wood-inhabiting corticioid basidiomycetes in Norway,NA
+cf999616-58f0-43af-8dba-164c0323f19d,Lichens from a study of primary producer traits across an altitudinal gradient in alpine Finse,fieldNotesEvent
+8904724a-8de2-41cf-848f-e6af7a80a2d3,"Red list project inventory, lichens",fieldNotesOslo
+14d5676a-2c54-4f94-9023-1e8dcd822aa0,Pl@ntNet automatically identified occurrences,presenceOnly
+9678e1a6-b1c4-4e86-9d26-ebb169338655,"Vascular plants in power line clearings and the nearby forest, southeast Norway",fieldNotesEvent
+ae77cf87-0f7f-4a08-91cc-5d55230fb421,Overvåking av åpen grunnlendt kalkmark i Oslofjordområdet,NA
+78ab5416-bf56-4714-a2bf-096b16f0e1d8,Effects of vegetation clearing on vascular plants in power line clearings southeast Norway,fieldNotesEvent
+6bbcb71c-42e7-40e7-bd02-b66d4e9a5c6e,"Vegetation data with and without experimental warming, alpine Finse 2000, 2004, 2011",fieldNotesEvent
+3cf0df27-6416-46a2-ad5e-7d970e5d1a19,Stabbetorp - Floristiske registreringer 2016,presenceOnly
+9b6f01f1-9b00-4c39-ae14-6ee552988ce9,Occurrence data from various smaller projects in Norway,presenceOnly
+5113877b-3da2-4ac2-a7cb-58f67da66228,"Monitoring data of natural and man-made semi-natural meadows in and around Oslo, Norway 2018-2021",NA
+a12cba4c-c620-4e76-aa22-0ec988824b6d,Overvåking av dragehode Dracocephalum ruyschiana,presenceOnly
+520909f1-dbca-411e-996c-448d87c6a700,ARKO strandeng,presenceOnly
+7a3679ef-5582-4aaa-81f0-8c2545cafc81,Pl@ntNet observations,presenceOnly
+f70bd131-1dff-41a0-b0b3-b5373062239,HjerkinnPRO restoration of removed roads,fieldNotesEvent
+b4926f5d-6426-4774-83fa-099e927862a1,"Vascular Plants, Museum of Archaeology, University of Stavanger",presenceOnly
+b49a2978-0e30-4748-a99f-9301d17ae119,Tetraonid line transect surveys from Norway: Data from Fjellstyrene,fieldNotesEvent
+6a948a1c-7e23-4d99-b1c1-ec578d0d3159,Tetraonid line transect surveys from Norway: Data from Statskog,fieldNotesEvent
+4b456e0f-a945-4083-8a72-79ea06898258,Balsfjord Nature Reserves,presenceOnly
+c6a2ecf7-f9d2-4443-91b6-199f00aa01a2,Bird collection NTNU University Museum,presenceOnly
+264e6a66-9c9e-4115-9aec-29d694c68097,NHMO Bird collection,presenceOnly
+ac3608fe-71ff-43b4-84da-8b284d5b7b47,ANM Bird egg collection,presenceOnly
+0dac68d7-afad-4710-a871-3233ffe0c0d3,ANM Zoological vertebrate collection,presenceOnly
+b84a3711-b4ca-4e4f-adac-80dfaea98d1c,Hatikka.fi observations,presenceOnly
+b848f1f3-3955-4725-8ad8-e711e4a9e0ac,"Rock ptarmigan (Lagopus muta) radio telemetry in Lierne, Norway",presenceOnly

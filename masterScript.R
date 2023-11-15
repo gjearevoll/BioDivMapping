@@ -59,7 +59,6 @@ source("pipeline/integration/speciesDataProcessing.R")
 # FAQ page of the shiny app. If you want to try out some potential meshes, you can do so using the
 # util file and editing the default list below.
 
-meshTest(myMesh, regionGeometry)
 meshTest(myMesh, regionGeometry, crs = crs)
 
 # Once you've figured that out, you can start running the models. Remember that this script is the one that's 

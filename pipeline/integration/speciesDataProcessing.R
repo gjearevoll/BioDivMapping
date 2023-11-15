@@ -98,6 +98,7 @@ processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x)
 processedDataCompiled <- do.call(rbind, processedDataForCompilation)
 processedPresenceData <- processedDataCompiled[processedDataCompiled$individualCount > 0,]
 processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
+saveRDS(processedPresenceData, "visualisation/hotspotMaps/data/processedPresenceData.RDS")
 
 ###-----------------------###
 ### 4. Upload to Wallace ####
@@ -113,7 +114,9 @@ if (uploadToWallace == TRUE) {
 
 # Here we see which species have sufficient presence/count data to actually run an individual species model
 redListSpecies <- filterByRedList(redList$GBIFName, processedPresenceData, 5)
-saveRDS(redListSpecies, paste0(folderName, "/redList.RDS"))
+redList$valid <- redList$GBIFName %in% redListSpecies$validSpecies
+saveRDS(redList, paste0(folderName, "/redList.RDS"))
+saveRDS(redList, "visualisation/hotspotMaps/data/redList.RDS")
 
 ###-----------------------------------###
 ### 6. Produce species richness data ####
@@ -138,4 +141,49 @@ if(nrow(processedRedListPresenceData) > 0){
 
 # To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
 rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
+file.copy(paste0(folderName, "/speciesMetadata.html"), "visualisation/hotspotMaps")
+
+
+###---------------------###
+### 8. Download photos ####
+###---------------------###
+
+# We need to download photos from iNaturalist, including their URL and the user name of the individual
+# who took the photo to give appropriate credit
+
+# Check if there is already an image credit file
+if (file.exists("visualisation/hotspotMaps/data/imageCredit.RDS")) {
+  imageCredit <- readRDS("visualisation/hotspotMaps/data/imageCredit.RDS")
+} else {
+  imageCredit <- data.frame(species = redList$species[redList$valid],
+                            credit = NA,
+                            url = NA,
+                            stringsAsFactors = FALSE)
+}
+
+for (taxa in unique(focalTaxon$taxa)) {
+  focalRedListSpecies <- redList$species[redList$taxa == taxa & redList$valid]
+  taxaFolder <- paste0("visualisation/hotspotMaps/data/photos/",taxa)
+  if (!file.exists(taxaFolder)) {
+    dir.create(taxaFolder)
+  }
+  for (species in focalRedListSpecies) {
+    # Create species folder
+    speciesFolder <- paste0(taxaFolder,"/",species)
+    if (!file.exists(speciesFolder)) {
+      dir.create(speciesFolder)
+    }
+    # Create species file (if it doesn't already exist)
+    if (file.exists(paste0(speciesFolder, "/speciesImage.jpg"))) {next}
+    tryCatch({inatAttempt <- rinat::get_inat_obs(taxon_name = species, maxresults = 10)
+    imageRow <- inatAttempt[!is.na(inatAttempt$image_url) & inatAttempt$image_url != "",]
+    imageCredit$url[imageCredit$species == species] <- imageRow$url[1]
+    imageCredit$credit[imageCredit$species == species] <- imageRow$user_login[1]
+    download.file(imageRow$image_url[1], destfile = paste0(speciesFolder,"/speciesImage.jpg" ), mode = 'wb')
+    }
+    , error = function(x){print(paste0("Error for species ",species, ". ", x))})
+  }}
+
+imageCredit$credit[imageCredit$credit == "" | is.na(imageCredit$credit)] <- "User name not provided"
+saveRDS(imageCredit, "visualisation/hotspotMaps/data/imageCredit.RDS")
 

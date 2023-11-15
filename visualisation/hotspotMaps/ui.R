@@ -16,8 +16,9 @@ library(sf)
 library(ggplot2)
 library(raster)
 
-focalSpecies <- read.csv("data/focalSpecies.csv")
-focalSpeciesDDVector <- split(focalSpecies$species, f = focalSpecies$taxonomicGroup)
+redList <- readRDS("data/redList.RDS")
+redListValid <- redList[redList$valid,]
+focalSpeciesDDVector <- split(redListValid$GBIFName, f = redListValid$taxa)
 focalSpeciesDDList <- lapply(focalSpeciesDDVector, FUN = function(x) {
   speciesList <- as.list(x)
   names(speciesList) <- x
@@ -45,8 +46,9 @@ shinyUI(
                            menuSubItem("Contact", tabName = "contactPage")),
                   menuItem("Species Intensities", tabName = "intensity", icon = icon("binoculars")),
                   menuItem("Taxa Biodiversity", tabName = "diversity", icon = icon("worm")),
-                  menuItem("Species Occurrences", tabName = "occurrences", icon = icon("bugs")),
-                  menuItem("Environmental Covariates", tabName = "covariates", icon = icon("cloud-sun"))
+                  #menuItem("Species Occurrences", tabName = "occurrences", icon = icon("bugs")),
+                  menuItem("Environmental Covariates", tabName = "covariates", icon = icon("cloud-sun")),
+                  menuItem("Metadata", tabName = "meta", icon = icon("file"))
       )
     )
     ,
@@ -100,11 +102,11 @@ shinyUI(
                           fluidRow(
                             box(width = 12,title = "Select species",
                                 selectInput(inputId = "taxa", label = "Taxa:",
-                                            selected = "fungi",
+                                            selected = "spiders",
                                             choices = names(focalSpeciesDDList)),
                                 selectInput(inputId = "species", label = "Species:",
-                                            selected = "Alectoria_sarmentosa",
-                                            choices = focalSpeciesDDList[[1]]),
+                                            selected = "Arctosa cinerea (Fabricius, 1777)",
+                                            choices = focalSpeciesDDList[[4]]),
                                 checkboxInput(inputId = "showOccurrences",
                                               label = "Show occurrences",
                                               value = FALSE))),
@@ -130,73 +132,68 @@ shinyUI(
         tabItem(
           tabName = "diversity",
           fluidRow(
-            column( width = 2, offset = 0,
+            column( width = 3, offset = 0,
                     fluidRow(
                       box(width = 12,title = "Select taxa",
                           selectInput(inputId = "taxa2", label = "Taxa:",
-                                      selected = "fungi",
+                                      selected = "spiders",
                                       choices = names(focalSpeciesDDList)),
-                          checkboxInput(inputId = "selectRedList", 
+                          checkboxInput(inputId = "selectRedList",
                                         label = "Use only red-listed species",
                                         value = FALSE)))),
             column(
               width = 5, offset = 0,
-              box(width = 12,title = "Taxa Diversity Map",
+              box(width = 12,title = "Species Richness Map",
                   status = "primary",
-                  plotOutput("taxaDiversityMap", height = '100%')
-              )),
-            column(
-              width = 5, offset = 0,
-              box(width = 12,title = "Taxa Richness Map",
                   plotOutput("speciesRichnessMap", height = '100%')
               ))
             )
-        ),
-        tabItem(tabName = "occurrences",
-                fluidRow(
-                  column(width = 3,
-                         fluidRow(
-                           box(width = 12,
-                               title = "Select species",
-                               br(),
-                               status = "primary",
-                               selectInput(inputId = "taxaOccurrence", label = "Taxa:",
-                                           selected = names(focalSpeciesDDList)[1],
-                                           choices = names(focalSpeciesDDList)),
-                               selectInput(inputId = "speciesOccurrence", label = "Species:",
-                                           selected = "Alectoria_sarmentosa",
-                                           choices = focalSpeciesDDList[[1]]),
-                               checkboxInput(inputId = "selectAbsences", 
-                                             label = "Show absences",
-                                             value = FALSE)   
-                           ) 
-                         ),
-                         fluidRow(
-                           box(width = 12,
-                               title = "Data type",
-                               selectInput(inputId = "dataClassification", label = "Show observations by:",
-                                           selected = "Data source",
-                                           choices = c("Data source" = "dataSource",
-                                                       "Data type" = "dataType"))
-                           )
-                         ),
-                         fluidRow(
-                           box(width = 12, title = "Species Info",
-                               collapsible = TRUE,
-                               htmlOutput("textBox2"),
-                               p(),
-                               imageOutput("imageBox2"))
-                         )
-                  ),
-                  column(width = 9,
-                         fluidRow(
-                           box(
-                             title = "Species Occurrence Map",
-                             plotOutput("speciesOccurrenceMap", height = "100%")
-                           )
-                         ))
-                )
-        )
+        )#,
+        # tabItem(tabName = "occurrences",
+        #         fluidRow(
+        #           column(width = 3,
+        #                  fluidRow(
+        #                    box(width = 12,
+        #                        title = "Select species",
+        #                        br(),
+        #                        status = "primary",
+        #                        selectInput(inputId = "taxaOccurrence", label = "Taxa:",
+        #                                    selected = names(focalSpeciesDDList)[1],
+        #                                    choices = names(focalSpeciesDDList)),
+        #                        selectInput(inputId = "speciesOccurrence", label = "Species:",
+        #                                    selected = "Alectoria_sarmentosa",
+        #                                    choices = focalSpeciesDDList[[1]]),
+        #                        checkboxInput(inputId = "selectAbsences", 
+        #                                      label = "Show absences",
+        #                                      value = FALSE)   
+        #                    ) 
+        #                  ),
+        #                  fluidRow(
+        #                    box(width = 12,
+        #                        title = "Data type",
+        #                        selectInput(inputId = "dataClassification", label = "Show observations by:",
+        #                                    selected = "Data source",
+        #                                    choices = c("Data source" = "dataSource",
+        #                                                "Data type" = "dataType"))
+        #                    )
+        #                  ),
+        #                  fluidRow(
+        #                    box(width = 12, title = "Species Info",
+        #                        collapsible = TRUE,
+        #                        htmlOutput("textBox2"),
+        #                        p(),
+        #                        imageOutput("imageBox2"))
+        #                  )
+        #           ),
+        #           column(width = 9,
+        #                  fluidRow(
+        #                    box(
+        #                      title = "Species Occurrence Map",
+        #                      plotOutput("speciesOccurrenceMap", height = "100%")
+        #                    )
+        #                  ))
+        #         )
+        # )
         ,
         tabItem(tabName = "covariates",
                 fluidRow(
@@ -231,9 +228,15 @@ shinyUI(
                              environmentalCovariateText(), collapsible = TRUE,
                              collapsed = TRUE)
                          )
-                         
+
                   )
                 )
+        ),
+        tabItem(tabName = "meta",
+                fluidRow(
+                  column(8,
+                         includeHTML("speciesMetadata.html")
+                  ))
         )
         
       )

@@ -33,7 +33,6 @@ sapply(list.files("functions", full.names = TRUE), source)
 focalTaxon <- read.csv("data/external/focalTaxa.csv")
 focalTaxa <- unique(focalTaxon[focalTaxon$include, "taxa"])
 redList <- readRDS(paste0(folderName, "/redList.RDS"))
-redListFull <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))[["redList"]]
 
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
@@ -42,7 +41,8 @@ speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 # Prepare models
-workflowList <- modelPreparation(focalTaxa, speciesData, redList$validSpecies, 
+
+workflowList <- modelPreparation(focalTaxa, speciesData, redList$GBIFName[redList$valid], 
                                  regionGeometry, modelFolderName, environmentalDataList, projCRS)
 focalTaxaRun <- names(workflowList)
 

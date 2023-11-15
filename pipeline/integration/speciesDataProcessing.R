@@ -141,6 +141,7 @@ if(nrow(processedRedListPresenceData) > 0){
 
 # To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
 rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
+file.copy(paste0(folderName, "/speciesMetadata.html"), "visualisation/hotspotMaps")
 
 
 ###---------------------###

@@ -9,10 +9,24 @@
 #' @param regionGeometry An sf object encompassing our region of study, as produced by defineRegion.
 #' @param modelFolderName The directory where model outputs should be saved.
 #' @param environmentalDataList A list of raster giving relevant environmental variables.
+#' @param crs The coordinate reference system used in the workflow.
 #' 
 #' @return An R6 environment object with enough information to run an intSDM model.
 
-modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeometry, modelFolderName, environmentalDataList) {
+modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
+  
+  if(is.null(crs)){
+    if(!is.null(environmentalDataList)){
+      crs <- crs(environmentalDataList)
+    } else {
+      # get crs from regionGeometry
+      crs <- st_crs(regionGeometry)
+      # convert lat/long projection to UTM
+      if(st_crs(crs)$units_gdal == "degree"){
+        crs <- utmCRS(regionGeometry)
+      }
+    }
+  }
   
   workflowList <- list()
   
@@ -46,7 +60,7 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeom
     
     # Initialise workflow, creating folder for model result storage
     workflow <- startWorkflow(
-      Projection = '+proj=utm +zone=32 +ellps=WGS84 +datum=WGS84 +units=m +no_defs',
+      Projection = st_crs(crs)$proj4string,
       Species = speciesList,
       saveOptions = list(projectDirectory = modelFolderName, projectName =  focalGroup), Save = TRUE
     )

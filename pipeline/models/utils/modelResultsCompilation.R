@@ -19,9 +19,8 @@ for (i in seq_along(focalTaxaRun)) {
   
   # Print warning if there are any species listed for which we don't have a model
   speciesRun <- gsub("_", " ", gsub(paste0(groupFolderLocation, "/"), "", list.dirs(path = groupFolderLocation, recursive = FALSE)))
-  speciesStarted <- redListFull$GBIFName[redListFull$taxa == focalGroup]
-  speciesPrepped <- redListFull$species[redListFull$GBIFName %in% redList$validSpecies[redList$validSpecies %in% speciesStarted]]
-  speciesMissing <- speciesPrepped[!(speciesPrepped %in% speciesRun)]
+  speciesStarted <- redList$species[redList$taxa == focalGroup & redList$valid]
+  speciesMissing <- speciesStarted[!(speciesStarted %in% speciesRun)]
   if (length(speciesMissing) > 0) {
     warning(paste0("The following species were not calculated but were in your original list: ", paste0(c(speciesMissing), collapse = ", ")))
   }

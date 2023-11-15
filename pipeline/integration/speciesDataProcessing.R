@@ -114,7 +114,7 @@ if (uploadToWallace == TRUE) {
 
 # Here we see which species have sufficient presence/count data to actually run an individual species model
 redListSpecies <- filterByRedList(redList$GBIFName, processedPresenceData, 5)
-redList$valid <- ifelse(redList$GBIFName %in% redListSpecies$validSpecies, TRUE, FALSE)
+redList$valid <- redList$GBIFName %in% redListSpecies$validSpecies
 saveRDS(redList, paste0(folderName, "/redList.RDS"))
 saveRDS(redList, "visualisation/hotspotMaps/data/redList.RDS")
 

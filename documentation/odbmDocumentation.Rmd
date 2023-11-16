@@ -1,0 +1,140 @@
+---
+title: The Open Data Biodiversity Mapper - Software Documentation
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+
+```{css style settings, echo = FALSE}
+blockquote {
+    padding: 10px 20px;
+    margin: 0 0 20px;
+    font-size: 14px;
+    border-left: 5px solid #eee;
+}
+```
+
+``` {r, dataImport, echo = FALSE}
+  
+source("../pipeline/installAllPackages.R")
+sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
+focalTaxa <- read.csv("../data/external/focalTaxa.csv")
+
+```
+
+## Introduction
+
+The Open Data Biodiversity Mapper (ODBM) is a tool intended to provide information on biodiveristy hotspots within Norway. It highlights
+regions where red-listed species are likely to be found, for the purposes of enabling policy decisions regarding the
+protection or restoration of said regions. The tool uses openly available data, fed through integrated species distribution
+models, to analyse where these regions can be found in Norway.
+
+The following document provides all the information you will need to produce your own version of the Open Data Biodiversity 
+Mapper (ODBM). It gives a comprehensive overview of how to prepare and run the ODBM pipeline, what choices you'll have to make 
+along the way, and how to interpret the results. For any further information, or to make requests for additions to the 
+documentation, please contact Sam Wenaas perrin at sam.perrin@ntnu.no.
+
+## Getting Started
+
+The pipeline is available on GitHub [at this link](https://github.com/gjearevoll/BioDivMapping), and uses R as a programming language.
+The entire script can be run using nothing more than the script `masterScript.R`, which you can find in the head of the repository,
+but you'll doubtless want to customise it for your own purposes.
+
+The pipeline is broken up into four main sections.
+
+- Species data import
+- Environmental data import
+- Species data processing
+- Modelling
+- Data visualisation
+
+We'll go through these in detail soon. But before you start running the pipeline, there are a few decisions you have to make. 
+The main ones are:
+
+- Which species do you want to include?
+- Whch environmental covariates would you like to use?
+- Which species datasets do you want your analysis to use?
+- What region of Norway are you looking to analyse?
+
+The first three of these questions corresponds to a csv file that you'll need to edit and load into the file "data/external". The last
+one is a simple matter of inputting a couple of parameters. Let's go over these points in detail.
+
+### Choosing your species
+
+This pipeline takes species on a taxa level, and downloads every species in your given taxonomic groups at any level, from kingdom to
+species. It downloads these groups using GBIF's taxon key, so for every group you want to analyse, you. While the pipeline is set up 
+to process entire taxonomic groups, you can still download single species by simply entering their species taxonomic code.
+
+You can find the taxonomic code for any taxonomic group by checking the GBIF page for that group. For instance, the code for the Cervidae 
+family can be found by [navigating to the appropriate page](https://www.gbif.org/species/5298) and checking that page's URL. The URL in 
+question is https://www.gbif.org/species/5298, which means the taxonomic code is 5298.
+
+Once you've decided on your taxonomic groups and found the relevant codes, you'll need to create a csv sheet like the example that is
+already provided in `data/external/focalTaxa.csv`. The three columns that are currently necessary are `taxa` (a common name for your group),
+`key` (the aforementioned taxa key) and `include`. `include` is simply a column that allows you to dictate whether or not a specific taxa
+should be included in this model run, allowing you to list any taxa of interest, and then exclude them from further analyses rather than
+deleting them entirely from the table. If you wish to analyse all species in the table, simply set the entirety of include to `TRUE`.
+
+Your end product should look like this (note that columns scientificName and level are not currently used in the pipeline and as such are
+not relevant at this stage):
+
+``` {r, speciesTable, echo = FALSE}
+  
+knitr::kable(
+  focalTaxa[1:10,], 
+  valign = 't',
+  caption = 'An example of the focal taxa currently processed by the ODBM pipeline. THe full dataset can be found in Appendix 1A.'
+)
+
+
+```
+
+
+> **A Note on Polyphyletic Groups**
+>
+>Some species groups are polyphyletic, ie. can be found in multiple taxonomic groups. Since these aren't comprised of a single
+taxnomic group of any level, there are a slightly different process for dealing with them. There are two main cases we deal with here. 
+> 
+> 1. A taxa that is made up of the entirety of multiple taxonomic groups. We see an example of this in the dataet above - amphibians and
+reptiles. This group is comprised of every species in two classes - Amphibia and Squamata. For this case, we simply list both.
+> 2. The second case is more complicated, and occurs when you have multiple species spread throughout different taxonomic groups, and only 
+comprising come species within those groups. A good example of this is lichens - even at the genus level, only some species within a 
+single genus may be lichenised. For this, you will need a full list of the species within the group. Then you can simply create a csv
+with the species names in one column and the taxonomic group's name in a second.
+
+### Choosing Your Environmental Covariates
+
+A full list of currently available environmental covariates can be found in Appendix 1B, or in the folder data/external/environmentalCovariates.
+Currently the pipeline provides pre-downloaded datasets at a resolution of 1000 metres. However for some of these, there is also the possibility
+to download data directly from the source. To decide which covariates you would like to use, and which of those you would like to download
+externally, you can edit the example already provided in 
+
+
+- Brief overview of pipeline
+- Preparation
+  - Region of analysis
+  - Analysis of datasets
+  - Choice of taxa
+  - A note on polyphyletic species
+  - Choice of environmental covariates  
+- Downloading from GBIF
+- Choosing which covariates to download externally and chosen resolution
+- Data processing
+  - CHoosing a minimum threshold for species occurrences
+- Species modelling
+  - What is a mesh
+  - iSDMs
+- The visuals
+
+
+
+## Appendix
+
+``` {r, appendix1}
+knitr::kable(
+  focalTaxa, 
+  valign = 't',
+  caption = 'The full list of specie scurrently analysed by the ODBM pipeline.'
+)

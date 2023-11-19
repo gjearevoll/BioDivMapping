@@ -73,11 +73,14 @@ parameterList <- list()
 
 for (parameter in seq_along(selectedParameters)) {
   focalParameter <- selectedParameters[parameter]
+  
+  ### 1. Check if the data needs to be downloaded externally.
   external <- parameters$external[parameters$parameters == focalParameter]
   
   if (external) {
     dataSource <- parameters$dataSource[parameters$parameters == focalParameter]
-    # check if data has already been downloaded
+    
+    ### 2. Check whether we have previously downloaded a version of the external data that encompasses the area we need.
     raster_found <- FALSE
     if(dir.exists(paste0("data/temp/", dataSource))){
       ## List all files in the directory that match the parameter
@@ -94,6 +97,7 @@ for (parameter in seq_along(selectedParameters)) {
           break
         } 
       }   
+      # 3. Create new temp folder to download necessary external data.
     } else {
       dir.create(paste0("data/temp/", dataSource))
     }

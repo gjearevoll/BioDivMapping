@@ -26,7 +26,6 @@ if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
 }
 
-speciesDataList <- readRDS(paste0("data/run_", dateAccessed, "/temp/speciesDataImported.RDS"))
 regionGeometry <- readRDS(paste0("data/run_", dateAccessed, "/regionGeometry.RDS"))
 
 # The following is a list of the various environmental variables we have available.

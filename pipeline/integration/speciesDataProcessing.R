@@ -74,7 +74,6 @@ names(processedData) <- namesProcessedData
 # Save for use in model construction
 processedData <- processedData[lapply(processedData,length)>0]
 saveRDS(processedData, paste0(folderName, "/speciesDataProcessed.RDS"))
-saveRDS(processedData, "visualisation/hotspotMaps/data/processedDataList.RDS")
 
 
 ###--------------------------------###
@@ -113,7 +112,7 @@ if (uploadToWallace == TRUE) {
 ###----------------------------###
 
 # Here we see which species have sufficient presence/count data to actually run an individual species model
-redListSpecies <- filterByRedList(redList$GBIFName, processedPresenceData, 5)
+redListSpecies <- filterByRedList(redList$GBIFName, processedPresenceData, redListThreshold)
 redList$valid <- redList$GBIFName %in% redListSpecies$validSpecies
 saveRDS(redList, paste0(folderName, "/redList.RDS"))
 saveRDS(redList, "visualisation/hotspotMaps/data/redList.RDS")

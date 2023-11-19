@@ -41,7 +41,8 @@ information, or to make requests for additions to the documentation, please cont
 # Getting Started
 
 The pipeline is available on GitHub **[at this link](https://github.com/gjearevoll/BioDivMapping)**, and uses R as a programming language.
-The entire script can be run using nothing more than the script `masterScript.R`, which is located in the head of the repository.
+The entire script can be run using nothing more than the script `masterScript.R`, which is located in the head of the repository. Information
+on the folder structure of the repository can be found in the README file in the head of the repository.
 
 The pipeline is broken up into four main sections.
 

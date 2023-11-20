@@ -30,7 +30,14 @@ speciesDataList <- readRDS(paste0("data/run_", dateAccessed, "/temp/speciesDataI
 regionGeometry <- readRDS(paste0("data/run_", dateAccessed, "/regionGeometry.RDS"))
 
 # The following is a list of the various environmental variables we have available.
-parameters <- read.csv("data/external/focalCovariates.csv")
+# Define initial species list.
+if(file.exists(paste0(folderName, "/focalCovariates.csv"))){
+  parameters <- read.csv( paste0(folderName, "/focalCovariates.csv"), header = T)
+} else {
+  parameters <- read.csv("data/external/focalCovariates.csv")  # save for reference
+  write.csv(parameters, paste0(folderName, "/focalCovariates.csv"), row.names = FALSE)
+}
+
 selectedParameters <- parameters$parameters[parameters$selected]
 
 # Check that any parameters we're downloading externally have a source

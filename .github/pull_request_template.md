@@ -9,7 +9,7 @@ anyone working on the project to udnerstand.
 to read through them anyway in the code. 
 - This is a good place to highlight anything of note that whoever is reviewing the PR should look out for though.
 
-## General Info (Delete this section)
+## General Info (Delete this section )
 
 Please give informative title to your PR. Title should show the general context and tell why the changes should be made.
 

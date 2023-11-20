@@ -45,8 +45,7 @@ shinyUI(
                            menuSubItem("FAQs", tabName = "faqs"),
                            menuSubItem("Contact", tabName = "contactPage")),
                   menuItem("Species Intensities", tabName = "intensity", icon = icon("binoculars")),
-                  menuItem("Taxa Biodiversity", tabName = "diversity", icon = icon("worm")),
-                  #menuItem("Species Occurrences", tabName = "occurrences", icon = icon("bugs")),
+                  menuItem("Observed Species Richness", tabName = "diversity", icon = icon("worm")),
                   menuItem("Environmental Covariates", tabName = "covariates", icon = icon("cloud-sun")),
                   menuItem("Metadata", tabName = "meta", icon = icon("file"))
       )
@@ -148,52 +147,7 @@ shinyUI(
                   plotOutput("speciesRichnessMap", height = '100%')
               ))
             )
-        )#,
-        # tabItem(tabName = "occurrences",
-        #         fluidRow(
-        #           column(width = 3,
-        #                  fluidRow(
-        #                    box(width = 12,
-        #                        title = "Select species",
-        #                        br(),
-        #                        status = "primary",
-        #                        selectInput(inputId = "taxaOccurrence", label = "Taxa:",
-        #                                    selected = names(focalSpeciesDDList)[1],
-        #                                    choices = names(focalSpeciesDDList)),
-        #                        selectInput(inputId = "speciesOccurrence", label = "Species:",
-        #                                    selected = "Alectoria_sarmentosa",
-        #                                    choices = focalSpeciesDDList[[1]]),
-        #                        checkboxInput(inputId = "selectAbsences", 
-        #                                      label = "Show absences",
-        #                                      value = FALSE)   
-        #                    ) 
-        #                  ),
-        #                  fluidRow(
-        #                    box(width = 12,
-        #                        title = "Data type",
-        #                        selectInput(inputId = "dataClassification", label = "Show observations by:",
-        #                                    selected = "Data source",
-        #                                    choices = c("Data source" = "dataSource",
-        #                                                "Data type" = "dataType"))
-        #                    )
-        #                  ),
-        #                  fluidRow(
-        #                    box(width = 12, title = "Species Info",
-        #                        collapsible = TRUE,
-        #                        htmlOutput("textBox2"),
-        #                        p(),
-        #                        imageOutput("imageBox2"))
-        #                  )
-        #           ),
-        #           column(width = 9,
-        #                  fluidRow(
-        #                    box(
-        #                      title = "Species Occurrence Map",
-        #                      plotOutput("speciesOccurrenceMap", height = "100%")
-        #                    )
-        #                  ))
-        #         )
-        # )
+        )
         ,
         tabItem(tabName = "covariates",
                 fluidRow(
@@ -209,7 +163,9 @@ shinyUI(
                                                        "Precipitation" = "precipitation",
                                                        "Soil moisture" = "soil_moisture",
                                                        "Temperature" = "temperature",
-                                                       "Human density" = "human_density"
+                                                       "Forest carbon" = "forest_carbon",
+                                                       "Soil coarsness" = "soil_coarse_fraction",
+                                                       "Slope" = "slope"
                                            )
                                )
                            )

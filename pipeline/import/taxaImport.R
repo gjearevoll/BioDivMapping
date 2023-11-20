@@ -94,6 +94,7 @@ if (scheduledDownload) {
               "View the download status at https://www.gbif.org/occurrence/download/", 
               downloadKey)
       downloadKey <- occ_download_wait(downloadKey, curlopts = list(), quiet = FALSE)
+      attr(downloadKey,'doi') <- downloadKey$doi
       saveRDS(downloadKey, file = paste0(folderName, "/downloadKey.RDS"))
     } else {
       downloadKey <- occ_download_meta(downloadKey) 

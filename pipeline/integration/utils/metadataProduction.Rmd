@@ -81,7 +81,7 @@ datasetTable2 <- datasetTable %>%
 
 knitr::kable(
   list(taxaTable2
-       ,datasetTable2[1:10,]
+       ,datasetTable2[1:min(nrow(datasetTable2), 10),]
   ), 
   valign = 't'
 )

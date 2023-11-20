@@ -41,18 +41,21 @@ regionGeometry <- defineRegion(level, region)
 if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
   focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 } else {
-  focalTaxon <- read.csv("data/external/focalTaxa.csv", header = T)
+  focalTaxon <- read.csv(paste0("data/external/focal",importLevel,".csv"), header = T)
+  # filter selected taxa
+  focalTaxon <- focalTaxon[focalTaxon$include,]
+  
+  # get missing keys
+  missingKey <- is.na(focalTaxon$key)
+  focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
+                                             rank = focalTaxon$level[missingKey], 
+                                             strict = T)
+  # get accepted scientifc name based on usage key
+  focalTaxon$acceptedScientificName <- getScientificName(focalTaxon$key)
+  
   # save for reference
   write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 }
-
-focalTaxon <- focalTaxon[focalTaxon$include,]
-
-# get missing keys
-missingKey <- is.na(focalTaxon$key)
-focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
-                                          rank = focalTaxon$level[missingKey], 
-                                          strict = T)
 
 # Import red list
 if (file.exists(paste0(tempFolderName, "/redList.RDS"))) {

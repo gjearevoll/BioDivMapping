@@ -131,6 +131,11 @@ shinyServer(function(input, output, session) {
                 "<br/><strong>Red list status:</strong> ", redListStatusFull, 
                 "<br/><strong>Image Credit:</strong> <a href = ", imageURL, ">", imageUser, "<a/>"))
   })
+  
+  getPage<-function() {
+    return(includeHTML("speciesMetadata.html"))
+  }
+  output$inc<-renderUI({getPage()})
  
 })
 

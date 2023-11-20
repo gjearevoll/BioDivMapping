@@ -190,8 +190,8 @@ shinyUI(
         ),
         tabItem(tabName = "meta",
                 fluidRow(
-                  column(8,
-                         includeHTML("speciesMetadata.html")
+                  column(12,
+                         htmlOutput("inc")
                   ))
         )
         

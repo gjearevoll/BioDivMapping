@@ -12,8 +12,11 @@
 #' @param crs The coordinate reference system used in the workflow.
 #' 
 #' @return An R6 environment object with enough information to run an intSDM model.
-
-modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
+#' @importFrom terra nlyr
+#' @importFrom sf st_sf
+#' @importFrom intSDM startWorkflow
+#' 
+modelPreparation <- function(focalTaxon, speciesData, redListModelled = NULL, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
   
   if(is.null(crs)){
     if(!is.null(environmentalDataList)){
@@ -40,7 +43,13 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeo
     
     # We need to remove all unnecessary species datasets from the species data
     focalSpeciesDataRefined <- lapply(speciesData, FUN = function(x) {
-      focalDataset <- x[x$taxa %in% focalGroup & x$acceptedScientificName %in% redListModelled & !is.na(x$acceptedScientificName),]
+      focalDataset <- x[x$taxa %in% focalGroup & 
+                          if(is.null(redListModelled)) {
+                            T
+                          } else {
+                            x$acceptedScientificName %in% redListModelled
+                          } &
+                          !is.na(x$acceptedScientificName),]
       if (nrow(focalDataset) == 0) {
         focalDataset <- NA
       }

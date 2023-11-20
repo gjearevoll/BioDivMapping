@@ -94,7 +94,9 @@ shinyServer(function(input, output, session) {
   
   output$covariateMap <- renderPlot({
 
-    covariateToPlot <- covariateData[[input$covariate]]
+    covariateToPlot <- terra::crop(covariateData[[input$covariate]],
+                                   project(vect(regionGeometry), covariateData),
+                                   mask = T)
     covariateDataDF <- as.data.frame(project(covariateToPlot, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"), xy = TRUE)
     colnames(covariateDataDF)[3] <- "value"
 

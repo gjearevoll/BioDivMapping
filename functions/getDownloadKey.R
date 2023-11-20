@@ -33,9 +33,9 @@ getDownloadKey <- function(taxa, regionGeometry) {
   
   if (!is.numeric(taxa)) {
     keys <- as.integer()
-    for(i in 1:length(species)){
-      focalSpecies <- gsub("_", " ", species[i])
-      keyTable <- name_suggest(q=focalSpecies, rank='species')
+    for(i in 1:length(taxa)){
+      focalSpecies <- gsub("_", " ", taxa[i])
+      keyTable <- name_suggest(q = focalSpecies, rank='species')
       keys[i] <- keyTable$data$key[1]
     }
   } else {

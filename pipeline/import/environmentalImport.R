@@ -155,6 +155,6 @@ saveRDS(projCRS, paste0(tempFolderName,"/projCRS.RDS"))
 writeRaster(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
 
 # Create aggregated version for visualisation and reference data
-parametersAggregated <- terra::aggregate(parametersCropped, fact = 6)
+parametersAggregated <- terra::aggregate(parametersCropped, fact = 2)
 writeRaster(parametersAggregated, "visualisation/hotspotMaps/data/covariateDataList.tiff", overwrite=TRUE)
 writeRaster(parametersAggregated, paste0("data/run_", dateAccessed,"/environmentalDataImported.tiff"), overwrite=TRUE)

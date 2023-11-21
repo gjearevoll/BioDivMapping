@@ -5,7 +5,7 @@ forest_agb.tif,FALSE,FALSE,
 forest_basisdensity.tif,FALSE,FALSE,
 forest_basisyear.tif,FALSE,FALSE,
 forest_bgb.tif,FALSE,FALSE,
-forest_carbon.tif,FALSE,FALSE,
+forest_carbon,TRUE,FALSE,
 forest_changeclass.tif,FALSE,FALSE,
 forest_changeyod.tif,FALSE,FALSE,
 forest_crowncoverage.tif,FALSE,FALSE,
@@ -19,13 +19,13 @@ forest_NATD6.tif,FALSE,FALSE,
 forest_NATD7.tif,FALSE,FALSE,
 forest_treeheight.tif,FALSE,FALSE,
 land.tif,FALSE,FALSE,
-precipitation,TRUE,FALSE,
-slope,FALSE,TRUE,geonorge
-soil_coarse_fraction,FALSE,FALSE,
+precipitation,TRUE,TRUE,worldclim
+slope,TRUE,TRUE,geonorge
+soil_coarse_fraction,TRUE,FALSE,
 soil_moisture,TRUE,FALSE,
 soil_organic_carbon,FALSE,FALSE,
 soil_ph,FALSE,FALSE,
 solar_radiation,FALSE,FALSE,
 temperature,TRUE,TRUE,worldclim
-human_density,TRUE,TRUE,ssb
-building_density,FALSE,FALSE,
+human_density,FALSE,FALSE,ssb
+building_density,FALSE,FALSE,ssb

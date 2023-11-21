@@ -26,7 +26,6 @@ if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
 }
 
-speciesDataList <- readRDS(paste0("data/run_", dateAccessed, "/temp/speciesDataImported.RDS"))
 regionGeometry <- readRDS(paste0("data/run_", dateAccessed, "/regionGeometry.RDS"))
 
 # The following is a list of the various environmental variables we have available.
@@ -80,11 +79,14 @@ parameterList <- list()
 
 for (parameter in seq_along(selectedParameters)) {
   focalParameter <- selectedParameters[parameter]
+  
+  ### 1. Check if the data needs to be downloaded externally.
   external <- parameters$external[parameters$parameters == focalParameter]
   
   if (external) {
     dataSource <- parameters$dataSource[parameters$parameters == focalParameter]
-    # check if data has already been downloaded
+    
+    ### 2. Check whether we have previously downloaded a version of the external data that encompasses the area we need.
     raster_found <- FALSE
     if(dir.exists(paste0("data/temp/", dataSource))){
       ## List all files in the directory that match the parameter
@@ -101,6 +103,7 @@ for (parameter in seq_along(selectedParameters)) {
           break
         } 
       }   
+      # 3. Create new temp folder to download necessary external data.
     } else {
       dir.create(paste0("data/temp/", dataSource))
     }
@@ -159,6 +162,6 @@ saveRDS(projCRS, paste0(tempFolderName,"/projCRS.RDS"))
 writeRaster(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
 
 # Create aggregated version for visualisation and reference data
-parametersAggregated <- terra::aggregate(parametersCropped, fact = 6)
+parametersAggregated <- terra::aggregate(parametersCropped, fact = 2)
 writeRaster(parametersAggregated, "visualisation/hotspotMaps/data/covariateDataList.tiff", overwrite=TRUE)
 writeRaster(parametersAggregated, paste0("data/run_", dateAccessed,"/environmentalDataImported.tiff"), overwrite=TRUE)

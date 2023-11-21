@@ -52,7 +52,7 @@ if (dataSource == "geonorge") {
   
 ### 3. SSB ####
 } else if (dataSource == "ssb") {
-    rasterisedVersion <- get_ssb(focalParameter, resolution = "250")
+    rasterisedVersion <- get_ssb(focalParameter)
 }
 
 ### merge with requested download area to make missing data explicit

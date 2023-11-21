@@ -10,11 +10,26 @@
 #'
 
 getDownloadKey <- function(taxa, regionGeometry) {
+  # Check if credentials are stored in .Renviron
+  gbif_user <- Sys.getenv("gbif_user", "")
+  gbif_email <- Sys.getenv("gbif_email", "")
+  gbif_pwd <- Sys.getenv("gbif_pwd", "")
   
-  # Log in to GBIF
-  options(gbif_user=rstudioapi::askForPassword("my gbif username"))
-  options(gbif_email=rstudioapi::askForPassword("my registred gbif e-mail"))
-  options(gbif_pwd=rstudioapi::askForPassword("my gbif password"))
+  # If not found in .Renviron, check in options, or ask the user
+  if (gbif_user == "") {
+    gbif_user <- getOption("gbif_user", rstudioapi::askForPassword("my GBIF username"))
+  }
+  if (gbif_email == "") {
+    gbif_email <- getOption("gbif_email", rstudioapi::askForPassword("my registered GBIF e-mail"))
+  }
+  if (gbif_pwd == "") {
+    gbif_pwd <- getOption("gbif_pwd", rstudioapi::askForPassword("my GBIF password"))
+  }
+  
+  # Set the credentials in options (if they were asked from the user)
+  options(gbif_user=gbif_user)
+  options(gbif_email=gbif_email)
+  options(gbif_pwd=gbif_pwd)
   
   if (!is.numeric(taxa)) {
     keys <- as.integer()

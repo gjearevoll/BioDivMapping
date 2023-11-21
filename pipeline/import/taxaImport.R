@@ -48,6 +48,12 @@ if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
 
 focalTaxon <- focalTaxon[focalTaxon$include,]
 
+# get missing keys
+missingKey <- is.na(focalTaxon$key)
+focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
+                                          rank = focalTaxon$level[missingKey], 
+                                          strict = T)
+
 # Import red list
 if (file.exists(paste0(tempFolderName, "/redList.RDS"))) {
   redList <- readRDS(paste0(tempFolderName, "/redList.RDS"))

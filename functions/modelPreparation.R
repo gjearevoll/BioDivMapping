@@ -5,7 +5,7 @@
 #'
 #' @param focalTaxa A vector of the taxonomic groups we are modelling.
 #' @param speciesData A list of processed datasets to be used in the intSDM models.
-#' @param redListModelled A vector of red listed species found in the datasets with enough occurrences for a decent model.
+#' @param redListModelled A vector of red listed species found in the datasets with enough occurrences for a decent model. If NULL, all species will be modelled.
 #' @param regionGeometry An sf object encompassing our region of study, as produced by defineRegion.
 #' @param modelFolderName The directory where model outputs should be saved.
 #' @param environmentalDataList A list of raster giving relevant environmental variables.

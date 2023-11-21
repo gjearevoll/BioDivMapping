@@ -51,18 +51,18 @@ get_worldclim <- function(coords, var, res = 0.5, buff = 0, path = NA, dfMaxLeng
   # define raster of worldclim tiles
   r <- terra::rast(vals = 1:72, nrows = 6, ncols = 12, ext = terra::ext(c(-180, 180, -90, 90))) 
   # Identify WorldClim tiles to download
-  r_nums <- terra::extract(r, vect(ext), ID = FALSE)
+  r_nums <- terra::extract(r, vect(ext), ID = FALSE, touches = TRUE)
   r_xy <- terra::xyFromCell(r, r_nums[[1]]) |>
     matrix(ncol = 2)
 
   # create temporary download path if non is provided
   if(is.na(path)){
-    delete_folder <- T
+    delete_folder <- TRUE
     path <- paste0(getwd(), "/tmp")
   } else {
-    delete_folder <- F
+    delete_folder <- FALSE
   }
-  
+
   # Download and merge tiles
   if (res == 0.5) {
     for (i in seq_along(r_nums[[1]])) {
@@ -83,8 +83,14 @@ get_worldclim <- function(coords, var, res = 0.5, buff = 0, path = NA, dfMaxLeng
   #   "bio11", "bio12", "bio13", "bio14", "bio15", "bio16", "bio17", "bio18", "bio19"
   # )
 
+  # return data
   if(delete_folder) {
-    unlink(path, recursive = TRUE)
+    # create copy of raster within R
+    wclimmemry <- terra::rast(wclim)
+    values(wclimmemry) <- values(wclim)
+    # delete temp folder
+    unlink(path, recursive = TRUE)  
+    return(wclimmemry)
   } 
 
   return(wclim)

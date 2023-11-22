@@ -19,7 +19,7 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   # Get the relevant endpoint
   
   # Download and unzip file in temp folder
-  options(timeout=100)
+  #ptions(timeout=100)
   download.file(focalEndpoint, paste0(tempFolderName,"/", datasetName ,".zip"), mode = "wb")
   unzip(paste0(tempFolderName,"/", datasetName ,".zip"), exdir = paste0(tempFolderName,"/",  datasetName))
   
@@ -48,6 +48,16 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry) %>%
     filter(coordinateUncertaintyInMeters <= 100)
   
+  # Make sure we have a 'year' column
+  if (!("year" %in% colnames(events))) {
+    if ("eventDate" %in% colnames(occurrence)) {
+    eventTable <- distinct(occurrence[,c("eventID", "eventDate")])
+    eventTable$year <- format(as.Date(eventTable$eventDate), "%Y") 
+    events$year <- eventTable$year[match(events$eventID, eventTable$eventID)]
+    } else {
+    events$year <- NA
+  } }
+   
   # Get a dates table to match years to events
   eventDates <- events %>%
     filter(eventID %in% eventLocationsSF$eventID) %>%
@@ -64,10 +74,13 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   eventTable <- expand.grid(species = surveyedSpecies, eventID = unique(eventLocationsSF$eventID))
   eventTable <- merge(eventTable, eventDates, all.x = TRUE, by = "eventID")
   
-  # Add in occurrence data, an NA in coordinateUncertainy column means the species was NOT found in the survey
-  eventTableWithOccurrences <- merge(eventTable, occurrence[,c("eventID", "scientificName", "coordinateUncertaintyInMeters")], all.x = TRUE,
+  # Create an individual count 
+  occurrence$individualCount <- 1
+  
+  # Add in occurrence data, an NA in individualCount column means the species was NOT found in the survey
+  eventTableWithOccurrences <- merge(eventTable, occurrence[,c("eventID", "scientificName", "individualCount")], all.x = TRUE,
                                      by.x = c("species", "eventID"), by.y = c("scientificName", "eventID"))
-  eventTableWithOccurrences$individualCount <- ifelse(!is.na(eventTableWithOccurrences$coordinateUncertaintyInMeters), 1, 0)
+  eventTableWithOccurrences$individualCount[is.na(eventTableWithOccurrences$individualCount)] <- 0
   eventTableWithOccurrences$geometry <- eventLocationsSF$geometry[match(eventTableWithOccurrences$eventID, eventLocationsSF$eventID)]
   eventTableWithOccurrences$acceptedScientificName <- speciesLegend$acceptedScientificName[match(eventTableWithOccurrences$species, speciesLegend$surveyedSpecies)]
   

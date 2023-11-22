@@ -41,7 +41,7 @@ regionGeometry <- defineRegion(level, region)
 if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
   focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 } else {
-  focalTaxon <- read.csv(paste0("data/external/focal",importLevel,".csv"), header = T)
+  focalTaxon <- read.csv(paste0("data/external/focalTaxa.csv"), header = T)
   # filter selected taxa
   focalTaxon <- focalTaxon[focalTaxon$include,]
   
@@ -50,9 +50,6 @@ if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
   focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
                                              rank = focalTaxon$level[missingKey], 
                                              strict = T)
-  # get accepted scientifc name based on usage key
-  focalTaxon$acceptedScientificName <- getScientificName(focalTaxon$key)
-  
   # save for reference
   write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 }

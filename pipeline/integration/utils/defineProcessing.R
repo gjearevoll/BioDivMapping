@@ -26,5 +26,5 @@ if (dataType == "insectMonitoring") {
 # No need to do anything to presence only data (yet) except add individualCount column
 } else if (dataType == "presenceOnly") {
   focalData$dataType <- "PO"
-  newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year")]
+  newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year", "taxonKeyProject")]
 }

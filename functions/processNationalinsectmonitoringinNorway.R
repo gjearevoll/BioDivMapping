@@ -94,9 +94,10 @@ processNationalInsectMonitoring <- function(focalData, endpoint, tempFolderName)
   newDataset <- st_transform(newDataset, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
   newDataset$dataType <- "Counts"
   
-  taxaLegend <- distinct(st_drop_geometry(focalData[,c("taxa", "acceptedScientificName")]))
+  taxaLegend <- distinct(st_drop_geometry(focalData[,c("taxa", "acceptedScientificName", "taxonKeyProject")]))
   
   newDataset$taxa <- taxaLegend$taxa[match(newDataset$acceptedScientificName, taxaLegend$acceptedScientificName)]
+  newDataset$taxonKeyProject <- taxaLegend$taxonKeyProject[match(newDataset$acceptedScientificName, taxaLegend$acceptedScientificName)]
   return(newDataset)
   
   

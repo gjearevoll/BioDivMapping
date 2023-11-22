@@ -99,7 +99,8 @@ for (parameter in seq_along(selectedParameters)) {
         if (isSubset(regionGeometryBuffer, rast)) {
           rasterisedVersion <- rast
           raster_found <- TRUE
-          cat("Raster encompassing region found and imported successfully!\n")
+          cat(sprintf("Raster for '%s' encompassing region found and imported successfully!\n",
+                      focalParameter))
           break
         } 
       }   

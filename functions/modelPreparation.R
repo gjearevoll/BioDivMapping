@@ -33,14 +33,17 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeo
   workflowList <- list()
   
   # Begin running different species groups
-  for (i in 1:length(focalTaxa)) {
-    
-    # Define species group to create
-    focalGroup <- focalTaxa[i]
+  for (focanTaxon in unique(focalTaxa$taxa)) {
     
     # We need to remove all unnecessary species datasets from the species data
     focalSpeciesDataRefined <- lapply(speciesData, FUN = function(x) {
-      focalDataset <- x[x$taxa %in% focalGroup & x$acceptedScientificName %in% redListModelled & !is.na(x$acceptedScientificName),]
+      focalDataset <- x[x$taxa %in% focanTaxon & 
+                          if(is.null(redListModelled)) {
+                            T
+                          } else {
+                            x$acceptedScientificName %in% redListModelled
+                          } &
+                          !is.na(x$acceptedScientificName),]
       if (nrow(focalDataset) == 0) {
         focalDataset <- NA
       }
@@ -50,7 +53,7 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeo
     
     # Eliminate taxa if no data    
     if (length(focalSpeciesDataRefined) == 0) {
-      print(paste0("No data at all for ", focalGroup))
+      print(paste0("No data at all for ", focanTaxon))
       next
     }  
     
@@ -62,20 +65,20 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeo
     
     # identify functional groups in species with data for focal taxonomic group
     focalSpeciesWithData <- focalTaxon[focalTaxon$key %in% uniqueTaxaSpecies &  # species with data
-                                         focalTaxon$taxa %in% focalGroup,]  # and of focal taxa (in case same species in different taxa)
+                                         focalTaxon$taxa %in% focanTaxon,]  # and of focal taxa (in case same species in different taxa)
     # if any species are to be modelled as functional groups
     if(any(!is.na(focalSpeciesWithData$functionalGroup) & focalSpeciesWithData$functionalGroup != "")){
       # update data
       focalSpeciesDataRefined <- joinFunctionalGroups(speciesData = focalSpeciesDataRefined,
                                                          focalTaxon = focalSpeciesWithData) 
-      focalGroupSpecies <- unique(unlist(lapply(focalSpeciesDataRefined, function(ds){
+      focanTaxonSpecies <- unique(unlist(lapply(focalSpeciesDataRefined, function(ds){
         as.character(ds$acceptedScientificName)
       })))
     }
     
     # Eliminate taxa if no data
     if (length(focalSpeciesDataRefined) == 0) {
-      print(paste0("No data at all for ", focalGroup))
+      print(paste0("No data at all for ", focanTaxon))
       next
     }  
     
@@ -90,7 +93,7 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeo
     workflow <- startWorkflow(
       Projection = st_crs(crs)$proj4string,
       Species = speciesList,
-      saveOptions = list(projectDirectory = modelFolderName, projectName =  focalGroup), Save = TRUE
+      saveOptions = list(projectDirectory = modelFolderName, projectName =  focanTaxon), Save = TRUE
     )
     workflow$addArea(Object = st_sf(regionGeometry))
     
@@ -111,12 +114,13 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeo
     }
     
     # Add environmental characteristics
-    for (e in 1:nlyr(environmentalDataList)) {
+    env <- if(is.null(environmentalDataList)) 0 else seq(nlyr(environmentalDataList))
+    for (e in env) {
       cat(sprintf("Adding covariate '%s' to the model.\n", names(environmentalDataList)[e]))
       workflow$addCovariates(Object = environmentalDataList[[e]])
     }
     
-    workflowList[[focalGroup]] <- workflow
+    workflowList[[focanTaxon]] <- workflow
     
   }
   return(workflowList)

@@ -18,7 +18,13 @@ if (dataType == "insectMonitoring") {
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
   newDataset <- processFieldNotes(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon)
   
-# 4. Field note data (with events table)
+# 4. Field note data  - Oslo and Agder
+} else if (dataType == "fieldNotesOslo"){
+  focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
+  newDataset <- processFieldNotesOslo(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon)
+  
+  
+# 5. Field note data (with events table)
 } else if (dataType == "fieldNotesEvent") {
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
   newDataset <- processFieldNotesEvent(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon)

@@ -71,7 +71,7 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
     filter(!is.na(taxonKey))
   
   # Create table with all data combinations that we can match to
-  eventTable <- expand.grid(species = surveyedSpecies, eventID = unique(eventLocationsSF$eventID))
+  eventTable <- expand.grid(species = speciesLegend$surveyedSpecies, eventID = unique(eventLocationsSF$eventID))
   eventTable <- merge(eventTable, eventDates, all.x = TRUE, by = "eventID")
   
   # Create an individual count 

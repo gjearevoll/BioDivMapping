@@ -58,7 +58,7 @@ processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, re
     distinct()
   
   # Start constructing table
-  eventTable <- expand.grid(scientificName = surveyedSpecies, eventID = unique(eventLocationsSF$eventID))
+  eventTable <- expand.grid(scientificName = speciesLegend$surveyedSpecies, eventID = unique(eventLocationsSF$eventID))
   eventTable <- merge(eventTable, eventDates, all.x = TRUE, by = "eventID")
   
   # Create an individual count 

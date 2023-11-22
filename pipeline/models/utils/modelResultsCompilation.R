@@ -37,7 +37,7 @@ for (i in seq_along(focalTaxaRun)) {
     intensityVector <- intensityList$predictions$mean
     intensityScaled <- (intensityVector - min(intensityVector))/(max(intensityVector)-min(intensityVector))
     intensityList$predictions$mean <- intensityScaled
-    reprojectedIntensity <- suppressMessages(reproject(intensityList$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
+    reprojectedIntensity <- suppressMessages(st_transform(intensityList$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
     reprojectedIntensity
   })
   

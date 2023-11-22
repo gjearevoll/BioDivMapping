@@ -68,7 +68,7 @@ for (i in 1:length(names(workflowList))) {
                                     safe = TRUE))
   
   # Run model (this directly saves output to folder specified above)
-  sdmWorkflow(workflow)
+  sdmWorkflow(workflow, predictionDim = c(300,400))
 }
 
 ###------------------------------###

@@ -1,5 +1,5 @@
 
-#' @title \emph{processFieldNotesEvent}: Turns a presence only dataset into a presence absence dataset for surveyed data.
+#' @title \emph{processFieldNotesOslo}: Turns a presence only dataset into a presence absence dataset for surveyed data.
 
 #' @description Some datasets have been reduced by GBIF to presence-only, despite the fact they are in fact presence-absence datastes. This function downloads these datasets directly from the source and adds the absences back in.
 #'
@@ -14,31 +14,35 @@
 #' @import sf
 #' 
 #' 
-processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon) {
+#' 
+processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon) {
+  
   
   # Get the relevant endpoint
   
   # Download and unzip file in temp folder
-  #ptions(timeout=100)
+  #options(timeout=100)
   download.file(focalEndpoint, paste0(tempFolderName,"/", datasetName ,".zip"), mode = "wb")
   unzip(paste0(tempFolderName,"/", datasetName ,".zip"), exdir = paste0(tempFolderName,"/",  datasetName))
   
-  # Function to change file names
-  foo = function(x){
-    paste(toupper(substring(x, 1, 1)),
-          tolower(substring(x, 2, nchar(x))),
-          sep = "")
-  }
-  
-  # Load in event and occurrence data
-  events <- read.delim(paste0(tempFolderName,"/", datasetName ,"/event.txt"))
+  # Load in occurrence data
   occurrence <- read.delim(paste0(tempFolderName,"/", datasetName ,"/occurrence.txt"))
   
-  # Get all species surveyed
-  surveyedSpecies <-  unique(occurrence$scientificName)
+  # Create surveyed species and eventID
+  surveyedSpecies <- unique(occurrence$scientificName)
+  occurrence$eventID <- sapply(occurrence$id, FUN = function(x) {
+    strsplit(x, "[/]")[[1]][1]
+  }
+  )
+  
+  # Buold a species table
+  speciesLegend <- data.frame(surveyedSpecies = surveyedSpecies, 
+                              acceptedScientificName = sapply(surveyedSpecies, FUN = findGBIFName),
+                              taxonKey = sapply(surveyedSpecies, FUN = function(x) {taxaCheck(x, focalTaxon$key)})) %>%
+    filter(!is.na(taxonKey))
   
   # Find only eventIDs within our regionGeometry
-  eventLocations <- events %>%
+  eventLocations <- occurrence %>%
     filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) %>%
     dplyr::select(decimalLatitude, decimalLongitude, eventID, coordinateUncertaintyInMeters) %>%
     distinct()
@@ -48,41 +52,24 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry) %>%
     filter(coordinateUncertaintyInMeters <= 100)
   
-  # Make sure we have a 'year' column
-  if (!("year" %in% colnames(events))) {
-    if ("eventDate" %in% colnames(occurrence)) {
-    eventTable <- distinct(occurrence[,c("eventID", "eventDate")])
-    eventTable$year <- format(as.Date(eventTable$eventDate), "%Y") 
-    events$year <- eventTable$year[match(events$eventID, eventTable$eventID)]
-    } else {
-    events$year <- NA
-  } }
-   
   # Get a dates table to match years to events
-  eventDates <- events %>%
-    filter(eventID %in% eventLocationsSF$eventID) %>%
+  eventDates <- occurrence %>%
     dplyr::select(year, eventID) %>%
     distinct()
   
-  # Build a species table
-  speciesLegend <- data.frame(surveyedSpecies = surveyedSpecies, 
-                              acceptedScientificName = sapply(surveyedSpecies, FUN = findGBIFName),
-                              taxonKey = sapply(surveyedSpecies, FUN = function(x) {taxaCheck(x, focalTaxon$key)})) %>%
-    filter(!is.na(taxonKey))
-  
-  # Create table with all data combinations that we can match to
-  eventTable <- expand.grid(species = speciesLegend$surveyedSpecies, eventID = unique(eventLocationsSF$eventID))
+  # Start constructing table
+  eventTable <- expand.grid(scientificName = speciesLegend$surveyedSpecies, eventID = unique(eventLocationsSF$eventID))
   eventTable <- merge(eventTable, eventDates, all.x = TRUE, by = "eventID")
   
   # Create an individual count 
   occurrence$individualCount <- 1
   
-  # Add in occurrence data, an NA in individualCount column means the species was NOT found in the survey
+  # Add in occurrence data, an NA in coordinateUncertainy column means the species was NOT found in the survey
   eventTableWithOccurrences <- merge(eventTable, occurrence[,c("eventID", "scientificName", "individualCount")], all.x = TRUE,
-                                     by.x = c("species", "eventID"), by.y = c("scientificName", "eventID"))
+                                     by.x = c("scientificName", "eventID"), by.y = c("scientificName", "eventID"))
   eventTableWithOccurrences$individualCount[is.na(eventTableWithOccurrences$individualCount)] <- 0
   eventTableWithOccurrences$geometry <- eventLocationsSF$geometry[match(eventTableWithOccurrences$eventID, eventLocationsSF$eventID)]
-  eventTableWithOccurrences$acceptedScientificName <- speciesLegend$acceptedScientificName[match(eventTableWithOccurrences$species, speciesLegend$surveyedSpecies)]
+  eventTableWithOccurrences$acceptedScientificName <- speciesLegend$acceptedScientificName[match(eventTableWithOccurrences$scientificName, speciesLegend$surveyedSpecies)]
   
   # Add final columns
   eventTableWithOccurrences$dataType <- "PA"

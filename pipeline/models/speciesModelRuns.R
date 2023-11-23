@@ -30,7 +30,7 @@ if (!file.exists(modelFolderName)) {
 sapply(list.files("functions", full.names = TRUE), source)
 
 # Import species list
-focalTaxon <- read.csv("data/external/focalTaxa.csv")
+focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 focalTaxa <- unique(focalTaxon[focalTaxon$include, "taxa"])
 redList <- readRDS(paste0(folderName, "/redList.RDS"))
 
@@ -63,7 +63,7 @@ for (i in 1:length(names(workflowList))) {
   workflow$addMesh(cutoff= myMesh$cutoff, max.edge=myMesh$max.edge, offset= myMesh$offset)
   workflow$specifySpatial(prior.range = c(300000, 0.05),
                           prior.sigma = c(500, 0.2)) #100
-  workflow$workflowOutput('Maps')
+  workflow$workflowOutput('Predictions')
   workflow$modelOptions(INLA = list(control.inla=list(int.strategy = 'eb', cmin = 0),
                                     safe = TRUE))
   

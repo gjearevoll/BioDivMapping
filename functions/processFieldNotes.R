@@ -21,19 +21,26 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
   # Get the relevant endpoint
   
   # Download and unzip file in temp folder
-  options(timeout=100)
+  #options(timeout=100)
   download.file(focalEndpoint, paste0(tempFolderName,"/", datasetName ,".zip"), mode = "wb")
   unzip(paste0(tempFolderName,"/", datasetName ,".zip"), exdir = paste0(tempFolderName,"/",  datasetName))
   
   # Load in occurrence data
   occurrence <- read.delim(paste0(tempFolderName,"/", datasetName ,"/occurrence.txt"))
   
-  
+  # Create surveyed species
   surveyedSpecies <- unique(occurrence$scientificName)
-  occurrence$eventID <- sapply(occurrence$id, FUN = function(x) {
-    strsplit(x, "[/]")[[1]][1]
+  
+  # Create eventID
+  # 1. Check for eventID 
+  if (!("eventID" %in% colnames(occurrence))) {
+    # 2. If no eventDate, create eventDate
+    if(length(unique(occurrence$eventDate)) == 1 &  is.na(unique(occurrence$eventDate))) {
+      occurrence$eventDate <- paste(occurrence$year, occurrence$month, occurrence$day, sep = "-")
+    }
+    occurrence$eventID <- paste(occurrence$locality, occurrence$eventDate, sep = "-")
   }
-  )
+  
   
   # Buold a species table
   speciesLegend <- data.frame(surveyedSpecies = surveyedSpecies, 
@@ -43,14 +50,13 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
   
   # Find only eventIDs within our regionGeometry
   eventLocations <- occurrence %>%
-    filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) %>%
-    dplyr::select(decimalLatitude, decimalLongitude, eventID, coordinateUncertaintyInMeters) %>%
+    filter(!is.na(decimalLatitude) & !is.na(decimalLongitude) & coordinateUncertaintyInMeters <= 100) %>%
+    dplyr::select(decimalLatitude, decimalLongitude, eventID) %>%
     distinct()
   eventLocationsSF <- st_as_sf(eventLocations,                         
                                coords = c("decimalLongitude", "decimalLatitude"),
                                crs = "+proj=longlat +ellps=WGS84")
-  eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry) %>%
-    filter(coordinateUncertaintyInMeters <= 100)
+  eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry)
   
   # Get a dates table to match years to events
   eventDates <- occurrence %>%
@@ -58,13 +64,16 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
     distinct()
   
   # Start constructing table
-  eventTable <- expand.grid(scientificName = surveyedSpecies, eventID = unique(eventLocationsSF$eventID))
+  eventTable <- expand.grid(scientificName = speciesLegend$surveyedSpecies, eventID = unique(eventLocationsSF$eventID))
   eventTable <- merge(eventTable, eventDates, all.x = TRUE, by = "eventID")
   
+  # Create an individual count 
+  occurrence$individualCount <- 1
+  
   # Add in occurrence data, an NA in coordinateUncertainy column means the species was NOT found in the survey
-  eventTableWithOccurrences <- merge(eventTable, occurrence[,c("eventID", "scientificName", "coordinateUncertaintyInMeters")], all.x = TRUE,
+  eventTableWithOccurrences <- merge(eventTable, occurrence[,c("eventID", "scientificName", "individualCount")], all.x = TRUE,
                                      by.x = c("scientificName", "eventID"), by.y = c("scientificName", "eventID"))
-  eventTableWithOccurrences$individualCount <- ifelse(!is.na(eventTableWithOccurrences$coordinateUncertaintyInMeters), 1, 0)
+  eventTableWithOccurrences$individualCount[is.na(eventTableWithOccurrences$individualCount)] <- 0
   eventTableWithOccurrences$geometry <- eventLocationsSF$geometry[match(eventTableWithOccurrences$eventID, eventLocationsSF$eventID)]
   eventTableWithOccurrences$acceptedScientificName <- speciesLegend$acceptedScientificName[match(eventTableWithOccurrences$scientificName, speciesLegend$surveyedSpecies)]
   

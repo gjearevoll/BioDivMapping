@@ -29,3 +29,4 @@ solar_radiation,FALSE,FALSE,
 temperature,TRUE,TRUE,worldclim
 human_density,FALSE,FALSE,ssb
 building_density,FALSE,FALSE,ssb
+net_primary_productivity,TRUE,TRUE,modis

@@ -23,9 +23,6 @@ if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
 }
 
-# Import taxa list
-focalTaxon <- read.csv("data/external/focalTaxa.csv")
-focalTaxon <- focalTaxon[focalTaxon$include,]
 
 # Import datasets
 folderName <- paste0("data/run_", dateAccessed)
@@ -35,6 +32,10 @@ speciesData <- speciesDataList[["species"]]
 redList <- speciesDataList[["redList"]]
 metadata <- speciesDataList$metadata$metadata
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
+
+# Import taxa list
+focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
+focalTaxon <- focalTaxon[focalTaxon$include,]
 
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
@@ -72,7 +73,7 @@ for (ds in seq_along(speciesData)) {
 names(processedData) <- namesProcessedData
 
 # Save for use in model construction
-processedData <- processedData[lapply(processedData,length)>0]
+processedData <- processedData[lapply(processedData,nrow)>0]
 saveRDS(processedData, paste0(folderName, "/speciesDataProcessed.RDS"))
 
 
@@ -140,7 +141,7 @@ if(nrow(processedRedListPresenceData) > 0){
 
 # To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
 rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
-file.copy(paste0(folderName, "/speciesMetadata.html"), "visualisation/hotspotMaps")
+file.copy(paste0(folderName, "/speciesMetadata.html"), "visualisation/hotspotMaps", overwrite = TRUE)
 
 
 ###---------------------###

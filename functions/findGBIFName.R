@@ -9,6 +9,10 @@
 #' 
 
 findGBIFName <- function(scientificName) {
+  
+  if (str_detect(substr(scientificName,1,1),"[[:lower:]]")) {
+    substr(scientificName,1,1) <- toupper(substr(scientificName,1,1))
+  }
   speciesNameTable <- as.data.frame(rgbif::name_backbone(scientificName))
   if ("species" %in% colnames(speciesNameTable)) {
     acceptedName <- speciesNameTable[1, "scientificName"]

@@ -11,6 +11,10 @@
 #'
 taxaCheck <- function(scientificName, taxaKeys) {
   
+  if (str_detect(substr(scientificName,1,1),"[[:lower:]]")) {
+    substr(scientificName,1,1) <- toupper(substr(scientificName,1,1))
+  }
+  
   speciesNameTable <- as.data.frame(rgbif::name_backbone(scientificName))
   
   if (speciesNameTable$matchType == "NONE") {

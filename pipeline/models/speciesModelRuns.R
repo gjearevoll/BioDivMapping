@@ -63,7 +63,7 @@ for (i in 1:length(names(workflowList))) {
   workflow$addMesh(cutoff= myMesh$cutoff, max.edge=myMesh$max.edge, offset= myMesh$offset)
   workflow$specifySpatial(prior.range = c(300000, 0.05),
                           prior.sigma = c(500, 0.2)) #100
-  workflow$workflowOutput('Maps')
+  workflow$workflowOutput('Predictions')
   workflow$modelOptions(INLA = list(control.inla=list(int.strategy = 'eb', cmin = 0),
                                     safe = TRUE))
   

@@ -1,5 +1,5 @@
 
-#' @title \emph{processFieldNotes}: Turns a presence only dataset into a presence absence dataset for surveyed data.
+#' @title \emph{processFieldNotesOslo}: Turns a presence only dataset into a presence absence dataset for surveyed data.
 
 #' @description Some datasets have been reduced by GBIF to presence-only, despite the fact they are in fact presence-absence datastes. This function downloads these datasets directly from the source and adds the absences back in.
 #'
@@ -15,7 +15,7 @@
 #' 
 #' 
 #' 
-processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon) {
+processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon) {
   
   
   # Get the relevant endpoint
@@ -28,19 +28,12 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
   # Load in occurrence data
   occurrence <- read.delim(paste0(tempFolderName,"/", datasetName ,"/occurrence.txt"))
   
-  # Create surveyed species
+  # Create surveyed species and eventID
   surveyedSpecies <- unique(occurrence$scientificName)
-  
-  # Create eventID
-  # 1. Check for eventID 
-  if (!("eventID" %in% colnames(occurrence))) {
-    # 2. If no eventDate, create eventDate
-    if(length(unique(occurrence$eventDate)) == 1 &  is.na(unique(occurrence$eventDate))) {
-      occurrence$eventDate <- paste(occurrence$year, occurrence$month, occurrence$day, sep = "-")
-    }
-    occurrence$eventID <- paste(occurrence$locality, occurrence$eventDate, sep = "-")
+  occurrence$eventID <- sapply(occurrence$id, FUN = function(x) {
+    strsplit(x, "[/]")[[1]][1]
   }
-  
+  )
   
   # Buold a species table
   speciesLegend <- data.frame(surveyedSpecies = surveyedSpecies, 
@@ -50,13 +43,14 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
   
   # Find only eventIDs within our regionGeometry
   eventLocations <- occurrence %>%
-    filter(!is.na(decimalLatitude) & !is.na(decimalLongitude) & coordinateUncertaintyInMeters <= 100) %>%
-    dplyr::select(decimalLatitude, decimalLongitude, eventID) %>%
+    filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) %>%
+    dplyr::select(decimalLatitude, decimalLongitude, eventID, coordinateUncertaintyInMeters) %>%
     distinct()
   eventLocationsSF <- st_as_sf(eventLocations,                         
                                coords = c("decimalLongitude", "decimalLatitude"),
                                crs = "+proj=longlat +ellps=WGS84")
-  eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry)
+  eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry) %>%
+    filter(coordinateUncertaintyInMeters <= 100)
   
   # Get a dates table to match years to events
   eventDates <- occurrence %>%
@@ -81,13 +75,12 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
   eventTableWithOccurrences$dataType <- "PA"
   eventTableWithOccurrences$taxonKey <- speciesLegend$taxonKey[match(eventTableWithOccurrences$acceptedScientificName, speciesLegend$acceptedScientificName)]
   eventTableWithOccurrences$taxa <- focalTaxon$taxa[match(eventTableWithOccurrences$taxonKey, focalTaxon$key)]
-  eventTableWithOccurrences$taxonKeyProject <- focalTaxon$key[match(eventTableWithOccurrences$taxonKey, focalTaxon$key)]
   
   # New dataset is ready!
   newDataset <- st_as_sf(eventTableWithOccurrences,          
                          crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
   newDataset <- newDataset %>%
-    dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject) %>%
+    dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year) %>%
     filter(!is.na(acceptedScientificName))
   return(newDataset)
 }

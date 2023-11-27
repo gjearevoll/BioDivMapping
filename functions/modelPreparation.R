@@ -64,7 +64,7 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeo
     focalSpeciesWithData <- focalTaxon[focalTaxon$key %in% uniqueTaxaSpecies &  # species with data
                                          focalTaxon$taxa %in% focalGroup,]  # and of focal taxa (in case same species in different taxa)
     # if any species are to be modelled as functional groups
-    if(any(focalSpeciesWithData$functionalGroup != "")){
+    if(any(!is.na(focalSpeciesWithData$functionalGroup) & focalSpeciesWithData$functionalGroup != "")){
       # update data
       focalSpeciesDataRefined <- joinFunctionalGroups(speciesData = focalSpeciesDataRefined,
                                                          focalTaxon = focalSpeciesWithData) 

@@ -128,7 +128,8 @@ for (i in seq_along(focalTaxa)) {
   focalSpeciesWithData <- focalSpecies[focalSpecies$key %in% processedDataShortened$taxonKeyProject &  # species with data
                                         focalSpecies$taxa %in% focalTaxaGroup,]  # and of focal taxa (in case same species in different taxa)
   # if any species are to be modelled as functional groups
-  if(any(focalSpeciesWithData$functionalGroup != "")){
+  if(any(!is.na(focalSpeciesWithData$functionalGroup) & 
+           focalSpeciesWithData$functionalGroup != "")){
     # update data
     processedDataShortenedFunc <- joinFunctionalGroups(speciesData = processedDataShortened,
         focalTaxon = focalSpeciesWithData) %>%

@@ -57,7 +57,7 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeo
     # Combine species by functionalGroup if requested (else leave as separate)
     # identify species with data
     uniqueTaxaSpecies <- unique(unlist(lapply(focalSpeciesDataRefined, function(ds){
-      as.character(ds$acceptedScientificName)
+      as.character(ds$taxonKeyProject)
     })))
     
     # identify functional groups in species with data for focal taxonomic group

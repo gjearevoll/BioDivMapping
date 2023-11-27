@@ -13,7 +13,7 @@
 #' 
 #' @return An R6 environment object with enough information to run an intSDM model.
 
-modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
+modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
   
   if(is.null(crs)){
     if(!is.null(environmentalDataList)){
@@ -27,6 +27,8 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeom
       }
     }
   }
+  
+  focalTaxa <- unique(focalTaxon$taxa)
   
   workflowList <- list()
   
@@ -46,6 +48,11 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeom
     })
     focalSpeciesDataRefined <- focalSpeciesDataRefined[!is.na(focalSpeciesDataRefined)]
     
+    # Eliminate taxa if no data    
+    if (length(focalSpeciesDataRefined) == 0) {
+      print(paste0("No data at all for ", focalGroup))
+      next
+    }  
     
     # Combine species by functionalGroup if requested (else leave as separate)
     # identify species with data
@@ -54,8 +61,8 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeom
     })))
     
     # identify functional groups in species with data for focal taxonomic group
-    focalSpeciesWithData <- focalTaxa[focalTaxa$key %in% uniqueTaxaSpecies &  # species with data
-                                        focalTaxa$taxa %in% focalTaxaGroup,]  # and of focal taxa (in case same species in different taxa)
+    focalSpeciesWithData <- focalTaxon[focalTaxon$key %in% uniqueTaxaSpecies &  # species with data
+                                         focalTaxon$taxa %in% focalGroup,]  # and of focal taxa (in case same species in different taxa)
     # if any species are to be modelled as functional groups
     if(any(focalSpeciesWithData$functionalGroup != "")){
       # update data
@@ -66,6 +73,7 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled, regionGeom
       })))
     }
     
+    # Eliminate taxa if no data
     if (length(focalSpeciesDataRefined) == 0) {
       print(paste0("No data at all for ", focalGroup))
       next

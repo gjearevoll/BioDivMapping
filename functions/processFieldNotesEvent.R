@@ -88,12 +88,13 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   eventTableWithOccurrences$dataType <- "PA"
   eventTableWithOccurrences$taxonKey <- speciesLegend$taxonKey[match(eventTableWithOccurrences$acceptedScientificName, speciesLegend$acceptedScientificName)]
   eventTableWithOccurrences$taxa <- focalTaxon$taxa[match(eventTableWithOccurrences$taxonKey, focalTaxon$key)]
+  eventTableWithOccurrences$taxonKeyProject <- focalTaxon$key[match(eventTableWithOccurrences$taxonKey, focalTaxon$key)]
   
   # New dataset is ready!
   newDataset <- st_as_sf(eventTableWithOccurrences,          
                          crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
   newDataset <- newDataset %>%
-    dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year) %>%
+    dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject) %>%
     filter(!is.na(acceptedScientificName))
   return(newDataset)
 }

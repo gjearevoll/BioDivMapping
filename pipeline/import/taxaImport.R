@@ -41,18 +41,18 @@ regionGeometry <- defineRegion(level, region)
 if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
   focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 } else {
-  focalTaxon <- read.csv("data/external/focalTaxa.csv", header = T)
+  focalTaxon <- read.csv(paste0("data/external/focalTaxa.csv"), header = T)
+  # filter selected taxa
+  focalTaxon <- focalTaxon[focalTaxon$include,]
+  
+  # get missing keys
+  missingKey <- is.na(focalTaxon$key)
+  focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
+                                             rank = focalTaxon$level[missingKey], 
+                                             strict = T)
   # save for reference
   write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 }
-
-focalTaxon <- focalTaxon[focalTaxon$include,]
-
-# get missing keys
-missingKey <- is.na(focalTaxon$key)
-focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
-                                          rank = focalTaxon$level[missingKey], 
-                                          strict = T)
 
 # Import red list
 if (file.exists(paste0(tempFolderName, "/redList.RDS"))) {
@@ -106,7 +106,7 @@ if (scheduledDownload) {
   # Start GBIF Download  
   source("pipeline/import/utils/formatScheduledDownload.R")
   occurrences <- occurrences[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord",
-                                "year", "datasetKey", "datasetName", "taxa")] %>%
+                                "year", "datasetKey", "datasetName", "taxa", "taxonKeyProject")] %>%
     filter(!is.na(taxa))
   
   # If you don't want a scheduled download and are only getting small amounts of data, the script

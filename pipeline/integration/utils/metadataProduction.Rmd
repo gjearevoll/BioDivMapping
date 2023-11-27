@@ -1,6 +1,8 @@
 ---
 title: Species metadata description
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ``` {r, dataImport, echo = FALSE}
@@ -10,7 +12,6 @@ library(sf)
 library(inlabru)
 library(gridExtra)
 library(tidyterra)
-
 
 # Combine into one data frame and add date accessed
 processedDataCompiled$dateAccessed <- Sys.Date()
@@ -104,6 +105,56 @@ for (i in 1:length(focalTaxa)) {
 }
 
 
+```
+
+
+\newpage
+
+```{r, sourceFunctionalGroups, echo = FALSE}
+source("../../../functions/joinFunctionalGroups.R")
+focalSpecies <- read.csv(paste0("../../../", folderName, "/focalTaxa.csv"))
+regionGeometry <- readRDS(paste0("../../../", folderName, "/regionGeometry.RDS"))
+```
+
+The following gives spatial density for observations across the surveyed region by taxa.
+```{r, joinFuncgroups_plot_observations, echo = FALSE}
+focalTaxa <- unique(na.omit(processedDataCompiled$taxa)) 
+
+for (i in seq_along(focalTaxa)) {
+  focalTaxaGroup <- focalTaxa[i]
+  processedDataShortened <- processedDataCompiled[processedDataCompiled$taxa == focalTaxaGroup,]
+  # Combine species by functionalGroup if requested
+  # functional groups in species with data for focal taxonomic group
+  focalSpeciesWithData <- focalSpecies[focalSpecies$key %in% processedDataShortened$taxonKeyProject &  # species with data
+                                        focalSpecies$taxa %in% focalTaxaGroup,]  # and of focal taxa (in case same species in different taxa)
+  # if any species are to be modelled as functional groups
+  if(any(!is.na(focalSpeciesWithData$functionalGroup) & 
+           focalSpeciesWithData$functionalGroup != "")){
+    # update data
+    processedDataShortenedFunc <- joinFunctionalGroups(speciesData = processedDataShortened,
+        focalTaxon = focalSpeciesWithData) %>%
+        # replace ungrouped species with "ungrouped"
+        mutate(acceptedScientificName = ifelse(scientificName == acceptedScientificName, "Ungrouped", acceptedScientificName))
+
+    rows <- sample(seq(nrow(processedDataShortenedFunc)), 
+                   min(nrow(processedDataShortenedFunc), 1000)) # max 1,000 data points
+    # plot
+    p <- ggplot(regionGeometry) +
+          geom_sf() +
+          geom_sf(data = processedDataShortenedFunc[rows,], colour = 'blue', size = 0.1) +
+          facet_wrap(~acceptedScientificName) +
+          ggtitle(focalTaxaGroup)
+  } else {
+    rows <- sample(seq(nrow(processedDataShortenedFunc)), 
+                   min(nrow(processedDataShortenedFunc), 1000)) # max 1,000 data points
+    # plot
+    p <- ggplot(regionGeometry) +
+          geom_sf() +
+          geom_sf(data = processedDataShortened[rows,], colour = 'blue', size = 0.1) +
+      ggtitle(focalTaxaGroup)
+  }
+  print(p)
+}
 ```
 
 

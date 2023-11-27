@@ -89,7 +89,7 @@ processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x)
   if (datasetType == "PO") {
     dataset$individualCount <- 1
   }
-  datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType")]
+  datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType", "taxonKeyProject")]
   datasetShort$dsName <- datasetName
   datasetShort
 })

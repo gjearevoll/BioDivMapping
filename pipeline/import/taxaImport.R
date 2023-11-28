@@ -50,7 +50,7 @@ if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
 focalTaxon <- focalTaxon[focalTaxon$include,]
 
 # get missing keys
-missingKey <- is.na(focalTaxon$key)
+missingKey <- is.na(focalTaxon$key) & focalTaxon$level != "polyphyla"
 focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
                                            rank = focalTaxon$level[missingKey], 
                                            strict = T)

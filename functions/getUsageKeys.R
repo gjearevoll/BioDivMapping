@@ -25,7 +25,8 @@ getUsageKeys <- function(names, confidenceThreshold = 95, ...) {
       if(is.na(args$name)) return(NA)
       backbone <- do.call(rgbif::name_backbone, args)
       
-      if (!is.null(backbone$confidence) && backbone$confidence >= ct) {
+      if (!is.null(backbone$confidence) && backbone$confidence >= ct &
+          backbone$matchType != "NONE") {
         return(backbone$usageKey)
       } else {
         return(NA)

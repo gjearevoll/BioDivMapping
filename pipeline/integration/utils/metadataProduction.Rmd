@@ -145,8 +145,8 @@ for (i in seq_along(focalTaxa)) {
           facet_wrap(~acceptedScientificName) +
           ggtitle(focalTaxaGroup)
   } else {
-    rows <- sample(seq(nrow(processedDataShortenedFunc)), 
-                   min(nrow(processedDataShortenedFunc), 1000)) # max 1,000 data points
+    rows <- sample(seq(nrow(processedDataShortened)), 
+                   min(nrow(processedDataShortened), 1000)) # max 1,000 data points
     # plot
     p <- ggplot(regionGeometry) +
           geom_sf() +

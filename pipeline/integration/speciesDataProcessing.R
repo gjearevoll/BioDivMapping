@@ -33,9 +33,11 @@ redList <- speciesDataList[["redList"]]
 metadata <- speciesDataList$metadata$metadata
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 
-# Import taxa list
+# Import taxa list and polyphyletic species
 focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 focalTaxon <- focalTaxon[focalTaxon$include,]
+polyphyleticSpecies <- read.csv("data/external/polyphyleticSpecies.csv") %>%
+  filter(taxa %in% focalTaxon$taxa)
 
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
@@ -66,6 +68,13 @@ for (ds in seq_along(speciesData)) {
   source("pipeline/integration/utils/defineProcessing.R")
   
   newDataset$simpleScientificName <- redList$species[match(newDataset$acceptedScientificName, redList$GBIFName)]
+  
+  # Add in polyphyletic taxa
+  newDataset$taxa <- ifelse(newDataset$acceptedScientificName %in% polyphyleticSpecies$acceptedScientificName, 
+                            polyphyleticSpecies$taxa[match(newDataset$acceptedScientificName, polyphyleticSpecies$acceptedScientificName)], 
+                            newDataset$taxa)
+  
+  # Save and name new dataset
   processedData[[ds]] <- newDataset
   namesProcessedData[ds] <- datasetName
 }
@@ -82,7 +91,7 @@ saveRDS(processedData, paste0(folderName, "/speciesDataProcessed.RDS"))
 ###--------------------------------###
 
 # Edit data frames to have the same number of columns
-processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x) {
+processedDataCompiled <- do.call(rbind, lapply(1:length(processedData), FUN = function(x) {
   dataset <- processedData[[x]]
   datasetName <- names(processedData)[x]
   datasetType <- unique(dataset$dataType)
@@ -92,10 +101,9 @@ processedDataForCompilation <- lapply(1:length(processedData), FUN = function(x)
   datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType", "taxonKeyProject")]
   datasetShort$dsName <- datasetName
   datasetShort
-})
+}))
 
 # Remove absences, combine into one data frame and add date accessed
-processedDataCompiled <- do.call(rbind, processedDataForCompilation)
 processedPresenceData <- processedDataCompiled[processedDataCompiled$individualCount > 0,]
 processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
 saveRDS(processedPresenceData, "visualisation/hotspotMaps/data/processedPresenceData.RDS")

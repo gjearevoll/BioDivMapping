@@ -42,8 +42,13 @@ projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 # Prepare models
 
-workflowList <- modelPreparation(focalTaxon, speciesData, redList$GBIFName[redList$valid], 
-                                 regionGeometry, modelFolderName, environmentalDataList, projCRS)
+# Prepare models
+workflowList <- modelPreparation(focalTaxon, speciesData, 
+                                 redListModelled = redList$GBIFName[redList$valid], 
+                                 regionGeometry = regionGeometry,
+                                 modelFolderName = modelFolderName, 
+                                 environmentalDataList = environmentalDataList, 
+                                 crs = projCRS)
 focalTaxaRun <- names(workflowList)
 
 ###----------------###

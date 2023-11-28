@@ -5,15 +5,18 @@
 #'
 #' @param focalTaxa A vector of the taxonomic groups we are modelling.
 #' @param speciesData A list of processed datasets to be used in the intSDM models.
-#' @param redListModelled A vector of red listed species found in the datasets with enough occurrences for a decent model.
+#' @param redListModelled A vector of red listed species found in the datasets with enough occurrences for a decent model. If NULL, all species will be modelled.
 #' @param regionGeometry An sf object encompassing our region of study, as produced by defineRegion.
 #' @param modelFolderName The directory where model outputs should be saved.
 #' @param environmentalDataList A list of raster giving relevant environmental variables.
 #' @param crs The coordinate reference system used in the workflow.
 #' 
 #' @return An R6 environment object with enough information to run an intSDM model.
-
-modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
+#' @importFrom terra nlyr
+#' @importFrom sf st_sf
+#' @importFrom intSDM startWorkflow
+#' 
+modelPreparation <- function(focalTaxon, speciesData, redListModelled = NULL, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
   
   if(is.null(crs)){
     if(!is.null(environmentalDataList)){
@@ -35,7 +38,10 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled, regionGeo
   # Begin running different species groups
   for (focanTaxon in unique(focalTaxa$taxa)) {
     
-    # We need to remove all unnecessary species datasets from the species data
+    # We need to use only species that are 
+    # a) in the right taxa
+    # b) are in our list of red list species to model (this can also be removed if we just want to model all species)
+    # c) have a valid accepted scientific name
     focalSpeciesDataRefined <- lapply(speciesData, FUN = function(x) {
       focalDataset <- x[x$taxa %in% focanTaxon & 
                           if(is.null(redListModelled)) {

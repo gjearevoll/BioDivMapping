@@ -99,7 +99,7 @@ if (scheduledDownload) {
   if (file.exists(paste0(folderName, "/downloadKey.RDS"))) {
     downloadKey <- readRDS(paste0(folderName, "/downloadKey.RDS"))
   } else {
-    downloadKey <- getDownloadKey(focalTaxon$key, regionGeometry)
+    downloadKey <- getDownloadKey(focalTaxon$key[!is.na(focalTaxon$key)], regionGeometry)
     if(waitForGbif){
       message("Download key has been created and will download once it is ready (5-30 minutes). ",
               "View the download status at https://www.gbif.org/occurrence/download/", 

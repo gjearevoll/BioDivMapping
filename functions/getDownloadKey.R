@@ -45,7 +45,7 @@ getDownloadKey <- function(taxa, regionGeometry) {
   # Get taxon keys for species
   
   download_key <- occ_download(
-    pred_in("taxonKey", keys),
+    pred_in("taxonKey", keys[!is.na(keys)]),
     pred("geometry", st_as_text(regionGeometry[[1]])),
     pred_lte("coordinateUncertaintyInMeters", 100),
     type = "and"

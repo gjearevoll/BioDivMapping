@@ -41,7 +41,10 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled = NULL, re
     # Define species group to create
     focalGroup <- focalTaxa[i]
     
-    # We need to remove all unnecessary species datasets from the species data
+    # We need to use only species that are 
+    # a) in the right taxa
+    # b) are in our list of red list species to model (this can also be removed if we just want to model all species)
+    # c) have a valid accepted scientific name
     focalSpeciesDataRefined <- lapply(speciesData, FUN = function(x) {
       focalDataset <- x[x$taxa %in% focalGroup & 
                           if(is.null(redListModelled)) {

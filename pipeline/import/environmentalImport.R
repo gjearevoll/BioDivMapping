@@ -26,7 +26,11 @@ if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
 }
 
-regionGeometry <- readRDS(paste0("data/run_", dateAccessed, "/regionGeometry.RDS"))
+# Add folder name
+folderName <- paste0("data/run_", dateAccessed)
+tempFolderName <- paste0(folderName, "/temp")
+
+regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 
 # The following is a list of the various environmental variables we have available.
 # Define initial species list.
@@ -52,8 +56,6 @@ if (length(emptyParameters) > 0) {
                  },
                if (length(vec) == 1) "a source" else "sources"))}
 
-# Define folders for storage of all run data
-tempFolderName <- paste0("data/run_", dateAccessed, "/temp/")
 
 ###--------------------###
 ### 2. Dataset Import ####

@@ -53,6 +53,10 @@ if (dataSource == "geonorge") {
 ### 3. SSB ####
 } else if (dataSource == "ssb") {
     rasterisedVersion <- get_ssb(focalParameter)
+    
+### 4. MODIS ####    
+} else if (dataSource == "modis") {
+  rasterisedVersion <- get_modis(regionGeometry, projCRS)
 }
 
 ### merge with requested download area to make missing data explicit

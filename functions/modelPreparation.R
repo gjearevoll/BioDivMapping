@@ -16,7 +16,7 @@
 #' @importFrom sf st_sf
 #' @importFrom intSDM startWorkflow
 #' 
-modelPreparation <- function(focalTaxon, speciesData, redListModelled = NULL, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
+modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
   
   if(is.null(crs)){
     if(!is.null(environmentalDataList)){
@@ -31,10 +31,7 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled = NULL, re
     }
   }
   
-  focalTaxa <- unique(focalTaxon$taxa)
-  
   workflowList <- list()
-  
   # Begin running different species groups
   for (focanTaxon in unique(focalTaxa$taxa)) {
     

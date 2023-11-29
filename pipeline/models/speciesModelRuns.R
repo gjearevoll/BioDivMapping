@@ -30,8 +30,7 @@ if (!file.exists(modelFolderName)) {
 sapply(list.files("functions", full.names = TRUE), source)
 
 # Import species list
-focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
-focalTaxon <- focalTaxon[focalTaxon$include,]
+focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 redList <- readRDS(paste0(folderName, "/redList.RDS"))
 
 # Import datasets
@@ -43,7 +42,7 @@ projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 # Prepare models
 
 # Prepare models
-workflowList <- modelPreparation(focalTaxon, speciesData, 
+workflowList <- modelPreparation(focalTaxa, speciesData, 
                                  redListModelled = redList$GBIFName[redList$valid], 
                                  regionGeometry = regionGeometry,
                                  modelFolderName = modelFolderName, 

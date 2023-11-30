@@ -57,6 +57,8 @@ if (dataSource == "geonorge") {
 ### 4. MODIS ####    
 } else if (dataSource == "modis") {
   rasterisedVersion <- get_modis(regionGeometry, projCRS)
+} else if (dataSource == "corine") {
+  rasterisedVersion <- get_corine(regionGeometryBuffer, "data/temp/corine")
 }
 
 ### merge with requested download area to make missing data explicit

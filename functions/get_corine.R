@@ -10,7 +10,12 @@
 #' @return A SpatRaster of WorldClim layers.
 library(terra)
 
-get_corine <- function(zip_path, output_path = NA) {
+get_corine <- function(zip_path = NA, output_path = NA) {
+  
+  if(is.na(zip_path)){
+    message("'zip_path' not specified, please select CORINE land cover zip file. Data can be downloaded from https://land.copernicus.eu/en/products/corine-land-cover/clc2018.")
+    zip_path <- file.choose()
+  }
   
   if(!file.exists(zip_path)) {
     stop("CORINE land cover data cannot be found. Data can be downloaded from https://land.copernicus.eu/en/products/corine-land-cover/clc2018.")

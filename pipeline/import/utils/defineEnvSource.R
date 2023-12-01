@@ -58,7 +58,7 @@ if (dataSource == "geonorge") {
 } else if (dataSource == "modis") {
   rasterisedVersion <- get_modis(regionGeometry, projCRS)
 } else if (dataSource == "corine") {
-  rasterisedVersion <- get_corine("data/external/environmentalCovariates/corine.zip")
+  rasterisedVersion <- get_corine()
 }
 
 ### merge with requested download area to make missing data explicit

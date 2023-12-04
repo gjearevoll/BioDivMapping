@@ -30,3 +30,4 @@ temperature,TRUE,TRUE,worldclim
 human_density,FALSE,FALSE,ssb
 building_density,FALSE,FALSE,ssb
 net_primary_productivity,TRUE,TRUE,modis
+land_cover_corine,TRUE,TRUE,corine

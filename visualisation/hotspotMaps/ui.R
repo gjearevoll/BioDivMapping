@@ -15,6 +15,7 @@ library(shinyjs)
 library(sf)
 library(ggplot2)
 library(raster)
+library(ggtext)
 
 redList <- readRDS("data/redList.RDS")
 redListValid <- redList[redList$valid,]
@@ -110,6 +111,13 @@ shinyUI(
                                               label = "Show occurrences",
                                               value = FALSE))),
                           fluidRow(
+                            box(width = 12, title = "Select intensity type",
+                                selectInput(inputId = "intensityType", label = "Intensity type:",
+                                            selected = "speciesIntensities",
+                                            choices = c("Occurrence intensity" = "speciesIntensities",
+                                                        "Sampling intensity" = "bias")))
+                          ),
+                          fluidRow(
                             box(width = 12, title = "Species Info",
                                 collapsible = TRUE,
                                 htmlOutput("textBox1"),
@@ -122,7 +130,9 @@ shinyUI(
                     fluidRow(
                       box(width = 12,title = "Species Intensity Map",
                           status = "primary",
-                          plotOutput("speciesMap", height = '100%'))),
+                          plotOutput("speciesMap", height = '100%'),
+                      p(),
+                      textOutput("figureCaption1"))),
                     fluidRow(
                       box(width = 12, title = "What is species intensity?",
                           collapsible = TRUE, collapsed = TRUE,

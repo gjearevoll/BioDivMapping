@@ -26,7 +26,11 @@ if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
 }
 
-regionGeometry <- readRDS(paste0("data/run_", dateAccessed, "/regionGeometry.RDS"))
+# Add folder name
+folderName <- paste0("data/run_", dateAccessed)
+tempFolderName <- paste0(folderName, "/temp")
+
+regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 
 # The following is a list of the various environmental variables we have available.
 # Define initial species list.
@@ -52,8 +56,6 @@ if (length(emptyParameters) > 0) {
                  },
                if (length(vec) == 1) "a source" else "sources"))}
 
-# Define folders for storage of all run data
-tempFolderName <- paste0("data/run_", dateAccessed, "/temp/")
 
 ###--------------------###
 ### 2. Dataset Import ####
@@ -137,16 +139,26 @@ for (parameter in seq_along(selectedParameters)) {
 
 # crop each covariate to extent of regionGeometryBuffer (exclusively for reduced computation)
 parametersCropped <- lapply(parameterList, FUN = function(x) {
-  scale(
     crop(x,
          as.polygons(terra::project(regionGeometryBuffer, x),  extent = T), 
          snap = "out", mask = T)
-  )
+})
+
+
+# crop each covariate to extent of regionGeometryBuffer (exclusively for reduced computation)
+parametersScaled <- lapply(parameterList, FUN = function(x) {
+  layerLevels <- levels(x)[[1]]
+  if (is.null(nrow(layerLevels))) {
+  scaledParameter <- scale(x)
+  } else {
+    scaledParameter <- x
+  }
+  scaledParameter
 })
 
 # project all rasters to the one with the highest resolution and combine 
 parametersCropped <- do.call(c, 
-                             lapply(parametersCropped, function(x){
+                             lapply(parametersScaled, function(x){
                                terra::project(x, baseRaster)
                              }))
 # assign names

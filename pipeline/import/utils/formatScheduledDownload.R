@@ -11,7 +11,7 @@ occurrences <- occ_download_import(downloadGet)
 
 # Reduce to relevant columns immediately to save space
 occurrences <- occurrences[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord",
-                              "year", "datasetKey", "datasetName", "kingdomKey", "phylumKey", "classKey", "orderKey",
+                              "year", "month", "datasetKey", "datasetName", "kingdomKey", "phylumKey", "classKey", "orderKey",
                               "familyKey", "genusKey", "speciesKey")]
 
 # Filter down to relevant datasets

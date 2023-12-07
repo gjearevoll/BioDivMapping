@@ -41,18 +41,23 @@ regionGeometry <- defineRegion(level, region)
 if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
   focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 } else {
-  focalTaxon <- read.csv(paste0("data/external/focalTaxa.csv"), header = T)
-  # filter selected taxa
-  focalTaxon <- focalTaxon[focalTaxon$include,]
-  
-  # get missing keys
-  missingKey <- is.na(focalTaxon$key)
-  focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
-                                             rank = focalTaxon$level[missingKey], 
-                                             strict = T)
+  focalTaxon <- read.csv("data/external/focalTaxa.csv", header = T)
   # save for reference
   write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 }
+
+# Refine focal taxon
+focalTaxon <- focalTaxon[focalTaxon$include,]
+
+# get missing keys
+missingKey <- is.na(focalTaxon$key) & focalTaxon$level != "polyphyla"
+focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
+                                           rank = focalTaxon$level[missingKey], 
+                                           strict = T)
+
+# Introduce polyphyletic groups
+polyphyleticSpecies <- read.csv("data/external/polyphyleticSpecies.csv") %>%
+  filter(taxa %in% focalTaxon$taxa)
 
 # Import red list
 if (file.exists(paste0(tempFolderName, "/redList.RDS"))) {
@@ -63,12 +68,18 @@ if (file.exists(paste0(tempFolderName, "/redList.RDS"))) {
   
   # Match to accepted names
   redList$taxaKey <- sapply(redList$species, FUN = function(x) {taxaCheck(x, focalTaxon$key)})
-  redList$taxa <- focalTaxon$taxa[match(redList$taxaKey, focalTaxon$key)]
-  redList <- redList[!is.na(redList$taxa),]
+  redList$taxa <- focalTaxon$taxa[match(redList$taxaKey, focalTaxon$key[!is.na(focalTaxon$key)])]
   redList$GBIFName <- sapply(redList$species, FUN = findGBIFName)
+  
+  # Add polyphyletic taxa
+  polyphylaTaxaVector <-  polyphyleticSpecies$taxa[match(redList$GBIFName, polyphyleticSpecies$acceptedScientificName)]
+  redList$taxa <- ifelse(redList$GBIFName %in% polyphyleticSpecies$acceptedScientificName, 
+                         polyphylaTaxaVector, redList$taxa)
+  
+  # Cut out NAs and save redList
+  redList <- redList[!is.na(redList$taxa),]
   saveRDS(redList, paste0(tempFolderName, "/redList.RDS"))  
 }
-
 
 # Import metadata information
 if ("metadataSummary.csv" %in% list.files("data/external")) {
@@ -88,7 +99,7 @@ if (scheduledDownload) {
   if (file.exists(paste0(folderName, "/downloadKey.RDS"))) {
     downloadKey <- readRDS(paste0(folderName, "/downloadKey.RDS"))
   } else {
-    downloadKey <- getDownloadKey(focalTaxon$key, regionGeometry)
+    downloadKey <- getDownloadKey(focalTaxon$key[!is.na(focalTaxon$key)], regionGeometry)
     if(waitForGbif){
       message("Download key has been created and will download once it is ready (5-30 minutes). ",
               "View the download status at https://www.gbif.org/occurrence/download/", 
@@ -107,7 +118,7 @@ if (scheduledDownload) {
   # Start GBIF Download  
   source("pipeline/import/utils/formatScheduledDownload.R")
   occurrences <- occurrences[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord",
-                                "year", "datasetKey", "datasetName", "taxa", "taxonKeyProject")] %>%
+                                "year", "month", "datasetKey", "datasetName", "taxa", "taxonKeyProject")] %>%
     filter(!is.na(taxa))
   
   # If you don't want a scheduled download and are only getting small amounts of data, the script
@@ -172,4 +183,4 @@ saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
 saveRDS(regionGeometry, paste0(folderName, "/regionGeometry.RDS"))
 saveRDS(regionGeometry, "visualisation/hotspotMaps/data/regionGeometry.RDS")
 write.csv(focalTaxon, "visualisation/hotspotMaps/data/focalTaxon.csv", row.names = FALSE)
-
+saveRDS(downloadKey, file = "visualisation/hotspotMaps/data/downloadKey.RDS")

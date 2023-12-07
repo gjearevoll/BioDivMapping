@@ -117,7 +117,7 @@ if (scheduledDownload) {
   # Start GBIF Download  
   source("pipeline/import/utils/formatScheduledDownload.R")
   occurrences <- occurrences[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord",
-                                "year", "datasetKey", "datasetName", "taxa", "taxonKeyProject")] %>%
+                                "year", "month", "datasetKey", "datasetName", "taxa", "taxonKeyProject")] %>%
     filter(!is.na(taxa))
   
   # If you don't want a scheduled download and are only getting small amounts of data, the script
@@ -182,4 +182,4 @@ saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
 saveRDS(regionGeometry, paste0(folderName, "/regionGeometry.RDS"))
 saveRDS(regionGeometry, "visualisation/hotspotMaps/data/regionGeometry.RDS")
 write.csv(focalTaxon, "visualisation/hotspotMaps/data/focalTaxon.csv", row.names = FALSE)
-
+saveRDS(downloadKey, file = "visualisation/hotspotMaps/data/downloadKey.RDS")

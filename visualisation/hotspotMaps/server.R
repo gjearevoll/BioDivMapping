@@ -20,6 +20,7 @@ library(plotKML)
 library(raster)
 library(terra)
 library(tidyterra)
+library(ggtext)
 
 # Import all necessary data
 dataList <- readRDS("data/outputData.RDS")
@@ -29,6 +30,7 @@ creditList <- readRDS("data/imageCredit.RDS")
 speciesRichness <- rast("data/speciesRichnessData.tiff")
 redListSpeciesRichness <- rast("data/redListRichnessData.tiff")
 presenceData <- readRDS("data/processedPresenceData.RDS")
+downloadKey <- readRDS("data/downloadKey.RDS")
 
 
 # Create dropdown list for taxa
@@ -53,17 +55,30 @@ shinyServer(function(input, output, session) {
   output$speciesMap <- renderPlot({
     simpleName <- redList$species[redList$GBIFName == input$species]
     taxaData <- dataList[[input$taxa]]
-    fillData <- taxaData[[simpleName]]
+    intensityData <- taxaData[[input$intensityType]]
+    fillData <- intensityData[[simpleName]]
     
+    validate(
+      need(!is.null(fillData), paste0("No sampling intensity data available for ", simpleName, 
+      ". The most likely cause is a lack of data in participatory datasets."))
+    )
+    
+    fillData2 <- data.frame(intensity = fillData$mean, geometry = fillData$geometry)
+    
+    colorPalette <- ifelse(input$intensityType == "bias", "viridis", "inferno")
+    figureTitle <- ifelse(input$intensityType == "bias", paste0("Sampling intensity for *", simpleName, "*"),
+                          paste0("Occurrence intensity map for *", simpleName, "*"))
     
     intensityPlot <- ggplot(regionGeometry) + 
-      geom_sf(fillData, mapping = aes(colour = mean)) + 
-      colorspace::scale_colour_continuous_sequential(palette = "Inferno", na.value = "grey50") +
+      geom_sf(fillData2, mapping = aes(colour = intensity, geometry = geometry)) + 
+      colorspace::scale_colour_continuous_sequential(palette = colorPalette, na.value = "grey50") +
       geom_sf(fill = NA, lwd = 0.7, colour = "black") +
-      theme_bw() + 
-      labs(fill = "Species\nintensity") + 
+      theme_bw() +
+      labs(colour = "Scaled\nintensity") + 
       theme(axis.title.x = element_blank(),
-            axis.title.y = element_blank())
+            axis.title.y = element_blank(),
+            plot.title = ggtext::element_markdown()) +
+      labs(title = figureTitle)
     
     if (input$showOccurrences == TRUE) {
       dataToPlot <- presenceData[presenceData$acceptedScientificName == input$species,] 
@@ -130,6 +145,15 @@ shinyServer(function(input, output, session) {
                 "<br/><strong>Number of occurrences:</strong> ", noOccurrences,
                 "<br/><strong>Red list status:</strong> ", redListStatusFull, 
                 "<br/><strong>Image Credit:</strong> <a href = ", imageURL, ">", imageUser, "<a/>"))
+  })
+  
+  output$figureCaption1 <- renderText ({
+    simpleName <- redList$species[redList$GBIFName == input$species]
+    figureCaption <- paste0(ifelse(input$intensityType == "bias", "Sampling ", "Occurrence "), "intensity map for ", simpleName, ". Data is drawn from the Global Biodiversity Information Facility (DOI: ", 
+                            downloadKey$doi, ")", ifelse(input$taxa %in% c("vascularPlants", "fungi", "lichens"), " and Arealrepresentativ naturovervåking. ", ". "),
+                            "Species modelled produced using the Hotspots data pipeline: https://github.com/gjearevoll/BioDivMapping.",
+                            ifelse(input$intensityType == "bias", " Sampling bias calculated for participatory datasets only.", ""))
+    figureCaption
   })
   
   getPage<-function() {

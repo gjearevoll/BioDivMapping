@@ -42,8 +42,6 @@ if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
   focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 } else {
   focalTaxon <- read.csv("data/external/focalTaxa.csv", header = T)
-  # save for reference
-  write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 }
 
 # Refine focal taxon
@@ -54,6 +52,8 @@ missingKey <- is.na(focalTaxon$key) & focalTaxon$level != "polyphyla"
 focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
                                            rank = focalTaxon$level[missingKey], 
                                            strict = T)
+# save for reference
+write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 
 # Introduce polyphyletic groups
 polyphyleticSpecies <- read.csv("data/external/polyphyleticSpecies.csv") %>%

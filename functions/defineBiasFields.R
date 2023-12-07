@@ -17,7 +17,7 @@
 
 
 
-defineBiasFields <- function(focalTaxaRun, dataTypes, speciesData, redList, datasets = NA) {
+defineBiasFields <- function(focalTaxaRun, dataTypes, speciesData, redList = NULL, datasets = NA) {
   # Check whether we have a pre-defined set of datasets
   if (!is.na(datasets)) {
     biasFields <- rep(list(datasets), length(focalTaxaRun))
@@ -27,12 +27,18 @@ defineBiasFields <- function(focalTaxaRun, dataTypes, speciesData, redList, data
   biasFieldList <- list()
   # Go through species by species
   for (t in seq_along(focalTaxaRun)) {
-    # See which individual species will be modelled
-    redListedSpecies <- redList$GBIFName[redList$taxa %in% focalTaxaRun[t] & redList$valid == TRUE]
-    
-    # Find which datasets have data for this taxa
-    useableDatasets <- sapply(speciesData, FUN = function(x) {nrow(x[x$acceptedScientificName %in% redListedSpecies,])})
-    useableDatasets <- names(useableDatasets[useableDatasets != 0])
+    if(is.null(redList)) {
+      # Find which datasets have data for this taxa
+      useableDatasets <- sapply(speciesData, FUN = function(x) {nrow(x)})
+      useableDatasets <- names(useableDatasets[useableDatasets != 0])
+    } else {
+      # See which individual species will be modelled
+      redListedSpecies <- redList$GBIFName[redList$taxa %in% focalTaxaRun[t] & redList$valid == TRUE]
+      
+      # Find which datasets have data for this taxa
+      useableDatasets <- sapply(speciesData, FUN = function(x) {nrow(x[x$acceptedScientificName %in% redListedSpecies,])})
+      useableDatasets <- names(useableDatasets[useableDatasets != 0])
+    }
     
     # Get suggested datasets from our metadata
     biasedDatasets <- dataTypes[dataTypes$biased,]

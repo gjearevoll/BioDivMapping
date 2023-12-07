@@ -33,14 +33,14 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, reg
   
   workflowList <- list()
   # Begin running different species groups
-  for (focanTaxon in unique(focalTaxa$taxa)) {
+  for (focalTaxon in unique(focalTaxa$taxa)) {
     
     # We need to use only species that are 
     # a) in the right taxa
     # b) are in our list of red list species to model (this can also be removed if we just want to model all species)
     # c) have a valid accepted scientific name
     focalSpeciesDataRefined <- lapply(speciesData, FUN = function(x) {
-      focalDataset <- x[x$taxa %in% focanTaxon & 
+      focalDataset <- x[x$taxa %in% focalTaxon & 
                           if(is.null(redListModelled)) {
                             T
                           } else {
@@ -56,7 +56,7 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, reg
     
     # Eliminate taxa if no data    
     if (length(focalSpeciesDataRefined) == 0) {
-      print(paste0("No data at all for ", focanTaxon))
+      print(paste0("No data at all for ", focalTaxon))
       next
     }  
     
@@ -68,20 +68,20 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, reg
     
     # identify functional groups in species with data for focal taxonomic group
     focalSpeciesWithData <- focalTaxon[focalTaxon$key %in% uniqueTaxaSpecies &  # species with data
-                                         focalTaxon$taxa %in% focanTaxon,]  # and of focal taxa (in case same species in different taxa)
+                                         focalTaxon$taxa %in% focalTaxon,]  # and of focal taxa (in case same species in different taxa)
     # if any species are to be modelled as functional groups
     if(any(!is.na(focalSpeciesWithData$functionalGroup) & focalSpeciesWithData$functionalGroup != "")){
       # update data
       focalSpeciesDataRefined <- joinFunctionalGroups(speciesData = focalSpeciesDataRefined,
                                                          focalTaxon = focalSpeciesWithData) 
-      focanTaxonSpecies <- unique(unlist(lapply(focalSpeciesDataRefined, function(ds){
+      focalTaxonSpecies <- unique(unlist(lapply(focalSpeciesDataRefined, function(ds){
         as.character(ds$acceptedScientificName)
       })))
     }
     
     # Eliminate taxa if no data
     if (length(focalSpeciesDataRefined) == 0) {
-      print(paste0("No data at all for ", focanTaxon))
+      print(paste0("No data at all for ", focalTaxon))
       next
     }  
     
@@ -96,7 +96,7 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, reg
     workflow <- startWorkflow(
       Projection = st_crs(crs)$proj4string,
       Species = speciesList,
-      saveOptions = list(projectDirectory = modelFolderName, projectName =  focanTaxon), Save = TRUE
+      saveOptions = list(projectDirectory = modelFolderName, projectName =  focalTaxon), Save = TRUE
     )
     workflow$addArea(Object = st_sf(regionGeometry))
     
@@ -123,7 +123,7 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, reg
       workflow$addCovariates(Object = environmentalDataList[[e]])
     }
     
-    workflowList[[focanTaxon]] <- workflow
+    workflowList[[focalTaxon]] <- workflow
     
   }
   return(workflowList)

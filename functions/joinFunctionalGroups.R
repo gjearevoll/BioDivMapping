@@ -16,15 +16,16 @@ joinFunctionalGroups <- function(speciesData, focalTaxon) {
   }
   # for each dataset
   speciesData <- lapply(speciesData, function(ds) {
+    ds$simpleScientificName <- gsub(" ", "_", word(ds$acceptedScientificName, 1,2, sep=" "))
     # make copy of original species names
-    ds$scientificName <- ds$acceptedScientificName
+    ds$scientificName <- ds$simpleScientificName
     # identify records of species part of one functional group
     # (typically generalists, or if only distinct specialists)
     singleFG <- ds$taxonKeyProject %in% names(instances[instances == 1]) &
       focalTaxon$functionalGroup[  # functional group not blank 
         match(ds$taxonKeyProject, focalTaxon$key)] != ""  
     # rename species part of one functional group 
-    ds$acceptedScientificName[singleFG] <-
+    ds$simpleScientificName[singleFG] <-
       focalTaxon$functionalGroup[match(ds$taxonKeyProject[singleFG], 
                                          focalTaxon$key)]
     # return ds if no species in taxa have multiple FGs
@@ -51,7 +52,7 @@ joinFunctionalGroups <- function(speciesData, focalTaxon) {
       replicated_rows <- do.call(rbind, replicate(length(fg), species_rows, simplify = FALSE))
       # replacement names ("" for species where modelled individually and with functionalGroup)
       newName <- rep(fg, each = nrow(species_rows)) 
-      replicated_rows$acceptedScientificName[newName != ""] <- newName[newName != ""]  # assign name
+      replicated_rows$simpleScientificName[newName != ""] <- newName[newName != ""]  # assign name
       return(replicated_rows) 
     }))
     # combine with remaining data (i.e., species modelled separately or in one FG)

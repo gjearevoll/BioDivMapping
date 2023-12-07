@@ -113,7 +113,6 @@ for (i in 1:length(focalTaxa)) {
 ```{r, sourceFunctionalGroups, echo = FALSE}
 source("../../../functions/joinFunctionalGroups.R")
 focalSpecies <- read.csv(paste0("../../../", folderName, "/focalTaxa.csv"))
-regionGeometry <- readRDS(paste0("../../../", folderName, "/regionGeometry.RDS"))
 ```
 
 The following gives spatial density for observations across the surveyed region by taxa.
@@ -134,7 +133,7 @@ for (i in seq_along(focalTaxa)) {
     processedDataShortenedFunc <- joinFunctionalGroups(speciesData = processedDataShortened,
         focalTaxon = focalSpeciesWithData) %>%
         # replace ungrouped species with "ungrouped"
-        mutate(acceptedScientificName = ifelse(scientificName == acceptedScientificName, "Ungrouped", acceptedScientificName))
+        mutate(simpleScientificName = ifelse(scientificName == simpleScientificName, "Ungrouped", simpleScientificName))
 
     rows <- sample(seq(nrow(processedDataShortenedFunc)), 
                    min(nrow(processedDataShortenedFunc), 1000)) # max 1,000 data points
@@ -142,7 +141,7 @@ for (i in seq_along(focalTaxa)) {
     p <- ggplot(regionGeometry) +
           geom_sf() +
           geom_sf(data = processedDataShortenedFunc[rows,], colour = 'blue', size = 0.1) +
-          facet_wrap(~acceptedScientificName) +
+          facet_wrap(~simpleScientificName) +
           ggtitle(focalTaxaGroup)
   } else {
     rows <- sample(seq(nrow(processedDataShortened)), 

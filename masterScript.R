@@ -45,7 +45,7 @@ source("pipeline/import/taxaImport.R")
 # we defined in the last step.
 
 myMesh <- list(cutoff = 25000, max.edge=c(109000, 120000), offset= 80000)
-mesh <- meshTest(myMesh, regionGeometry, print = T, crs = crs) %>% 
+mesh <- meshTest(myMesh, regionGeometry, print = T, crs = crs) |>
   inlaMeshToSf()
 
 source("pipeline/import/environmentalImport.R")

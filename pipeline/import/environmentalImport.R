@@ -173,7 +173,21 @@ saveRDS(projCRS, paste0(tempFolderName,"/projCRS.RDS"))
 # Save both to temp file for model processing and visualisation folder for mapping
 writeRaster(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
 
-# Create aggregated version for visualisation and reference data
-parametersAggregated <- terra::aggregate(parametersCropped, fact = 2)
+# Create aggregated version for all non-land cover visualisation and reference data
+parametersAggregated <- lapply(parametersCropped, FUN = function(x) {
+  layerLevels <- levels(x)[[1]]
+  if (is.null(nrow(layerLevels))) {
+    aggregatedParameter <- terra::aggregate(x, fact = 2)
+  } else {
+    aggregatedParameter <- terra::aggregate(x, fact = 2, fun = "modal")
+  }
+  aggregatedParameterCropped <- crop(aggregatedParameter,ext(baseRaster))
+  aggregatedParameterCropped
+})
+parametersAggregated <- do.call(c, parametersAggregated)
+names(parametersAggregated) <- selectedParameters
 writeRaster(parametersAggregated, "visualisation/hotspotMaps/data/covariateDataList.tiff", overwrite=TRUE)
 writeRaster(parametersAggregated, paste0("data/run_", dateAccessed,"/environmentalDataImported.tiff"), overwrite=TRUE)
+
+
+

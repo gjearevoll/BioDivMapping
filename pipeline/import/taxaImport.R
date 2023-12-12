@@ -117,7 +117,7 @@ if (scheduledDownload) {
   # Start GBIF Download  
   source("pipeline/import/utils/formatScheduledDownload.R")
   occurrences <- occurrences[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord",
-                                "year", "month", "datasetKey", "datasetName", "taxa", "taxonKeyProject")] %>%
+                                "year", "month", "datasetKey", "datasetName", "taxa", "taxonKeyProject", "taxonRank")] %>%
     filter(!is.na(taxa))
   
   # If you don't want a scheduled download and are only getting small amounts of data, the script

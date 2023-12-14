@@ -16,7 +16,7 @@
 #' @importFrom sf st_sf
 #' @importFrom intSDM startWorkflow
 #' 
-modelPreparation <- function(focalTaxon, speciesData, redListModelled = NULL, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
+modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
   
   if(is.null(crs)){
     if(!is.null(environmentalDataList)){
@@ -31,22 +31,16 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled = NULL, re
     }
   }
   
-  focalTaxa <- unique(focalTaxon$taxa)
-  
   workflowList <- list()
-  
   # Begin running different species groups
-  for (i in 1:length(focalTaxa)) {
-    
-    # Define species group to create
-    focalGroup <- focalTaxa[i]
+  for (focalTaxon in unique(focalTaxa$taxa)) {
     
     # We need to use only species that are 
     # a) in the right taxa
     # b) are in our list of red list species to model (this can also be removed if we just want to model all species)
     # c) have a valid accepted scientific name
     focalSpeciesDataRefined <- lapply(speciesData, FUN = function(x) {
-      focalDataset <- x[x$taxa %in% focalGroup & 
+      focalDataset <- x[x$taxa %in% focalTaxon & 
                           if(is.null(redListModelled)) {
                             T
                           } else {
@@ -62,7 +56,7 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled = NULL, re
     
     # Eliminate taxa if no data    
     if (length(focalSpeciesDataRefined) == 0) {
-      print(paste0("No data at all for ", focalGroup))
+      print(paste0("No data at all for ", focalTaxon))
       next
     }  
     
@@ -74,20 +68,20 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled = NULL, re
     
     # identify functional groups in species with data for focal taxonomic group
     focalSpeciesWithData <- focalTaxon[focalTaxon$key %in% uniqueTaxaSpecies &  # species with data
-                                         focalTaxon$taxa %in% focalGroup,]  # and of focal taxa (in case same species in different taxa)
+                                         focalTaxon$taxa %in% focalTaxon,]  # and of focal taxa (in case same species in different taxa)
     # if any species are to be modelled as functional groups
     if(any(!is.na(focalSpeciesWithData$functionalGroup) & focalSpeciesWithData$functionalGroup != "")){
       # update data
       focalSpeciesDataRefined <- joinFunctionalGroups(speciesData = focalSpeciesDataRefined,
                                                          focalTaxon = focalSpeciesWithData) 
-      focalGroupSpecies <- unique(unlist(lapply(focalSpeciesDataRefined, function(ds){
+      focalTaxonSpecies <- unique(unlist(lapply(focalSpeciesDataRefined, function(ds){
         as.character(ds$acceptedScientificName)
       })))
     }
     
     # Eliminate taxa if no data
     if (length(focalSpeciesDataRefined) == 0) {
-      print(paste0("No data at all for ", focalGroup))
+      print(paste0("No data at all for ", focalTaxon))
       next
     }  
     
@@ -102,7 +96,7 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled = NULL, re
     workflow <- startWorkflow(
       Projection = st_crs(crs)$proj4string,
       Species = speciesList,
-      saveOptions = list(projectDirectory = modelFolderName, projectName =  focalGroup), Save = TRUE
+      saveOptions = list(projectDirectory = modelFolderName, projectName =  focalTaxon), Save = TRUE
     )
     workflow$addArea(Object = st_sf(regionGeometry))
     
@@ -123,12 +117,13 @@ modelPreparation <- function(focalTaxon, speciesData, redListModelled = NULL, re
     }
     
     # Add environmental characteristics
-    for (e in 1:nlyr(environmentalDataList)) {
+    env <- if(is.null(environmentalDataList)) 0 else seq(nlyr(environmentalDataList))
+    for (e in env) {
       cat(sprintf("Adding covariate '%s' to the model.\n", names(environmentalDataList)[e]))
       workflow$addCovariates(Object = environmentalDataList[[e]])
     }
     
-    workflowList[[focalGroup]] <- workflow
+    workflowList[[focalTaxon]] <- workflow
     
   }
   return(workflowList)

@@ -30,8 +30,8 @@ if (!file.exists(modelFolderName)) {
 sapply(list.files("functions", full.names = TRUE), source)
 
 # Import species list
-focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
-focalTaxon <- focalTaxon[focalTaxon$include,]
+focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
+focalTaxa <- focalTaxa[focalTaxa$include,]
 redList <- readRDS(paste0(folderName, "/redList.RDS"))
 
 # Import datasets
@@ -41,7 +41,7 @@ speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 # Prepare models
-workflowList <- modelPreparation(focalTaxon, speciesData, 
+workflowList <- modelPreparation(focalTaxa, speciesData, 
                                  redListModelled = redList$GBIFName[redList$valid], 
                                  regionGeometry = regionGeometry,
                                  modelFolderName = modelFolderName, 
@@ -74,7 +74,7 @@ for (i in 1:length(names(workflowList))) {
   workflow$addMesh(cutoff= myMesh$cutoff, max.edge=myMesh$max.edge, offset= myMesh$offset)
   workflow$specifySpatial(prior.range = c(300000, 0.05),
                           prior.sigma = c(500, 0.2)) #100
-  workflow$workflowOutput(c('Predictions', 'Bias'))
+  workflow$workflowOutput(c('Predictions', 'Bias','Model', 'Maps'))
   workflow$modelOptions(INLA = list(control.inla=list(int.strategy = 'eb', cmin = 0),
                                     safe = TRUE))
   

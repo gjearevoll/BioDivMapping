@@ -136,32 +136,24 @@ for (parameter in seq_along(selectedParameters)) {
   parameterList[[parameter]] <- rasterisedVersion
 }
 
-# crop each covariate to extent of regionGeometryBuffer (exclusively for reduced computation)
-parametersCropped <- lapply(parameterList, FUN = function(x) {
-    crop(x,
-         as.polygons(terra::project(regionGeometryBuffer, x),  extent = T), 
-         snap = "out", mask = T)
-})
-
-
-# crop each covariate to extent of regionGeometryBuffer (exclusively for reduced computation)
-parametersScaled <- lapply(parameterList, FUN = function(x) {
-  layerLevels <- levels(x)[[1]]
-  if (is.null(nrow(layerLevels))) {
-  scaledParameter <- scale(x)
-  } else {
-    scaledParameter <- x
-  }
-  scaledParameter
-})
-
-# project all rasters to the one with the highest resolution and combine 
-parametersCropped <- do.call(c, 
-                             lapply(parametersScaled, function(x){
-                               terra::project(x, baseRaster)
-                             }))
-# assign names
-names(parametersCropped) <- selectedParameters
+# crop, reproject, and combine raster layers
+parametersCropped <- parameterList |> 
+  lapply(function(x) {
+    # Crop each covariate to extent of regionGeometryBuffer
+    out <- crop(x, as.polygons(project(regionGeometryBuffer, x), extent = TRUE), snap = "out", mask = TRUE)
+    # Project all rasters to baseRaster and combine
+    if(is.factor(x)) {
+      # project categorical rasters
+      out <- project(out, baseRaster, method = "mode")
+      levels(out) <- levels(x)  # reassign levels 
+      out
+    } else {
+      # project & scale continuous rasters
+      project(out, baseRaster) |>
+        scale()  
+    }}) |>  
+  rast() |>  # combine raster layers
+  setNames(selectedParameters)  # assign names
 
 ###--------------------###
 ### 3. Dataset Upload ####
@@ -174,18 +166,14 @@ saveRDS(projCRS, paste0(tempFolderName,"/projCRS.RDS"))
 writeRaster(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
 
 # Create aggregated version for all non-land cover visualisation and reference data
-parametersAggregated <- lapply(parametersCropped, FUN = function(x) {
-  layerLevels <- levels(x)[[1]]
-  if (is.null(nrow(layerLevels))) {
-    aggregatedParameter <- terra::aggregate(x, fact = 2)
-  } else {
-    aggregatedParameter <- terra::aggregate(x, fact = 2, fun = "modal")
-  }
-  aggregatedParameterCropped <- crop(aggregatedParameter,ext(baseRaster))
-  aggregatedParameterCropped
-})
-parametersAggregated <- do.call(c, parametersAggregated)
-names(parametersAggregated) <- selectedParameters
+agg <- function(x, fact){
+  if(is.factor(x))
+    terra::aggregate(x, fact, fun = "modal") else
+      terra::aggregate(x, fact)
+}
+parametersAggregated <- sapp(x = parametersCropped, fun = agg, fact = 2) |>
+  crop(baseRaster)
+
 writeRaster(parametersAggregated, "visualisation/hotspotMaps/data/covariateDataList.tiff", overwrite=TRUE)
 writeRaster(parametersAggregated, paste0("data/run_", dateAccessed,"/environmentalDataImported.tiff"), overwrite=TRUE)
 

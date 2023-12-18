@@ -44,14 +44,17 @@ focalSpeciesDDList <- lapply(focalSpeciesDDVector, FUN = function(x) {
 }
 )
 
+source("data/textFunctions.R")
+
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
   
-  
+  # Input of species for intensity figure
   observe({
     updateSelectInput(inputId = "species", choices = focalSpeciesDDList[[input$taxa]])
   })
   
+  # Species intensity map
   output$speciesMap <- renderPlot({
     simpleName <- redList$species[redList$GBIFName == input$species]
     taxaData <- dataList[[input$taxa]]
@@ -88,6 +91,7 @@ shinyServer(function(input, output, session) {
     
   }, height = 500)
   
+  # Species richness map 
   output$speciesRichnessMap <- renderPlot({
 
     if (input$selectRedList == TRUE) {
@@ -107,6 +111,7 @@ shinyServer(function(input, output, session) {
 
   }, height = 500)
   
+  # Covvariate map
   output$covariateMap <- renderPlot({
 
     covariateToPlot <- terra::crop(covariateData[[input$covariate]],
@@ -124,6 +129,7 @@ shinyServer(function(input, output, session) {
             axis.title.y=element_blank())
   }, height = 500)
   
+  # Image box for species intensity tab
   output$imageBox1 <- renderImage({
     simpleName <- redList$species[redList$GBIFName == input$species]
     ImgTxt <- paste0("data/photos/", input$taxa, "/", simpleName,"/speciesImage.jpg")
@@ -134,6 +140,7 @@ shinyServer(function(input, output, session) {
     )
   }, deleteFile = FALSE)
   
+  # Text box for species intensity tab
   output$textBox1 <- renderUI({
     simpleName <- redList$species[redList$GBIFName == input$species]
     redListStatus <- redList$status[redList$GBIFName == input$species]
@@ -147,6 +154,7 @@ shinyServer(function(input, output, session) {
                 "<br/><strong>Image Credit:</strong> <a href = ", imageURL, ">", imageUser, "<a/>"))
   })
   
+  # Caption for species intensity figure
   output$figureCaption1 <- renderText ({
     simpleName <- redList$species[redList$GBIFName == input$species]
     figureCaption <- paste0(ifelse(input$intensityType == "bias", "Sampling ", "Occurrence "), "intensity map for ", simpleName, ". Data is drawn from the Global Biodiversity Information Facility (DOI: ", 
@@ -156,6 +164,7 @@ shinyServer(function(input, output, session) {
     figureCaption
   })
   
+  # Display of metadata report
   getPage<-function() {
     return(includeHTML("speciesMetadata.html"))
   }

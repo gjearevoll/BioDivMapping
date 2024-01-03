@@ -75,7 +75,6 @@ get_modis <- function(regionGeometry, projCRS, parameter) {
   
   else if (parameter == "ndvi_peak") {
     # Extract NDVI for spring and summer, and get the peak value (maximum NDVI during the year)
-    
     bands <- MODIStsp_get_prodlayers("Vegetation Indexes_16Days_250m (M*D13Q1)")
     
     # we want "250m_16_days_NDVI", fill value is -3000, scale factor = 0.0001
@@ -111,46 +110,27 @@ get_modis <- function(regionGeometry, projCRS, parameter) {
     NDVIfiles <- list.files('data/temp/modis/ndviMod/',
                             full.names = T)
     years <- unlist(unique(lapply(NDVIfiles, function(x) substr(strsplit(x, "MOD13Q1.")[[1]][2], start=2, stop=5))))
-    daynrs <- unlist(unique(lapply(NDVIfiles, function(x) substr(strsplit(x, "MOD13Q1.")[[1]][2], start=6, stop=8))))
-    daynrs <- daynrs[1:3]
     
-    for(i in years)
-    {
-      for(d in daynrs)
-      {
-        yeardatefiles <- list.files('data/temp/modis/VI_16Days_250m_v61/NDVI/',
-                                    paste0(i, "_", d), full.names = T)
-        yeardaterast <- sprc(lapply(yeardatefiles, function(x) rast(x, lyrs=1)))
-        yeardaterastall <- merge(yeardaterast)
-        if(d == daynrs[1])
-        {
-          # we may need to crop here
-          yearrast <- crop(yeardaterastall, vect(Noreg_si), mask=TRUE)
-        } else {
-          yearrast <- rast(list(yearrast, crop(yeardaterastall, vect(Noreg_si), mask=TRUE)))
-        }
-        
-        print(paste(i, d))
-        flush.console()
-      }
+    # Process each year
+    peakNDVI <- lapply(years, function(year) {
+      # Get file paths for the year
+      yearFiles <-  list.files('data/temp/modis/VI_16Days_250m_v61/NDVI/',
+                                year, full.names = T)
       
-      # find the max value for that year
-      yearmax <- app(yearrast, fun=function(x) max(x, na.rm=TRUE))
+      # Load and find the maximum NDVI for the year
+      yearmax <- max(rast(yearFiles), na.rm = TRUE)
       
-      if(i == years[1])
-      {
-        peakNDVI <- yearmax*0.0001
-      } else {
-        peakNDVI <- rast(list(yearmax*0.0001, peakNDVI))
-      }
-    }
+      return(yearmax)
+    }) |>
+      rast() |>
+      # mean over all years, the final product
+      mean(na.rm = TRUE) |>
+      # set lower NDVI limit to 0
+      clamp(lower = 0, values = FALSE)
     
-    # mean over all years, the final product
-    NoregMeanPeakNDVI <- app(peakNDVI, fun=function(x) mean(x, na.rm=TRUE))
+    # Scale NDVI values
+    finalMap <- peakNDVI  * 0.0001
     
-    # Remove -Inf values
-    NoregMeanPeakNDVI <- clamp(NoregMeanPeakNDVI, lower = 0, values = FALSE)
-    finalMap <- terra::project(NoregMeanPeakNDVI, projCRS)
     return(finalMap)
   }
 }

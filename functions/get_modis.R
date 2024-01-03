@@ -124,9 +124,11 @@ get_modis <- function(regionGeometry, projCRS, parameter) {
     }) |>
       rast() |>
       # mean over all years, the final product
-      mean(na.rm = TRUE) |>
-      # set lower NDVI limit to 0
-      clamp(lower = 0, values = FALSE)
+      mean(na.rm = TRUE) 
+    
+    # # set lower NDVI limit to 0
+    # peakNDVI <- peakNDVI |>
+    #   clamp(lower = 0, values = FALSE)
     
     # Scale NDVI values
     finalMap <- peakNDVI  * 0.0001

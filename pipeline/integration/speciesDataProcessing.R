@@ -72,7 +72,9 @@ for (ds in seq_along(speciesData)) {
       simpleScientificName = coalesce(
         redList$species[match(acceptedScientificName, redList$GBIFName)],  # Match redList species
         str_extract(acceptedScientificName, "^[A-Za-z]+\\s+[a-z]+")        # Extract binomial name
-      )
+      ),
+      # Replace space with underscore in simpleScientificName
+      simpleScientificName = str_replace(simpleScientificName, " ", "_")
     )
   
   # Add in polyphyletic taxa

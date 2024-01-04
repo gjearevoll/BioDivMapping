@@ -56,7 +56,7 @@ if (dataSource == "geonorge") {
     
 ### 4. MODIS ####    
 } else if (dataSource == "modis") {
-  rasterisedVersion <- get_modis(regionGeometry, projCRS)
+  rasterisedVersion <- get_modis(regionGeometry, projCRS, focalParameter)
 } else if (dataSource == "corine") {
   rasterisedVersion <- get_corine()
 }

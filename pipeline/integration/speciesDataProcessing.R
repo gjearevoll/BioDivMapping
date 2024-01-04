@@ -66,8 +66,14 @@ for (ds in seq_along(speciesData)) {
   newDataset <- NULL
   
   source("pipeline/integration/utils/defineProcessing.R")
-  
-  newDataset$simpleScientificName <- redList$species[match(newDataset$acceptedScientificName, redList$GBIFName)]
+  # add simpleScientificName column
+  newDataset <- newDataset %>%
+    mutate(
+      simpleScientificName = coalesce(
+        redList$species[match(acceptedScientificName, redList$GBIFName)],  # Match redList species
+        str_extract(acceptedScientificName, "^[A-Za-z]+\\s+[a-z]+")        # Extract binomial name
+      )
+    )
   
   # Add in polyphyletic taxa
   newDataset$taxa <- ifelse(newDataset$acceptedScientificName %in% polyphyleticSpecies$acceptedScientificName, 

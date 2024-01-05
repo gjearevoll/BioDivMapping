@@ -30,9 +30,7 @@ if (!file.exists(folderName)) {
   dir.create(tempFolderName)
 }
 
-# Run script to define geographical region and resolution we are working with 
-#extentCoords <- c(4.641979, 57.97976, 31.05787, 71.18488)
-#names(extentCoords) <- c("north", "south", "east", "west")
+# Run script to define geographical region and scale we are working with 
 if (!exists("level")) {level <- "country"}  # level can be country, county, municipality, or points (examples of points given below)
 if (!exists("region")) {region <- "Norway"}
 regionGeometry <- defineRegion(level, region)
@@ -47,12 +45,12 @@ if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
 # Refine focal taxon
 focalTaxon <- focalTaxon[focalTaxon$include,]
 
-# get missing keys
+# Obtain any missing taxon keys from GBIF
 missingKey <- is.na(focalTaxon$key) & focalTaxon$level != "polyphyla"
 focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
                                            rank = focalTaxon$level[missingKey], 
                                            strict = T)
-# save for reference
+# Save for reference
 write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 
 # Introduce polyphyletic groups
@@ -168,6 +166,8 @@ names(GBIFLists) <- unique(GBIFImportCompiled$name)
 ### 4. ANO Import ####
 ###----------------###
 
+# Import data from external sources using specialised scripts. For now, the only external data imported
+# is from ANO.
 GBIFLists[["ANOData"]] <- importANOData(tempFolderName, regionGeometry, focalTaxon)
 
 ###--------------------###

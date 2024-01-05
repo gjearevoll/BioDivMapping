@@ -2,7 +2,7 @@
 ### Define Dataset Processing ####
 
 # This script assigns different functions to the datasets that they were created for. The functions herein
-# reside in functions/integration.
+# reside in functions and begin with "process".
 
 # 1. The national insect Monitoring in Norway dataset
 if (dataType == "insectMonitoring") {

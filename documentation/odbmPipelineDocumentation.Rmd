@@ -77,7 +77,12 @@ already provided in `data/external/focalTaxa.csv`. The three columns that are cu
 should be included in this model run, allowing us to list any taxa of interest, and then exclude them from further analyses rather than
 deleting them entirely from the table.
 
-The end product looks like this (note that columns scientificName and level are not currently used in the pipeline and as such are
+There is also an extra column called `functionalGroups` - this allows you to manually group taxa, or (if you are listing individual species
+in the taxa column) manually group individual species into different taxa. By using this column you can assign taxa to a larger group, and
+display it in resulting visualisations and metadata in these larger groups. However the pipeline operates without
+this column, and if you do not want to use it you can simply leave it blank.
+
+The end product of looks like this (note that columns scientificName and level are not currently used in the pipeline and as such are
 not relevant yet):
 
 ``` {r, speciesTable, echo = FALSE}
@@ -142,7 +147,8 @@ knitr::include_graphics("images/datasets.png")
 
 The results of this analysis can be found in a file named `metadataSummary.csv` (as with the other sections, there is a sample in `data/external`)
 which lists relevant datasets, their dataset key in GBIF, and how they should be processed. As with the taxon keys, the dataset key can be found by 
-looking at the end of the URL for the GBIF page for the given dataset. A sample below:
+looking at the end of the URL for the GBIF page for the given dataset. The last column, `biased`, indicates which datasets should be used 
+in calculating the sampling bias fields (more on that when we talk about the modelling later on). A sample below of the final csv file:
 
 ``` {r, metadataTable, echo = FALSE}
   
@@ -180,7 +186,7 @@ it are part of the taxa we're analysing. The red list is then saved for later us
 We then start our GBIF download. The pipeline has two options - the first is an instant download for a small test run that doesn't require a DOI. This
 is only used for small test runs of the pipeline, and we do NOT recommend using this for any data that is to be published, since citing a DOI is a key 
 aspect of reproducibility. The second option is a scheduled download, which creates a DOI and a download key that allows you to redownload the exact 
-same data at a later point. This is recommended for longer downloads. It does necessitate a long wait though - it usually necessitates need to run the
+same data at a later point. This is recommended for longer downloads. It does necessitate a long wait though - it usually necessitates running the
 taxaImport script once again when GBIF has finished the download. It also requires the creation of a GBIF account, since GBIF needs to see who is accessing
 the data.
 
@@ -218,7 +224,8 @@ and at which sampling events they were not found. The custom scripts built so fa
  sampled in specific events.
  - fieldNotes - This is almost identical to above, except that an event dataset is not attached. We therefore either find an eventID in the occurrence
  table, or create an eventID using unique time and place combinations.
- - specific dataset scripts - Some data has been recorded in unique ways, and need their own scripts.
+ - specific dataset scripts - Some data has been recorded in unique ways, and need their own scripts. The two current examples are ´processANOData' and
+ ´processNationaInsectmonitoringinNorway´. The names of these datasets trigger an if clause which then uses these specific functions.
  
 All custom scripts can be found in the `functions` folders with the prefix "process".
 
@@ -226,7 +233,7 @@ There are now a number of other aspects of the data that need to be produced, bo
 
 ## Data compilation
 
-At this point our data exists as a list of datasets. In order to create a species richness map, these need to be compiled into one large dataset, then
+At this point our data exists as a list of data frames. In order to create a species richness map, these need to be compiled into one large data frame, then
 narrowed down to presence-only data. We're using this to visualise species richness, we then take unique species sightings in a given pixel to figure
 out species richness in that pixel. Since it's purely for visialisation and not for modelling, we can decrease the resolution somewhat for faster processing 
 time.
@@ -241,7 +248,7 @@ value depending on their inclusion.
 ## Produce metadata document
 
 For anyone who wants to get some information about the pipeline run without digging through the entire repository, we create a metadata file in R markdown
-which lists important aspets of the pipeline run, including the taxa, covariates and DOI used, as well as providing some quick visualisations of the data.
+which lists important aspects of the pipeline run, including the taxa, covariates and DOI used, as well as providing some quick visualisations of the data.
 You can access a version of this at the [metadata tab in the Shiny app](https://swp-data-projects.shinyapps.io/odbm/_w_7fd47317/#shiny-tab-meta).
 
 ## Image download
@@ -280,9 +287,16 @@ in the form of a zero-mean Gaussian markov random field described by a Matérn c
 random field as a discrete random process through some spatial mesh defined by triangulating the study domain. Constructing this mesh is made easy using 
 the R-INLA package with the inla.mesh.2d() function.
 
+The modelling script also involves a short function which decides which datasets to use to determine sampling bias for each taxa. You have three options
+here:
+- You can dictate which datastes within the function itself
+- You can take the datasets dictated in the `biased` column of the metadataSummary file
+- You can use every dataset for which there is sufficient data for a taxa
+
 The modelling process creates a folder for each taxa, with a subfolder nested inside these for each individual species. In these folders it saves a 
-data frame containing predicted species intensities for pixels of a given resolution distributed throughout Norway. It also outputs two additional 
-predicted intensity data frames - one containing predicted species richness per pixel, and another containing predicted red-listed species richness.
+data frame containing predicted species intensities for pixels of a given resolution distributed throughout Norway, and a similar data frame for 
+sampling intensity per species. In the near future it will also output two additional predicted intensity data frames on a taxa level - one containing 
+predicted species richness per pixel, and another containing predicted red-listed species richness.
 
 This is the end of the data pipeline, but as previously mentioned, there is a second document which gives an in-depth technical description of the
 visualisation tool - in this case a Shiny app.

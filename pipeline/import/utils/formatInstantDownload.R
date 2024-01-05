@@ -1,4 +1,9 @@
 
+#### INSTANT DOWNLAOD IMPORT ####
+
+# This script is built for smaller, test downloads from GBIF. It does not produce a DOI for the download
+# and thus should not be used for anything that will be published or needs a citation.
+
 gbifImportsPerTaxa <- lapply(focalTaxa, FUN = function(x) {
   focalTaxaImport <- focalTaxon$key[focalTaxon$taxa == x]
   GBIFImport <- occ_data(taxonKey = focalTaxaImport, hasCoordinate = TRUE, limit = 3000, 

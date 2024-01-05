@@ -18,7 +18,7 @@ occurrences <- occurrences[,c("acceptedScientificName", "decimalLongitude", "dec
 issuesToFlag <- c("ZERO_COORDINATE|COORDINATE_OUT_OF_RANGE|COORDINATE_INVALID|COORDINATE_PRECISION_INVALID|COORDINATE_UNCERTAINTY_METRES_INVALID")
 occurrences <- occurrences %>%
   filter(datasetKey %in% dataTypes$datasetKey[!is.na(dataTypes$processing)]) %>%
-  filter(grepl(issuesToFlag,issue))
+  filter(!grepl(issuesToFlag,issue))
 
 # Assign a taxon key based on what level of taxonomy the key is valid for
 occurrences$taxonKeyProject <- ifelse(occurrences$kingdomKey %in% focalTaxon$key, occurrences$kingdomKey,

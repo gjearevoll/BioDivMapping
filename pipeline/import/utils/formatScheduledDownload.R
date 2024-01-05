@@ -12,11 +12,13 @@ occurrences <- occ_download_import(downloadGet)
 # Reduce to relevant columns immediately to save space
 occurrences <- occurrences[,c("acceptedScientificName", "decimalLongitude", "decimalLatitude", "basisOfRecord",
                               "year", "month", "datasetKey", "datasetName", "taxonRank", "kingdomKey", "phylumKey", "classKey", "orderKey",
-                              "familyKey", "genusKey", "speciesKey")]
+                              "familyKey", "genusKey", "speciesKey", "issue")]
 
 # Filter down to relevant datasets
+issuesToFlag <- c("ZERO_COORDINATE|COORDINATE_OUT_OF_RANGE|COORDINATE_INVALID|COORDINATE_PRECISION_INVALID|COORDINATE_UNCERTAINTY_METRES_INVALID")
 occurrences <- occurrences %>%
-  filter(datasetKey %in% dataTypes$datasetKey[!is.na(dataTypes$processing)])
+  filter(datasetKey %in% dataTypes$datasetKey[!is.na(dataTypes$processing)]) %>%
+  filter(grepl(issuesToFlag,issue))
 
 # Assign a taxon key based on what level of taxonomy the key is valid for
 occurrences$taxonKeyProject <- ifelse(occurrences$kingdomKey %in% focalTaxon$key, occurrences$kingdomKey,

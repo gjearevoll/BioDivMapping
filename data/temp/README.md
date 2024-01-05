@@ -1,9 +1,11 @@
 ## Data source description for environmental covariates change
 
-There are two types of data that are currently used in this model run: internal and external.
+There are two types of data that are currently used in this model run: internal and external. A full list of the covariates we will
+be using for the Hotspots project [can be found here](https://docs.google.com/spreadsheets/d/1HYZwVdwwtAgXht-lsF-mU3J49J7ttwB8NEvUvW2iYX4/edit) 
+(link only available to project members).
 
 - **Internal** - These datasets have been pre-processed by ROn Togunov and are available at a 1km by 1km resolution for the whole of Norway.
-They can be found in the folder https://github.com/gjearevoll/BioDivMapping/tree/main/data/external/environmentalCovariates. A description of them can be found below.
+They can be found in the folder https://github.com/gjearevoll/BioDivMapping/tree/main/data/external/environmentalCovariates. A description of them can be found below. These are temporary solutions for the environmental variables that do not currently have an external source.
 - **External** - These are datasets for which we have constructed scripts that allow a user to download them directly from the source from R,
 with as limited manual work outside of the R environment required as possible. The end goal of the project is to have all environmental data 
 available in this format.

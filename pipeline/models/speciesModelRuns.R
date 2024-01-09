@@ -14,6 +14,7 @@ print("Preparing data for model run.")
 library(intSDM)
 library(rgbif)
 library(terra)
+library(dplyr)
 
 # Initialise folders for storage of all run data
 if (!exists("dateAccessed")) {
@@ -40,8 +41,12 @@ environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported
 speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
+# Define speciesData based on run type and create predictionData
+modelSpeciesData <- refineSpeciesData("redListRichness", speciesData)
+predictionData <- createPredictionData(c(1,1), regionGeometry)
+
 # Prepare models
-workflowList <- modelPreparation(focalTaxa, speciesData, 
+workflowList <- modelPreparation(focalTaxa, modelSpeciesData, 
                                  redListModelled = redList$GBIFName[redList$valid], 
                                  regionGeometry = regionGeometry,
                                  modelFolderName = modelFolderName, 
@@ -52,10 +57,16 @@ focalTaxaRun <- names(workflowList)
 # Get bias fields
 if ("metadataSummary.csv" %in% list.files("data/external")) {
   dataTypes <- read.csv("data/external/metadataSummary.csv")
-  biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], speciesData, redList)
+  biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], modelSpeciesData, redList)
 } else {
   biasFieldList <- rep(list(NULL), length(focalTaxonRun))
 }
+
+# Set model outputs
+modelOutputs <- if(modelRun %in% c("richness", "redListRichness")) 
+  c('Richness', 'Model') else 
+    c('Predictions', 'Model')
+
 
 ###----------------###
 ### 2. Run models ####
@@ -74,9 +85,9 @@ for (i in 1:length(names(workflowList))) {
   workflow$addMesh(cutoff= myMesh$cutoff, max.edge=myMesh$max.edge, offset= myMesh$offset)
   workflow$specifySpatial(prior.range = c(300000, 0.05),
                           prior.sigma = c(500, 0.2)) #100
-  workflow$workflowOutput(c('Predictions', 'Bias','Model', 'Maps'))
-  workflow$modelOptions(INLA = list(control.inla=list(int.strategy = 'eb', cmin = 0),
-                                    safe = TRUE))
+  workflow$workflowOutput(modelOutputs)
+  workflow$modelOptions(INLA = list(control.inla=list(int.strategy = 'eb', cmin = 0),safe = TRUE),
+                        Richness = list(predictionIntercept = 'ANOData'))
   
   # Add bias fields if necessary
   if (!is.null(biasFieldList[[i]])) {
@@ -84,7 +95,7 @@ for (i in 1:length(names(workflowList))) {
   }
   
   # Run model (this directly saves output to folder specified above)
-  sdmWorkflow(workflow, predictionDim = c(240,320))
+  sdmWorkflow(workflow, predictionData = predictionData)
 }
 
 ###------------------------------###

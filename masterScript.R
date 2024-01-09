@@ -63,8 +63,11 @@ source("pipeline/integration/speciesDataProcessing.R")
 meshTest(myMesh, regionGeometry, crs = crs)
 
 # Once you've figured that out, you can start running the models. Remember that this script is the one that's 
-# likely to take the longest, so grab a coffee or other beverage of choice.
+# likely to take the longest, so grab a coffee or other beverage of choice. There are three choices of modelRun,
+# 'richness' (estimates species richness), 'redListRichness' (same but only for red-listed species) and 'redListSpecies'
+# (individual species models for red-listed species). We suggest running these individually.
 
+modelRun <- "redListSpecies"
 source("pipeline/models/speciesModelRuns.R")
 
 # And you're done! Now all that's left to do is to open up the app, which you can do by opening either the

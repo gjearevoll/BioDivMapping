@@ -36,6 +36,7 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   
   # Get all species surveyed
   surveyedSpecies <-  unique(occurrence$scientificName)
+  surveyedSpecies <- surveyedSpecies[!is.na(surveyedSpecies)]
   
   # Find only eventIDs within our regionGeometry
   eventLocations <- events %>%

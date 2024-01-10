@@ -1,9 +1,0 @@
-"taxa","key","level","scientificName","include","functionalGroup"
-"amphibiansReptiles",11592253,"class","Squamata",TRUE,NA
-"amphibiansReptiles",131,"class","Amphibia",TRUE,NA
-"spiders",367,"class","Arachnida",TRUE,NA
-"bugs",809,"order","Hemiptera",TRUE,NA
-"caddislflies",1003,"order","Tricoptera",TRUE,NA
-"dragonflies",789,"order","Odonata",TRUE,NA
-"fungi",5,"kingdom","Fungi",TRUE,NA
-"lichens",NA,"polyphyla","Lichens",TRUE,NA

@@ -64,7 +64,7 @@ if ("metadataSummary.csv" %in% list.files("data/external")) {
 
 # Set model outputs
 modelOutputs <- if(modelRun %in% c("richness", "redListRichness")) 
-  c('Richness', 'Model') else 
+  c('Richness', 'Bias') else 
     c('Predictions', 'Model')
 
 
@@ -86,7 +86,7 @@ for (i in 1:length(names(workflowList))) {
   workflow$specifySpatial(prior.range = c(300000, 0.05),
                           prior.sigma = c(500, 0.2)) #100
   workflow$workflowOutput(modelOutputs)
-  workflow$modelOptions(INLA = list(control.inla=list(int.strategy = 'eb', cmin = 0),safe = TRUE),
+  workflow$modelOptions(INLA = list(num.threads = 8, control.inla=list(int.strategy = 'eb', cmin = 0),safe = TRUE),
                         Richness = list(predictionIntercept = 'ANOData'))
   
   # Add bias fields if necessary

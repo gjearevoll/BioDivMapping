@@ -11,7 +11,9 @@
 importRedList <- function(categories) {
   redListCategories <- lapply(categories, FUN = function(x) {
     apiQuery <- httr::GET(paste0("https://artsdatabanken.no/api/Resource/?Take=999999&Type=taxon&Tags=Kategori/", x))
-    data <- jsonlite::fromJSON(rawToChar(apiQuery$content))
+    charChange <- rawToChar(apiQuery$content)
+    Encoding(charChange) <- "UTF-8" #The encoding for fromJSON should be UTF-8
+    data <- jsonlite::fromJSON(charChange, flatten = TRUE)
     cbind(data$AcceptedNameUsage$ScientificName, data$Kategori)}
   )
   

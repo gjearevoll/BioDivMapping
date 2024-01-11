@@ -59,7 +59,26 @@ if (dataSource == "geonorge") {
 } else if (dataSource == "modis") {
   rasterisedVersion <- get_modis(regionGeometryBuffer, projCRS, focalParameter)
 } else if (dataSource == "corine") {
-  rasterisedVersion <- get_corine()
+  # check if encompassing corine alreadydownloaded
+  rasterisedVersion <- checkAndImportRast("land_cover_corine", regionGeometryBuffer, dataPath)
+  # download and save if missing
+  if(is.null(rasterisedVersion)){
+    # download
+    rasterisedVersion <- get_corine()  
+    # save
+    file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+    writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
+  }
+  # calculate distance to water (if necessary)
+  if (focalParameter == 'distance_water') {
+    # Extract the levels data frame
+    levels <- levels(rasterisedVersion)[[1]]
+    # Find the numeric value corresponding to "Water bodies"
+    water_val <- levels[levels$LABEL3 == "Water bodies", 1]
+    water <- rasterisedVersion == water_val
+    water[!isTRUE(water)] <- NA # Assign NA to cells that are not water bodies
+    rasterisedVersion <- distance(water)
+  }
 }
 
 ### merge with requested download area to make missing data explicit

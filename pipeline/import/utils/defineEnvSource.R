@@ -8,14 +8,15 @@ if(inherits(regionGeometryBuffer, c("sf", "sfc"))){
 }
 ### 1. geonorge ####
 if (dataSource == "geonorge") { 
-  if (file.exists("data/temp/geonorge/elevationRaster.tiff")) { 
-    elevation <- rast("data/temp/geonorge/elevationRaster.tiff")
-  } else {
-    if (!dir.exists("data/temp/geonorge")) {
-      dir.create("data/temp/geonorge", recursive = TRUE)
-    }
+  # check if encompassing corine alreadydownloaded
+  elevation <- checkAndImportRast("elevation", regionGeometryBuffer, dataPath)
+  # download and save if missing
+  if(is.null(elevation)){
+    # download
     elevation <- get_geonorge(targetDir = tempFolderName)
-    writeRaster(elevation, "data/temp/geonorge/elevationRaster.tiff", overwrite=TRUE)
+    # save
+    file_path <- generateRastFileName(elevation, dataSource, "elevation", dataPath)
+    writeRaster(elevation, filename = file_path, overwrite = TRUE)
   }
   
   # Now get the raster you're actually looking for

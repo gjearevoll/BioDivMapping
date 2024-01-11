@@ -113,23 +113,6 @@ for (parameter in seq_along(selectedParameters)) {
     if (!raster_found) {
       # download file
       source(paste0("pipeline/import/utils/defineEnvSource.R"))
-      # get info to save
-      info <- crs(rasterisedVersion, describe = T)
-      if(!is.na(info$authority)){
-        ext <- ext(rasterisedVersion)
-        info <- sprintf("%s%s_X%s_%s_Y%s_%s",
-                        info$authority, info$code, 
-                        ext[1], ext[2], ext[3], ext[4])
-      } else {
-        info <- digest(list(crs(rasterisedVersion), ext(rasterisedVersion)))
-      }
-      #  Construct the filename and save with raster information
-      file_path <- sprintf("data/temp/%s/%s_%s.tiff",
-                           dataSource,focalParameter, info)
-      x <- rasterisedVersion
-      if(!file.exists(file_path)){
-        writeRaster(x, filename = file_path, overwrite = TRUE)
-      }
     }
   } else {
     rasterisedVersion <- rast(paste0("data/external/environmentalCovariates/",focalParameter, ".tiff"))

@@ -64,3 +64,6 @@ if (dataSource == "geonorge") {
 ### merge with requested download area to make missing data explicit
 rasterisedVersion <- extend(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion), snap = "out")
 
+### generate descriptive file name and save
+file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)

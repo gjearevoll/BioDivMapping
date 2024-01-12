@@ -146,7 +146,7 @@ saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RD
 
 if(nrow(processedRedListPresenceData) > 0){
   redListRichness <- speciesRichnessConverter(regionGeometry, processedRedListPresenceData, blankRaster)
-  writeRaster(redListRichness$rasters, paste0(folderName, "/redListRichnessData.tiff", overwrite=TRUE))
+  writeRaster(redListRichness$rasters, paste0(folderName, "/redListRichnessData.tiff"), overwrite=TRUE)
   saveRDS(redListRichness$richness, paste0(folderName, "/redListRichnessData.RDS"))
 }
 

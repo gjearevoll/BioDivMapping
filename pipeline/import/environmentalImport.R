@@ -141,16 +141,16 @@ for (parameter in seq_along(selectedParameters)) {
 parametersCropped <- parameterList |> 
   lapply(function(x) {
     # Crop each covariate to extent of regionGeometryBuffer
-    out <- crop(x, as.polygons(project(regionGeometryBuffer, x), extent = TRUE), snap = "out", mask = TRUE)
+    out <- terra::crop(x, as.polygons(terra::project(regionGeometryBuffer, x), extent = TRUE), snap = "out", mask = TRUE)
     # Project all rasters to baseRaster and combine
     if(is.factor(x)) {
       # project categorical rasters
-      out <- project(out, baseRaster, method = "mode")
+      out <- terra::project(out, baseRaster, method = "mode")
       levels(out) <- levels(x)  # reassign levels 
       out
     } else {
       # project & scale continuous rasters
-      project(out, baseRaster) |>
+      terra::project(out, baseRaster) |>
         scale()  
     }}) |>  
   rast() |>  # combine raster layers

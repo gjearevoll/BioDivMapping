@@ -87,7 +87,7 @@ for (i in 1:length(names(workflowList))) {
   workflow$specifySpatial(prior.range = c(300000, 0.05),
                           prior.sigma = c(500, 0.2)) #100
   workflow$workflowOutput(modelOutputs)
-  workflow$modelOptions(INLA = list(num.threads = 8, control.inla=list(int.strategy = 'eb', cmin = 0),safe = TRUE),
+  workflow$modelOptions(INLA = list(num.threads = 12, control.inla=list(int.strategy = 'eb', cmin = 0),safe = TRUE),
                         Richness = list(predictionIntercept = 'ANOData'))
   
   # Add bias fields if necessary
@@ -97,17 +97,13 @@ for (i in 1:length(names(workflowList))) {
   
   # Run model (this directly saves output to folder specified above)
   sdmWorkflow(workflow, predictionData = predictionData)
+  
+  # Change model name to ensure no overwrite of richness data
+  if (modelRun %in% c("richness", "redListRichness")) {
+    file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
+                paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Predictions.rds"))
+  }
 }
 
-###------------------------------###
-### 3. Get biodiversity metrics ####
-###------------------------------###
 
-# Create list to save data in for easy access for visualisations
-outputList <- list()
-source("pipeline/models/utils/modelResultsCompilation.R")
-
-# Save visualisation data with species data
-saveRDS(outputList, file=paste0(folderName, "/outputData.RDS"))
-saveRDS(outputList, file="visualisation/hotspotMaps/data/outputData.RDS")
 

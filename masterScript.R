@@ -66,7 +66,7 @@ meshTest(myMesh, regionGeometry, crs = crs)
 # likely to take the longest, so grab a coffee or other beverage of choice. There are three choices of modelRun, 
 # 'richness' (estimates species richness), 'redListRichness' (same but only for red-listed species) and 'redListSpecies'
 # (individual species models for red-listed species). We suggest running these individually.
-
+modelRun <- "richness"  # or "redListRichness"
 source("pipeline/models/speciesModelRuns.R")
 
 # Now that all the necessary data has been produced, we can compile and export it for use in the app. Just use the 

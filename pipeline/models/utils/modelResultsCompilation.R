@@ -42,7 +42,7 @@ for (i in seq_along(taxaRun)) {
   
   
   # Scale all columns for each species between 0 and 1
-  speciesIntensitiesScaled <- lapply(1:length(speciesIntensities), FUN = function(x) {
+  speciesIntensitiesScaled <- lapply(seq_along(speciesIntensities), FUN = function(x) {
     intensityList <- speciesIntensities[[x]]
     intensityVector <- intensityList$predictions$mean
     intensityScaled <- (intensityVector - min(intensityVector))/(max(intensityVector)-min(intensityVector))

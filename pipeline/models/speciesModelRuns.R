@@ -43,7 +43,7 @@ projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 # Define speciesData based on run type and create predictionData
 modelSpeciesData <- refineSpeciesData("redListRichness", speciesData)
-predictionData <- createPredictionData(c(1,1), regionGeometry)
+predictionData <- createPredictionData(c(res/1000, res/1000), regionGeometry)
 
 # Prepare models
 workflowList <- modelPreparation(focalTaxa, modelSpeciesData, 

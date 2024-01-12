@@ -63,8 +63,9 @@ if ("metadataSummary.csv" %in% list.files("data/external")) {
 }
 
 # Set model outputs
-modelOutputs <- if(modelRun %in% c("richness", "redListRichness")) 
-  c('Richness', 'Bias') else 
+modelOutputs <- if(modelRun == "richness") 
+  c('Richness', 'Bias') else if (modelRun == "redListRichness") 
+    'Richness' else
     c('Predictions', 'Model')
 
 

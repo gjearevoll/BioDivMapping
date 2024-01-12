@@ -74,7 +74,7 @@ if (dataSource == "geonorge") {
     # Extract the levels data frame
     levels <- levels(rasterisedVersion)[[1]]
     # Find the numeric value corresponding to "Water bodies"
-    water_val <- levels[levels$LABEL3 == "Water bodies", 1]
+    water_val <- levels[levels[,2] == "Water bodies", 1]
     water <- rasterisedVersion == water_val
     water[!isTRUE(water)] <- NA # Assign NA to cells that are not water bodies
     rasterisedVersion <- distance(water)

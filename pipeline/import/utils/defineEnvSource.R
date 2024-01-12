@@ -60,7 +60,7 @@ if (dataSource == "geonorge") {
   rasterisedVersion <- get_modis(regionGeometryBuffer, projCRS, focalParameter)
 } else if (dataSource == "corine") {
   # check if encompassing corine alreadydownloaded
-  rasterisedVersion <- checkAndImportRast("land_cover_corine", regionGeometryBuffer, dataPath)
+  rasterisedVersion <- checkAndImportRast("land_cover_corine", regionGeometryBuffer, dataPath, quiet = TRUE)
   # download and save if missing
   if(is.null(rasterisedVersion)){
     # download

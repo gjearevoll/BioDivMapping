@@ -16,6 +16,8 @@ library(rgbif)
 library(terra)
 library(dplyr)
 
+if (!exists("modelRun")) stop("You need to specify the variable modelRun")
+
 # Initialise folders for storage of all run data
 if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())

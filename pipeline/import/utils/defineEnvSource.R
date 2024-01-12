@@ -75,8 +75,11 @@ if (dataSource == "geonorge") {
     levels <- levels(rasterisedVersion)[[1]]
     # Find the numeric value corresponding to "Water bodies"
     water_val <- levels[levels[,2] == "Water bodies", 1]
+    message("Identifying water cells in corine data.")
     water <- rasterisedVersion == water_val
+    message("Nullifying non-water cells in corine data.")
     water[!isTRUE(water)] <- NA # Assign NA to cells that are not water bodies
+    message("Calculating distance to water.")
     rasterisedVersion <- distance(water)
   }
 }

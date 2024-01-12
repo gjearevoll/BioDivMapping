@@ -50,27 +50,39 @@ for (i in seq_along(taxaRun)) {
     reprojectedIntensity <- suppressMessages(st_transform(intensityList$predictions, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
     reprojectedIntensity
   })
+  names(speciesIntensitiesScaled) <- speciesRun
   
   # Scale bias
-  taxaBias <- readRDS(paste0(groupFolderLocation, "/biasPreds.rds"))
-  biasVector <- taxaBias$biasFields$sharedBias$mean
-  biasScaled <- (biasVector - min(biasVector))/(max(biasVector)-min(biasVector))
-  taxaBias$biasFields$sharedBias$mean <- biasScaled
-  reprojectedBias <- suppressMessages(st_transform(taxaBias$biasFields$sharedBias, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
+  if (!file.exists(paste0(groupFolderLocation, "/biasPreds.rds"))) {
+    warning(sprintf("A bias predictions file does not exist for %s. NULL value will be returned", {focalGroup}))
+    reprojectedBias <- NULL
+  } else {
+    taxaBias <- readRDS(paste0(groupFolderLocation, "/biasPreds.rds"))
+    biasVector <- taxaBias$biasFields$sharedBias$mean
+    biasScaled <- (biasVector - min(biasVector))/(max(biasVector)-min(biasVector))
+    taxaBias$biasFields$sharedBias$mean <- biasScaled
+    reprojectedBias <- suppressMessages(st_transform(taxaBias$biasFields$sharedBias, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
+  }
   
   # Scale red-listed richness predictions
+  if (!file.exists(paste0(groupFolderLocation, "/redListRichnessPredictions.rds"), {focalGroup})) {
+    warning(sprintf("A red-listed richness predictions file does not exist for %s. NULL value will be returned"))
+    reprojectedRedListRichness <- NULL
+  }
   taxaRedListRichness <- readRDS(paste0(groupFolderLocation, "/redListRichnessPredictions.rds"))
   reprojectedRedListRichness <- suppressMessages(st_transform(taxaRedListRichness, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
 
   # Scale richness predictions
+  if (!file.exists(paste0(groupFolderLocation, "/redListRichnessPredictions.rds"), {focalGroup})) {
+    warning(sprintf("A richness predictions file does not exist for %s. NULL value will be returned"))
+    reprojectedRichness <- NULL
+  }
   taxaRichness <- readRDS(paste0(groupFolderLocation, "/richnessPredictions.rds"))
   reprojectedRichness <- suppressMessages(st_transform(taxaRichness, "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
   
   # Name columns and rescale aggregate for biodiversity metric
-  names(speciesIntensitiesScaled) <- speciesRun
-  names(taxaBiasesScaled) <- gsub("_", " ", biasNames)
-  outputList[[focalGroup]] <- list(speciesIntensities = speciesIntensitiesScaled, bias = taxaBiasesScaled, richness = reprojectedRichness,
-                                   redListRichness = reprojectedRedListRichness)
+  outputList[[focalGroup]] <- list(speciesIntensities = speciesIntensitiesScaled, bias = taxaBiasesScaled, 
+                                   richness = reprojectedRichness, redListRichness = reprojectedRedListRichness)
   
   print(paste0("Finished running ", focalGroup))
   

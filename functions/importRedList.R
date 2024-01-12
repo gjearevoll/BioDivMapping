@@ -13,7 +13,7 @@ importRedList <- function(categories) {
     apiQuery <- httr::GET(paste0("https://artsdatabanken.no/api/Resource/?Take=999999&Type=taxon&Tags=Kategori/", x))
     charChange <- rawToChar(apiQuery$content)
     Encoding(charChange) <- "UTF-8" #The encoding for fromJSON should be UTF-8
-    data <- jsonlite::fromJSON(charChange, flatten = TRUE)
+    data <- jsonlite::fromJSON(charChange)
     cbind(data$AcceptedNameUsage$ScientificName, data$Kategori)}
   )
   

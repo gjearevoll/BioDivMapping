@@ -20,7 +20,7 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # Let's get started! The first script to run is the speciesImport.R script, which requires that you
 # define a spatial level on which to run the pipeline, as well as a region within Norway. The options are
 # "country", "county", "municipality", or "points", which is a box created by latitudinal and longitudinal 
-# points (example given below). The default options are set for the county of Trøndelag. Codes for
+# points (example given below). The default options are set for the county of TrC8ndelag. Codes for
 # different municipalities and couunites in Norway can be found at this link:
 # https://kartverket.no/til-lands/kommunereform/tekniske-endringer-ved-sammenslaing-og-grensejustering/komendr2020
 
@@ -38,7 +38,7 @@ res <- 1000 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
 # FALSE here.
 
 scheduledDownload <- TRUE
-waitForGbif <- TRUE
+waitForGbif <- FALSE
 source("pipeline/import/taxaImport.R")
 
 # Next we run the environmental import script, which brings in a set of rasters that apply to the region

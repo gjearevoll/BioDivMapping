@@ -58,6 +58,8 @@ if (dataSource == "geonorge") {
 ### 4. MODIS ####    
 } else if (dataSource == "modis") {
   rasterisedVersion <- get_modis(regionGeometryBuffer, projCRS, focalParameter)
+  
+### 5. CORINE ###  
 } else if (dataSource == "corine") {
   # check if encompassing corine alreadydownloaded
   rasterisedVersion <- checkAndImportRast("land_cover_corine", regionGeometryBuffer, dataPath, quiet = TRUE)
@@ -80,6 +82,10 @@ if (dataSource == "geonorge") {
     # round to nearest 10m to reduce file size
     rasterisedVersion <- round(rasterisedVersion/10)*10
   }
+  
+### 6. Chelsa ###  
+} else if (dataSource == "chelsa") {
+  rasterisedVersion <- get_chelsa(focalParameter)
 }
 
 ### merge with requested download area to make missing data explicit

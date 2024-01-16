@@ -61,6 +61,7 @@ if (dataSource == "geonorge") {
 } else if (dataSource == "corine") {
   # check if encompassing corine alreadydownloaded
   rasterisedVersion <- checkAndImportRast("land_cover_corine", regionGeometryBuffer, dataPath, quiet = TRUE)
+  # rasterisedVersion <- terra::crop(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion))
   # download and save if missing
   if(is.null(rasterisedVersion)){
     # download
@@ -71,16 +72,13 @@ if (dataSource == "geonorge") {
   }
   # calculate distance to water (if necessary)
   if (focalParameter == 'distance_water') {
-    # Extract the levels data frame
-    levels <- levels(rasterisedVersion)[[1]]
     # Find the numeric value corresponding to "Water bodies"
-    water_val <- levels[levels[,2] == "Water bodies", 1]
     message("Identifying water cells in corine data.")
-    water <- rasterisedVersion == water_val
-    message("Nullifying non-water cells in corine data.")
-    water[!isTRUE(water)] <- NA # Assign NA to cells that are not water bodies
+    rasterisedVersion[!(rasterisedVersion == "Water bodies")] <- NA 
     message("Calculating distance to water.")
-    rasterisedVersion <- distance(water)
+    rasterisedVersion <- terra::distance(rasterisedVersion) 
+    # round to nearest 10m to reduce file size
+    rasterisedVersion <- round(rasterisedVersion/10)*10
   }
 }
 

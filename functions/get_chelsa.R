@@ -10,21 +10,12 @@
 
 
 get_chelsa <- function(parameter) {
-
-  # Check whether chelsa directory exists
-  if (!dir.exists("data/temp/chelsa/")) {
-    dir.create("data/temp/chelsa/")
-  }
-  
   if (parameter == "snow_cover") {
     focalURL <- "https://os.zhdk.cloud.switch.ch/envicloud/chelsa/chelsa_V2/GLOBAL/climatologies/1981-2010/bio/CHELSA_scd_1981-2010_V.2.1.tif"
   }
-  fileName <- paste0("data/temp/chelsa/",parameter,".tif")
-  
-  download.file(focalURL, destfile= fileName)
-  
-  rasterised_version <- terra::rast(fileName)
-  return(rasterised_version)
+  message(sprintf("Downloading, %s raster from chelsa.", parameter))
+  raster <- terra::rast(focalURL)
+  return(raster)
 }
 
 

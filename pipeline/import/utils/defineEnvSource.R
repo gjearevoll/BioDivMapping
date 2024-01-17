@@ -8,14 +8,15 @@ if(inherits(regionGeometryBuffer, c("sf", "sfc"))){
 }
 ### 1. geonorge ####
 if (dataSource == "geonorge") { 
-  if (file.exists("data/temp/geonorge/elevationRaster.tiff")) { 
-    elevation <- rast("data/temp/geonorge/elevationRaster.tiff")
-  } else {
-    if (!dir.exists("data/temp/geonorge")) {
-      dir.create("data/temp/geonorge", recursive = TRUE)
-    }
+  # check if encompassing corine alreadydownloaded
+  elevation <- checkAndImportRast("elevation", regionGeometryBuffer, dataPath)
+  # download and save if missing
+  if(is.null(elevation)){
+    # download
     elevation <- get_geonorge(targetDir = tempFolderName)
-    writeRaster(elevation, "data/temp/geonorge/elevationRaster.tiff", overwrite=TRUE)
+    # save
+    file_path <- generateRastFileName(elevation, dataSource, "elevation", dataPath)
+    writeRaster(elevation, filename = file_path, overwrite = TRUE)
   }
   
   # Now get the raster you're actually looking for
@@ -56,11 +57,40 @@ if (dataSource == "geonorge") {
     
 ### 4. MODIS ####    
 } else if (dataSource == "modis") {
-  rasterisedVersion <- get_modis(regionGeometry, projCRS)
+  rasterisedVersion <- get_modis(regionGeometryBuffer, projCRS, focalParameter)
+  
+### 5. CORINE ###  
 } else if (dataSource == "corine") {
-  rasterisedVersion <- get_corine()
+  # check if encompassing corine alreadydownloaded
+  rasterisedVersion <- checkAndImportRast("land_cover_corine", regionGeometryBuffer, dataPath, quiet = TRUE)
+  # rasterisedVersion <- terra::crop(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion))
+  # download and save if missing
+  if(is.null(rasterisedVersion)){
+    # download
+    rasterisedVersion <- get_corine()  
+    # save
+    file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+    writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
+  }
+  # calculate distance to water (if necessary)
+  if (focalParameter == 'distance_water') {
+    # Find the numeric value corresponding to "Water bodies"
+    message("Identifying water cells in corine data.")
+    rasterisedVersion[!(rasterisedVersion == "Water bodies")] <- NA 
+    message("Calculating distance to water.")
+    rasterisedVersion <- terra::distance(rasterisedVersion) 
+    # round to nearest 10m to reduce file size
+    rasterisedVersion <- round(rasterisedVersion/10)*10
+  }
+  
+### 6. Chelsa ###  
+} else if (dataSource == "chelsa") {
+  rasterisedVersion <- get_chelsa(focalParameter)
 }
 
 ### merge with requested download area to make missing data explicit
 rasterisedVersion <- extend(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion), snap = "out")
 
+### generate descriptive file name and save
+file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)

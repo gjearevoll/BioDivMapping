@@ -20,7 +20,7 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # Let's get started! The first script to run is the speciesImport.R script, which requires that you
 # define a spatial level on which to run the pipeline, as well as a region within Norway. The options are
 # "country", "county", "municipality", or "points", which is a box created by latitudinal and longitudinal 
-# points (example given below). The default options are set for the county of TrC8ndelag. Codes for
+# points (example given below). The default options are set for the whole of Norway. Codes for
 # different municipalities and couunites in Norway can be found at this link:
 # https://kartverket.no/til-lands/kommunereform/tekniske-endringer-ved-sammenslaing-og-grensejustering/komendr2020
 
@@ -52,7 +52,7 @@ source("pipeline/import/environmentalImport.R")
 
 # Next we start on data processing, which adds extra information to our datasets.
 
-redListThreshold <- 5
+redListThreshold <- 30
 source("pipeline/integration/speciesDataProcessing.R")
 
 # We then run our models. NOTE: This is the point where defining a Mesh becomes important. You can read
@@ -63,9 +63,17 @@ source("pipeline/integration/speciesDataProcessing.R")
 meshTest(myMesh, regionGeometry, crs = crs)
 
 # Once you've figured that out, you can start running the models. Remember that this script is the one that's 
-# likely to take the longest, so grab a coffee or other beverage of choice.
-
+# likely to take the longest, so grab a coffee or other beverage of choice. There are three choices of modelRun, 
+# 'richness' (estimates species richness), 'redListRichness' (same but only for red-listed species) and 'redListSpecies'
+# (individual species models for red-listed species). We suggest running these individually.
+modelRun <- "richness"  # or "redListRichness"
 source("pipeline/models/speciesModelRuns.R")
+
+# Now that all the necessary data has been produced, we can compile and export it for use in the app. Just use the 
+# function below to compile and move the necessary results into the visualisation folder. Here, date accessed is a 
+# required input.
+
+source("pipleine/models/utils/modelResultsCompilation.R")
 
 # And you're done! Now all that's left to do is to open up the app, which you can do by opening either the
 # server.R or ui.R file in the visualisation/hotspotMaps folder and hitting "Run App".

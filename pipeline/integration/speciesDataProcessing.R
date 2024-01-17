@@ -114,7 +114,7 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(processedData), FUN = fu
 # Remove absences, combine into one data frame and add date accessed
 processedPresenceData <- processedDataCompiled[processedDataCompiled$individualCount > 0,]
 processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
-saveRDS(processedPresenceData, "visualisation/hotspotMaps/data/processedPresenceData.RDS")
+saveRDS(processedPresenceData, paste0(folderName, "/processedPresenceData.RDS"))
 
 ###-----------------------###
 ### 4. Upload to Wallace ####
@@ -132,7 +132,6 @@ if (uploadToWallace == TRUE) {
 redListSpecies <- filterByRedList(redList$GBIFName, processedPresenceData, redListThreshold)
 redList$valid <- redList$GBIFName %in% redListSpecies$validSpecies
 saveRDS(redList, paste0(folderName, "/redList.RDS"))
-saveRDS(redList, "visualisation/hotspotMaps/data/redList.RDS")
 
 ###-----------------------------------###
 ### 6. Produce species richness data ####
@@ -142,12 +141,12 @@ saveRDS(redList, "visualisation/hotspotMaps/data/redList.RDS")
 blankRaster <- terra::project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]],
                               "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs")
 allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, blankRaster)
-writeRaster(allSpeciesRichness$rasters, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
+writeRaster(allSpeciesRichness$rasters, paste0(folderName, "/speciesRichnessData.tiff"), overwrite=TRUE)
 saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))
 
 if(nrow(processedRedListPresenceData) > 0){
   redListRichness <- speciesRichnessConverter(regionGeometry, processedRedListPresenceData, blankRaster)
-  writeRaster(redListRichness$rasters, "visualisation/hotspotMaps/data/redListRichnessData.tiff", overwrite=TRUE)
+  writeRaster(redListRichness$rasters, paste0(folderName, "/redListRichnessData.tiff"), overwrite=TRUE)
   saveRDS(redListRichness$richness, paste0(folderName, "/redListRichnessData.RDS"))
 }
 
@@ -157,7 +156,6 @@ if(nrow(processedRedListPresenceData) > 0){
 
 # To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
 rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
-file.copy(paste0(folderName, "/speciesMetadata.html"), "visualisation/hotspotMaps", overwrite = TRUE)
 
 
 ###---------------------###

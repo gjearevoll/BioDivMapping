@@ -16,12 +16,11 @@ library(rgbif)
 library(terra)
 library(dplyr)
 
+# Ensure that modelRun and dateAccessed are specified
 if (!exists("modelRun")) stop("You need to specify the variable modelRun")
+if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
 
-# Initialise folders for storage of all run data
-if (!exists("dateAccessed")) {
-  dateAccessed <- as.character(Sys.Date())
-}
+# Specify folders for storage of all run data
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 modelFolderName <- paste0(folderName, "/modelOutputs")
@@ -44,7 +43,7 @@ speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 # Define speciesData based on run type and create predictionData
-modelSpeciesData <- refineSpeciesData("redListRichness", speciesData)
+modelSpeciesData <- refineSpeciesData(modelRun, speciesData)
 predictionData <- createPredictionData(c(res/1000, res/1000), regionGeometry)
 
 # Prepare models
@@ -59,7 +58,8 @@ focalTaxaRun <- names(workflowList)
 # Get bias fields
 if ("metadataSummary.csv" %in% list.files("data/external")) {
   dataTypes <- read.csv("data/external/metadataSummary.csv")
-  biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], modelSpeciesData, redList)
+  redListUsed <- if (modelRun == "richness") NULL else redList
+  biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], modelSpeciesData, redListUsed)
 } else {
   biasFieldList <- rep(list(NULL), length(focalTaxonRun))
 }
@@ -103,7 +103,7 @@ for (i in 1:length(names(workflowList))) {
   # Change model name to ensure no overwrite of richness data
   if (modelRun %in% c("richness", "redListRichness")) {
     file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
-                paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Predictions.rds"))
+                paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Preds.rds"))
   }
 }
 

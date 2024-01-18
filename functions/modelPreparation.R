@@ -37,16 +37,8 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, reg
     
     # We need to use only species that are 
     # a) in the right taxa
-    # b) are in our list of red list species to model (this can also be removed if we just want to model all species)
-    # c) have a valid accepted scientific name
     focalSpeciesDataRefined <- lapply(speciesData, FUN = function(x) {
-      focalDataset <- x[x$taxa %in% focalTaxon & 
-                          if(is.null(redListModelled)) {
-                            T
-                          } else {
-                            x$acceptedScientificName %in% redListModelled
-                          } &
-                          !is.na(x$acceptedScientificName),]
+      focalDataset <- x[x$taxa %in% focalTaxon,]
       if (nrow(focalDataset) == 0) {
         focalDataset <- NA
       }

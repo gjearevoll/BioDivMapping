@@ -16,12 +16,11 @@ library(rgbif)
 library(terra)
 library(dplyr)
 
+# Ensure that modelRun and dateAccessed are specified
 if (!exists("modelRun")) stop("You need to specify the variable modelRun")
+if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
 
-# Initialise folders for storage of all run data
-if (!exists("dateAccessed")) {
-  dateAccessed <- as.character(Sys.Date())
-}
+# Specify folders for storage of all run data
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 modelFolderName <- paste0(folderName, "/modelOutputs")

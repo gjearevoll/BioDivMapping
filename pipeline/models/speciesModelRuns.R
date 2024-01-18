@@ -44,7 +44,7 @@ speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 # Define speciesData based on run type and create predictionData
-modelSpeciesData <- refineSpeciesData("redListRichness", speciesData)
+modelSpeciesData <- refineSpeciesData(modelRun, speciesData)
 predictionData <- createPredictionData(c(res/1000, res/1000), regionGeometry)
 
 # Prepare models
@@ -59,7 +59,8 @@ focalTaxaRun <- names(workflowList)
 # Get bias fields
 if ("metadataSummary.csv" %in% list.files("data/external")) {
   dataTypes <- read.csv("data/external/metadataSummary.csv")
-  biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], modelSpeciesData, redList)
+  redListUsed <- if (modelRun == "richness") NULL else redList
+  biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], modelSpeciesData, redListUsed)
 } else {
   biasFieldList <- rep(list(NULL), length(focalTaxonRun))
 }

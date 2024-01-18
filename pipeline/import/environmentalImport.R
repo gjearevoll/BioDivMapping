@@ -145,7 +145,6 @@ agg <- function(x, fact){
 parametersAggregated <- sapp(x = parametersCropped, fun = agg, fact = 2) |>
   crop(baseRaster)
 
-writeRaster(parametersAggregated, "visualisation/hotspotMaps/data/covariateDataList.tiff", overwrite=TRUE)
 writeRaster(parametersAggregated, paste0("data/run_", dateAccessed,"/environmentalDataImported.tiff"), overwrite=TRUE)
 
 

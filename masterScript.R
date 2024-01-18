@@ -66,14 +66,14 @@ meshTest(myMesh, regionGeometry, crs = crs)
 # likely to take the longest, so grab a coffee or other beverage of choice. There are three choices of modelRun, 
 # 'richness' (estimates species richness), 'redListRichness' (same but only for red-listed species) and 'redListSpecies'
 # (individual species models for red-listed species). We suggest running these individually.
-modelRun <- "richness"  # or "redListRichness"
+modelRun <- "redListSpecies"  # or "redListRichness" or "richness"
 source("pipeline/models/speciesModelRuns.R")
 
 # Now that all the necessary data has been produced, we can compile and export it for use in the app. Just use the 
 # function below to compile and move the necessary results into the visualisation folder. Here, date accessed is a 
 # required input.
 
-source("pipleine/models/utils/modelResultsCompilation.R")
+source("pipeline/models/utils/modelResultsCompilation.R")
 
 # And you're done! Now all that's left to do is to open up the app, which you can do by opening either the
 # server.R or ui.R file in the visualisation/hotspotMaps folder and hitting "Run App".

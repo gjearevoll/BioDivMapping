@@ -181,6 +181,3 @@ attr(dataList, "level") <- level
 attr(dataList, "region") <- region
 saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
 saveRDS(regionGeometry, paste0(folderName, "/regionGeometry.RDS"))
-saveRDS(regionGeometry, "visualisation/hotspotMaps/data/regionGeometry.RDS")
-write.csv(focalTaxon, "visualisation/hotspotMaps/data/focalTaxon.csv", row.names = FALSE)
-saveRDS(downloadKey, file = "visualisation/hotspotMaps/data/downloadKey.RDS")

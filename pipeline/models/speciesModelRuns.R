@@ -103,7 +103,7 @@ for (i in 1:length(names(workflowList))) {
   # Change model name to ensure no overwrite of richness data
   if (modelRun %in% c("richness", "redListRichness")) {
     file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
-                paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Predictions.rds"))
+                paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Preds.rds"))
   }
 }
 

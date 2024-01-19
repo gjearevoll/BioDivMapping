@@ -108,7 +108,8 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(processedData), FUN = fu
   if (datasetType == "PO") {
     dataset$individualCount <- 1
   }
-  datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType", "taxonKeyProject")]
+  datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType", 
+                              "taxonKeyProject", "simpleScientificName")]
   datasetShort$dsName <- datasetName
   datasetShort
 }))

@@ -52,6 +52,12 @@ processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, re
   eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry) %>%
     filter(coordinateUncertaintyInMeters <= 100)
   
+  # At this point we may find that there are no relevant points from this dataset available - 
+  # in this case we want to finish the function early
+  if (nrow(eventLocationsSF) == 0) {
+    return(NULL)
+  }
+  
   # Get a dates table to match years to events
   eventDates <- occurrence %>%
     dplyr::select(year, eventID) %>%

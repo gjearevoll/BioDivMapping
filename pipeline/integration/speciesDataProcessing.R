@@ -66,6 +66,8 @@ for (ds in seq_along(speciesData)) {
   newDataset <- NULL
   
   source("pipeline/integration/utils/defineProcessing.R")
+  if (is.null(newDataset)) {break}
+  
   # add simpleScientificName column
   newDataset <- newDataset %>%
     mutate(
@@ -74,7 +76,7 @@ for (ds in seq_along(speciesData)) {
         str_extract(acceptedScientificName, "^[A-Za-z]+\\s+[a-z]+")        # Extract binomial name
       ),
       # Replace space with underscore in simpleScientificName
-      simpleScientificName = str_replace(simpleScientificName, " ", "_")
+      simpleScientificName = gsub("×","", gsub(" ", "_", simpleScientificName))
     )
   
   # Add in polyphyletic taxa

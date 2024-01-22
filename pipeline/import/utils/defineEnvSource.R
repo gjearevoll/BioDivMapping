@@ -86,6 +86,10 @@ if (dataSource == "geonorge") {
 ### 6. Chelsa ###  
 } else if (dataSource == "chelsa") {
   rasterisedVersion <- get_chelsa(focalParameter)
+  
+### 7. NIBIO ###
+} else if (dataSource == "nibio") {
+  rasterisedVersion <- get_nibio()
 }
 
 ### merge with requested download area to make missing data explicit

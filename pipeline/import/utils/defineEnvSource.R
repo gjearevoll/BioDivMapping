@@ -8,22 +8,49 @@ if(inherits(regionGeometryBuffer, c("sf", "sfc"))){
 }
 ### 1. geonorge ####
 if (dataSource == "geonorge") { 
-  # check if encompassing corine alreadydownloaded
-  elevation <- checkAndImportRast("elevation", regionGeometryBuffer, dataPath)
-  # download and save if missing
-  if(is.null(elevation)){
-    # download
-    elevation <- get_geonorge(targetDir = tempFolderName)
-    # save
-    file_path <- generateRastFileName(elevation, dataSource, "elevation", dataPath)
-    writeRaster(elevation, filename = file_path, overwrite = TRUE)
-  }
   
-  # Now get the raster you're actually looking for
-  if (focalParameter == 'elevation') {
-    rasterisedVersion <- elevation
-  } else {
-    rasterisedVersion <- terra::terrain(elevation, v=focalParameter, unit='degrees', neighbors=8)
+  if (focalParameter %in% c("slope", "aspect", "elevation")) {
+    # check if encompassing corine alreadydownloaded
+    elevation <- checkAndImportRast("elevation", regionGeometryBuffer, dataPath)
+    # download and save if missing
+    if(is.null(elevation)){
+      # download
+      elevation <- get_geonorge(targetDir = tempFolderName, dataFormat = "TIFF")
+      # save
+      file_path <- generateRastFileName(elevation, dataSource, "elevation", dataPath)
+      writeRaster(elevation, filename = file_path, overwrite = TRUE)
+    }
+    
+    # Now get the raster you're actually looking for
+    if (focalParameter == 'elevation') {
+      rasterisedVersion <- elevation
+    } else {
+      rasterisedVersion <- terra::terrain(elevation, v=focalParameter, unit='degrees', neighbors=8)
+    }
+  } else if (focalParameter %in% c("distance_water", "distance_road")) {
+    
+    # Get relevant vector for water/roads
+    rasterisedVersion <- get_geonorge(dataName = "N250Kartdata", targetDir = tempFolderName, dataFormat = "FGDB")
+    
+    searchTerms <- if (focalParameter == "distance_water") c("Innsjø", "ElvBekk") else "VegSenterlinje"
+    geoVector <- terra::subset(rasterisedVersion, rasterisedVersion$objtype %in% searchTerms)
+    
+    # get  base raster for whole of Norway (as closest road or lake may be over county lines)
+    baseRasterDistance <- defineRegion("country", "Norway") |>
+      st_buffer(20000) |>
+      st_transform(projCRS) |> 
+      vect()
+    baseWaterRaster <- terra::rast(extent = ext(baseRasterDistance), res = 1000, crs = projCRS)
+    baseWaterRaster$cellId <- paste0("cell", 1:ncell(baseWaterRaster))
+    
+    # Extract vectors to a raster layer and figure out which cells have a road/wtaer body in them
+    geoVectorExtracted <- terra::extract(baseWaterRaster, geoVector)
+    baseWaterRaster[[focalParameter]] <- 0
+    baseWaterRaster[[focalParameter]][!(baseWaterRaster$cellId %in% openWaterExtracted$cellId)] <- NA
+    
+    # Calculate distance
+    rasterisedVersion <- terra::distance(baseWaterRaster[[focalParameter]])
+    
   }
   
 ### 2. worldclim ####  

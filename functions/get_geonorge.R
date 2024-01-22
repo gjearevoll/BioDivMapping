@@ -18,7 +18,7 @@
 # Check out the full list of data repositories here: https://nedlasting.geonorge.no/geonorge/
 # See available data sources: https://nedlasting.geonorge.no/geonorge/Basisdata/
 
-get_geonorge <- function(repo = "Basisdata", dataName = "DTM10UTM33", targetDir) {
+get_geonorge <- function(repo = "Basisdata", dataName = "DTM10UTM33", targetDir, dataFormat) {
 
   # extend the target directory path with the data name
   targetDirExt <- file.path(targetDir, dataName)
@@ -46,7 +46,7 @@ get_geonorge <- function(repo = "Basisdata", dataName = "DTM10UTM33", targetDir)
   print(formats)
   
   # construct the URL containing the list of zip files for the selected format
-  url <- paste0(base_url, "TIFF/")
+  url <- paste0(base_url, paste0(dataFormat, "/"))
   
   # scrape the data URL to obtain a list of zip files
   zip_links <- url %>%
@@ -55,7 +55,12 @@ get_geonorge <- function(repo = "Basisdata", dataName = "DTM10UTM33", targetDir)
     html_attr("href") %>%  # Get the href attribute of these links
     paste0(url, .) # Concatenate the base URL with each zip link to form the full URL
   
-  # (quietly) download each zip file, unzip it, and then delete the zip file
+  # If using RGDB data, just download the Norwegian data
+  if (dataFormat == "FGDB") {
+    zip_links <- zip_links[grepl("0000_Norge", zip_links, fixed = TRUE)]
+  }
+  
+  # Else (quietly) download each zip file, unzip it, and then delete the zip file
   invisible(lapply(zip_links, function(link) {
     # specify the temporary zip file name
     zip_name <- file.path(targetDirExt, "temp.zip")
@@ -72,12 +77,24 @@ get_geonorge <- function(repo = "Basisdata", dataName = "DTM10UTM33", targetDir)
   
   dirNames <- list.files(targetDirExt, full.names = TRUE)
   
-  # Aggregate each file to 100m and add to list, then merge
-  DTMList <- lapply(dirNames, FUN = function(x) {
-    aggregate(rast(x), fact = 10)
-  })
-  elevation <- do.call(mosaic, DTMList)
-  return(elevation)
+  if (dataFormat == "TIFF") {
+    # If elevation, aggregate to Aggregate each file to 100m and add to list, then merge
+    DTMList <- lapply(dirNames, FUN = function(x) {
+      aggregate(rast(x), fact = 10)
+    })
+    elevation <- do.call(mosaic, DTMList)
+    return(elevation)
+    
+  } else if (dataFormat == "FGDB") {
+    # get links with gdb ending
+    # List all files in the directory that match the parameter
+    filePattern <- "_.*\\.gdb$"
+    fileList <- dir(path = targetDirExt, pattern = filePattern, full.names = TRUE)
+    correctLayer <- ifelse(focalParameter == "distance_water", 3, 2)
+    gdbFileLayers <- ogrListLayers(fileList)
+    vectorData <- vect(fileList, layer = gdbFileLayers[correctLayer])
+    return(vectorData)
+  }
 }
 
 

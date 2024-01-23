@@ -27,17 +27,17 @@ if (dataSource == "geonorge") {
     } else {
       rasterisedVersion <- terra::terrain(elevation, v=focalParameter, unit='degrees', neighbors=8)
     }
-  } else if (focalParameter %in% c("distance_water", "distance_road")) {
+  } else if (focalParameter %in% c("distance_water", "distance_roads")) {
     
     # Get relevant vector for water/roads
-    rasterisedVersion <- get_geonorge(dataName = "N250Kartdata", targetDir = tempFolderName, dataFormat = "FGDB")
+    vectorBase <- get_geonorge(dataName = "N250Kartdata", targetDir = tempFolderName, dataFormat = "FGDB")
     
     searchTerms <- if (focalParameter == "distance_water") c("Innsjø", "ElvBekk") else "VegSenterlinje"
-    geoVector <- terra::subset(rasterisedVersion, rasterisedVersion$objtype %in% searchTerms)
+    geoVector <- terra::subset(vectorBase, vectorBase$objtype %in% searchTerms)
     
-    # get  base raster for whole of Norway (as closest road or lake may be over county lines)
-    baseRasterDistance <- defineRegion("country", "Norway") |>
-      st_buffer(20000) |>
+    # get  base raster with expanded buffer (as closest road or lake may be over county lines)
+    baseRasterDistance <- regionGeometry |>
+      st_buffer(40000) |>
       st_transform(projCRS) |> 
       vect()
     baseWaterRaster <- terra::rast(extent = ext(baseRasterDistance), res = 1000, crs = projCRS)
@@ -46,7 +46,7 @@ if (dataSource == "geonorge") {
     # Extract vectors to a raster layer and figure out which cells have a road/wtaer body in them
     geoVectorExtracted <- terra::extract(baseWaterRaster, geoVector)
     baseWaterRaster[[focalParameter]] <- 0
-    baseWaterRaster[[focalParameter]][!(baseWaterRaster$cellId %in% openWaterExtracted$cellId)] <- NA
+    baseWaterRaster[[focalParameter]][!(baseWaterRaster$cellId %in% geoVectorExtracted$cellId)] <- NA
     
     # Calculate distance
     rasterisedVersion <- terra::distance(baseWaterRaster[[focalParameter]])

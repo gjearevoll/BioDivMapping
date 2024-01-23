@@ -89,7 +89,7 @@ if (dataSource == "geonorge") {
   
 ### 7. NIBIO ###
 } else if (dataSource == "nibio") {
-  rasterisedVersion <- get_nibio()
+  rasterisedVersion <- get_nibio(regionGeometryBuffer)
 }
 
 ### merge with requested download area to make missing data explicit

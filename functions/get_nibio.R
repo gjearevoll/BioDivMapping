@@ -19,7 +19,7 @@ get_nibio <- function(regionGeometryBuffer) {
   forestLine <- terra::rast("data/temp/nibio/fl_800_2017_e")
   
   # Get elevation raster
-  elevation <- checkAndImportRast("elevation", regionGeometryBuffer, "data/temp/geonorge")
+  elevation <- checkAndImportRast("elevation", regionGeometryBuffer, "data/temp/geonorge", quiet = TRUE)
   
   # Project forest line onto elevation
   reprojForestLine <- terra::project(forestLine, elevation)

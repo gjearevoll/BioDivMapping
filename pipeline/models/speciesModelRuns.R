@@ -2,9 +2,6 @@
 
 #### MODEL RUNS ####
 
-# The following script imports our various forms of environmental data and processes them, based on the type of data
-# and other specifications related to the source.
-
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###
@@ -16,6 +13,9 @@ library(rgbif)
 library(terra)
 library(dplyr)
 
+# Import local functions
+sapply(list.files("functions", full.names = TRUE), source)
+
 # Ensure that modelRun and dateAccessed are specified
 if (!exists("modelRun")) stop("You need to specify the variable modelRun")
 if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
@@ -23,13 +23,6 @@ if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed
 # Specify folders for storage of all run data
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
-modelFolderName <- paste0(folderName, "/modelOutputs")
-if (!file.exists(modelFolderName)) {
-  dir.create(modelFolderName)
-}
-
-# Import local functions
-sapply(list.files("functions", full.names = TRUE), source)
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -56,8 +49,8 @@ workflowList <- modelPreparation(focalTaxa, modelSpeciesData,
 focalTaxaRun <- names(workflowList)
 
 # Get bias fields
-if ("metadataSummary.csv" %in% list.files("data/external")) {
-  dataTypes <- read.csv("data/external/metadataSummary.csv")
+if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
+  dataTypes <- read.csv(paste0(folderName, "/metadataSummary.csv"))
   redListUsed <- if (modelRun == "richness") NULL else redList
   biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], modelSpeciesData, redListUsed)
 } else {

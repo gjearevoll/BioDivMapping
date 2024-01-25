@@ -69,7 +69,11 @@ if (length(emptyParameters) > 0) {
 projCRS <- sf::st_crs(crs)$proj4string
 
 # define region to download as bounding box of buffered and projected mesh/regionGeometry
-regionGeometryBuffer <- st_union(if(exists("mesh")) mesh else regionGeometry) |>
+regionGeometryBuffer <- st_union(if(exists("myMesh")) {
+  meshTest(myMesh, regionGeometry, print = F, crs = crs) |>
+    inlaMeshToSf()
+}
+  else regionGeometry) |>
   st_buffer(20000) |>
   st_transform(projCRS) |> 
   st_bbox() |> 

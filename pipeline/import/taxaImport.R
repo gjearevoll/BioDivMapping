@@ -68,8 +68,9 @@ if (file.exists(paste0(tempFolderName, "/redList.RDS"))) {
   
   # Match to accepted names
   speciesBackbones <- getGbifBackbone(redList$species)
+  redList$taxaKey <- matchBackboneKeys(speciesBackbones, focalTaxon$key)
   redList$taxa <- focalTaxon$taxa[match(redList$taxaKey, focalTaxon$key[!is.na(focalTaxon$key)])]
-  redList$GBIFName <- sapply(redList$species, FUN = findGBIFName)
+  redList$GBIFName <- speciesBackbones$scientificName
   
   # Add polyphyletic taxa
   polyphylaTaxaVector <-  polyphyleticSpecies$taxa[match(redList$GBIFName, polyphyleticSpecies$acceptedScientificName)]

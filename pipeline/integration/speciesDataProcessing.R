@@ -11,6 +11,9 @@ library(sf)
 library(rgdal)
 library(terra)
 
+# Import local functions
+sapply(list.files("functions", full.names = TRUE), source)
+
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###
@@ -18,29 +21,35 @@ library(terra)
 # Defiine whether or not we want to upload this data to Wallace
 uploadToWallace <- FALSE
 
-# First thing is to bring in imported data
+# if it is not already, define dateAccessed
 if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
 }
-
-
-# Import datasets
+# define repo folder names
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
+
+# import regionGeometry list
+if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
+  regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
+} else {
+  stop("Please source defineRegionGeometry.R first.")
+}
+
+# Import datasets
 speciesDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))
 speciesData <- speciesDataList[["species"]]
 redList <- speciesDataList[["redList"]]
 metadata <- speciesDataList$metadata$metadata
-regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 
 # Import taxa list and polyphyletic species
 focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 focalTaxon <- focalTaxon[focalTaxon$include,]
-polyphyleticSpecies <- read.csv("data/external/polyphyleticSpecies.csv") %>%
-  filter(taxa %in% focalTaxon$taxa)
 
-# Import local functions
-sapply(list.files("functions", full.names = TRUE), source)
+# import polyphyletic groups
+if(file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
+  polyphyleticSpecies <- read.csv(paste0(folderName, "/polyphyleticSpecies.csv"), header = T)
+} 
 
 ###----------------###
 ### 2. Processing ####

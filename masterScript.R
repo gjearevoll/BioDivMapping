@@ -17,7 +17,16 @@ source("pipeline/installAllPackages.R")
 
 sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 
-# Let's get started! The first script to run is the speciesImport.R script, which requires that you
+# Let's get started! The first script initialiseRepository.R, which will create 
+# a folder for the specified dateAccessed, filters focalTaxa for taxa to be analyzed 
+# and assigns missing usageKeys. Last, it saves a copy of focalTaxa.csv, polyphyleticSpecies.csv,
+# metadataSummary.csv, and focalCovariates.csv in the working folder for reproducibility.
+
+dateAccessed <- "2024-01-26"
+
+source("pipeline/import/initialiseRepository.R")
+
+# Next, we will run defineRegionGeometry.R, which will create the requires that you
 # define a spatial level on which to run the pipeline, as well as a region within Norway. The options are
 # "country", "county", "municipality", or "points", which is a box created by latitudinal and longitudinal 
 # points (example given below). The default options are set for the whole of Norway. Codes for
@@ -32,6 +41,8 @@ region <- "Norway"
 
 crs <- 25833  # as accepted by sf::st_crs()
 res <- 1000 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
+
+source("pipeline/import/defineRegionGeometry.R")
 
 # You also need to define whether or not you want to use a scheduled download. Scheduled downloads produce a DOI,
 # and enable handling of much larger datasets. If you're playing around with a small dataset, you can probably hit 

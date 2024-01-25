@@ -20,26 +20,31 @@ sapply(list.files("functions", full.names = TRUE), source)
 ### 1. Preparation ####
 ###-----------------###
 
-# Run script to define geographical region and resolution we are working with 
-# Initialise folders for storage of all run data
+# if it is not already, define dateAccessed
 if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
 }
-
-# Add folder name
+# define repo folder names
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 
-regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
-
-# The following is a list of the various environmental variables we have available.
-# Define initial species list.
+# Import focal covariates
 if(file.exists(paste0(folderName, "/focalCovariates.csv"))){
   parameters <- read.csv( paste0(folderName, "/focalCovariates.csv"), header = T)
 } else {
-  parameters <- read.csv("data/external/focalCovariates.csv")  # save for reference
-  write.csv(parameters, paste0(folderName, "/focalCovariates.csv"), row.names = FALSE)
+  stop("Please source initialiseRepository.R first.")
 }
+
+# import regionGeometry list
+if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
+  regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
+} else {
+  stop("Please source defineRegionGeometry.R first.")
+}
+
+###--------------------###
+### 2. Dataset Import ####
+###--------------------###
 
 selectedParameters <- parameters$parameters[parameters$selected]
 
@@ -50,16 +55,11 @@ if (length(emptyParameters) > 0) {
                {
                  vec <- paste0("'", emptyParameters, "'")
                  if (length(vec) == 1) { as.character(vec)
-                   } else if (length(vec) == 2) { paste(vec[1], "and", vec[2])
-                     } else { paste0(paste(vec[-length(vec)], collapse = ", "), ", and ", vec[length(vec)])
-                       }
-                 },
+                 } else if (length(vec) == 2) { paste(vec[1], "and", vec[2])
+                 } else { paste0(paste(vec[-length(vec)], collapse = ", "), ", and ", vec[length(vec)])
+                 }
+               },
                if (length(vec) == 1) "a source" else "sources"))}
-
-
-###--------------------###
-### 2. Dataset Import ####
-###--------------------###
 
 # convert crs to format accepted by sf, terra, and intSDM (& dependencies) 
 projCRS <- sf::st_crs(crs)$proj4string
@@ -145,7 +145,7 @@ agg <- function(x, fact){
 parametersAggregated <- sapp(x = parametersCropped, fun = agg, fact = 2) |>
   crop(baseRaster)
 
-writeRaster(parametersAggregated, paste0("data/run_", dateAccessed,"/environmentalDataImported.tiff"), overwrite=TRUE)
+writeRaster(parametersAggregated, paste0(folderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
 
 
 

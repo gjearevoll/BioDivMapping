@@ -38,6 +38,34 @@ if (!file.exists(modelFolderName)) {
   dir.create(modelFolderName)
 }
 
+###-----------------------------###
+### 2. Save control parameters  ###
+###-----------------------------###
+
+if(file.exists(paste0(folderName,"/controlPars.RDS"))){
+  controlPars <- readRDS(paste0(folderName,"/controlPars.RDS"))
+  # assign controlPars back into the environment
+  list2env(controlPars, envir = .GlobalEnv)
+} else {
+  # combine control parameters
+  controlPars <- list(externalFolder = externalFolder,
+                      localCovFolder = localCovFolder,
+                      downloadCovFolder = downloadCovFolder,
+                      level = level,
+                      region = region,
+                      crs = crs,
+                      res = res,
+                      uploadToWallace = uploadToWallace,
+                      scheduledDownload = scheduledDownload,
+                      waitForGbif = waitForGbif,
+                      myMesh = myMesh,
+                      redListCategories = redListCategories,
+                      redListThreshold = redListThreshold,
+                      modelRun = modelRun)
+  # save
+  saveRDS(controlPars, paste0(folderName,"/controlPars.RDS"))
+}
+
 ###-----------------------###
 ### 2. Process focalTaxa  ###
 ###-----------------------###

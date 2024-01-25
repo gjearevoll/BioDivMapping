@@ -18,9 +18,6 @@ sapply(list.files("functions", full.names = TRUE), source)
 ### 1. Preparation ####
 ###-----------------###
 
-# Defiine whether or not we want to upload this data to Wallace
-uploadToWallace <- FALSE
-
 # if it is not already, define dateAccessed
 if (!exists("dateAccessed")) {
   dateAccessed <- as.character(Sys.Date())
@@ -136,7 +133,7 @@ saveRDS(processedPresenceData, paste0(folderName, "/processedPresenceData.RDS"))
 ### 4. Upload to Wallace ####
 ###-----------------------###
 
-if (uploadToWallace == TRUE) {
+if (uploadToWallace) {
   source("pipeline/integration/uploadToWallace.R")
 }
 

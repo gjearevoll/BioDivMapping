@@ -67,14 +67,14 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
 }
 
 ###-----------------------###
-### 2. Process focalTaxa  ###
+### 3. Process focalTaxa  ###
 ###-----------------------###
 
 # save copy of focalTaxa.csv
 if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
   focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 } else {
-  focalTaxon <- read.csv("data/external/focalTaxa.csv", header = T)
+  focalTaxon <- read.csv(file.path(externalFolder, "focalTaxa.csv"), header = T)
 }
 
 # Refine focal taxon
@@ -89,34 +89,34 @@ focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey]
 write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 
 ###---------------------------------###
-### 3. Process polyphyleticSpecies  ###
+### 4. Process polyphyleticSpecies  ###
 ###---------------------------------###
 
 # save copy of polyphyletic groups
 if(!file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
-  read.csv("data/external/polyphyleticSpecies.csv") %>%
+  read.csv(file.path(externalFolder, "polyphyleticSpecies.csv")) %>%
     filter(taxa %in% focalTaxon$taxa) %>% 
     # save for reference
     write.csv(paste0(folderName, "/polyphyleticSpecies.csv"), row.names = FALSE)
 }
 
 ###-----------------------------###
-### 4. Process metadataSummary  ###
+### 5. Process metadataSummary  ###
 ###-----------------------------###
 
 # save copy of metadataSummary groups
-if ("metadataSummary.csv" %in% list.files("data/external") &
+if ("metadataSummary.csv" %in% list.files(externalFolder) &
     !file.exists(paste0(folderName, "/metadataSummary.csv"))){
-  read.csv("data/external/metadataSummary.csv") %>%
+  read.csv(file.path(externalFolder, "metadataSummary.csv")) %>%
     write.csv(paste0(folderName, "/metadataSummary.csv"), row.names = FALSE)
 }
 
 ###-----------------------------###
-### 5. Process focalCovariates  ###
+### 6. Process focalCovariates  ###
 ###-----------------------------###
 
 # save for reference
 if(!file.exists(paste0(folderName, "/focalCovariates.csv"))){
-  read.csv("data/external/focalCovariates.csv") %>% 
+  read.csv(file.path(externalFolder, "focalCovariates.csv")) %>% 
     write.csv(paste0(folderName, "/focalCovariates.csv"), row.names = FALSE)
 }

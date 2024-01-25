@@ -94,7 +94,7 @@ for(parameter in seq_along(selectedParameters)) {
     dataSource <- parameters$dataSource[parameters$parameters == focalParameter]
     
     ### 2. Check whether we have previously downloaded a version of the external data that encompasses the area we need.
-    dataPath <- paste0("data/temp/", dataSource)
+    dataPath <- file.path(downloadCovFolder, dataSource)
     if(dir.exists(dataPath)){
       rasterisedVersion <- checkAndImportRast(focalParameter, regionGeometryBuffer, dataPath)
       # 3. Create new temp folder to download necessary external data.
@@ -106,7 +106,7 @@ for(parameter in seq_along(selectedParameters)) {
       source(paste0("pipeline/import/utils/defineEnvSource.R"))
     }
   } else {
-    rasterisedVersion <- rast(paste0("data/external/environmentalCovariates/",focalParameter, ".tiff"))
+    rasterisedVersion <- rast(file.path(localCovFolder, paste0(focalParameter, ".tiff")))
   }
   parameterList[[parameter]] <- rasterisedVersion
 }

@@ -62,7 +62,7 @@ if(file.exists(paste0(folderName, "/metadataSummary.csv"))){
 if (file.exists(paste0(tempFolderName, "/redList.RDS"))) {
   redList <- readRDS(paste0(tempFolderName, "/redList.RDS"))
 } else {
-  redListCategories <- c("VU", "EN", "CR")
+  # redListCategories <- c("VU", "EN", "CR")
   redList <- importRedList(redListCategories)
   
   # Match to accepted names

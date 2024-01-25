@@ -21,6 +21,10 @@ if (!exists("dateAccessed")) {
 }
 folderName <- paste0("data/run_", dateAccessed)
 
+# import project control parameters into the environment
+readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
+  list2env(envir = .GlobalEnv)
+
 ###------------------###
 ### 2. define Region ###
 ###------------------###

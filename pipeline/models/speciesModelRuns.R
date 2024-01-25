@@ -24,6 +24,10 @@ if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 
+# import project control parameters into the environment
+readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
+  list2env(envir = .GlobalEnv)
+
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 focalTaxa <- focalTaxa[focalTaxa$include,]

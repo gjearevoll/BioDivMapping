@@ -9,7 +9,7 @@
 
 getGbifBackbone <- function(scientificNames){
   # first character to lower-case
-  scientificNames <- stringr::str_to_sentence(scientificNames)
+  ScientificNames <- stringr::str_to_sentence(scientificNames)
   
   # match names with gbif
   speciesNameTable <- as.data.frame(rgbif::name_backbone_checklist(ScientificNames))

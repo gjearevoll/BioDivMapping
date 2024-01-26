@@ -34,3 +34,4 @@ land_cover_corine,TRUE,TRUE,corine
 ndvi_peak,TRUE,TRUE,modis
 distance_water,TRUE,TRUE,corine
 snow_cover,TRUE,TRUE,chelsa
+forest_line,TRUE,TRUE,nibio

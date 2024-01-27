@@ -75,7 +75,7 @@ modelOutputs <- if(modelRun == "richness")
 print("Starting model run.")
 
 # Begin running different species groups
-for (i in 1:length(names(workflowList))) {
+for (i in seq_along(workflowList)) {
   
   # Define species group to create
   focalGroup <- names(workflowList)[i]

@@ -94,6 +94,9 @@ for (ds in seq_along(speciesData)) {
                             polyphyleticSpecies$taxa[match(newDataset$acceptedScientificName, polyphyleticSpecies$acceptedScientificName)], 
                             newDataset$taxa)
   
+  # convert year to numeric
+  newDataset$year <- as.numeric(newDataset$year)
+  
   # Save and name new dataset
   processedData[[ds]] <- newDataset
   namesProcessedData[ds] <- datasetName

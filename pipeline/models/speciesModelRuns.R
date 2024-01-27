@@ -30,7 +30,6 @@ readRDS(paste0(folderName,"/controlPars.RDS")) %>%
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
-focalTaxa <- focalTaxa[focalTaxa$include,]
 redList <- readRDS(paste0(folderName, "/redList.RDS"))
 
 # Import datasets

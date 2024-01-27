@@ -49,7 +49,7 @@ redListThreshold <- 30
 # which categories are to be used for filtering/analysing red list species
 redListCategories <- c("VU", "EN", "CR")
 # the type of model that will be fitted to the data
-modelRun <- "redListSpecies"  # or "redListRichness" or "richness"
+modelRun <- "redListSpecies"  # or "redListRichness", "richness", or "allSpecies"
 
 # Let's get started! The first script initialiseRepository.R, which will create 
 # a folder for the specified dateAccessed, filters focalTaxa for taxa to be analyzed 

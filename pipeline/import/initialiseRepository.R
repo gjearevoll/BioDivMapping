@@ -39,6 +39,13 @@ if (!file.exists(modelFolderName)) {
   dir.create(modelFolderName)
 }
 
+# location where focalTaxa, polyphyleticSpecies, metadataSummary, and focalCovariates CSVs are stored 
+externalFolder <- "data/external"
+# location where local environmental covariates are stored 
+localCovFolder <- "data/external/environmentalCovariates" 
+# location where externaly downloaded environmental covariates are to be saved
+downloadCovFolder <- "data/temp" 
+
 ###-----------------------------###
 ### 2. Save control parameters  ###
 ###-----------------------------###

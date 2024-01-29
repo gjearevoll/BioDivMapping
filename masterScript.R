@@ -22,12 +22,6 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 
 # Date of analysis from which working directory will be create/access
 dateAccessed <- "2024-01-26"  
-# location where focalTaxa, polyphyleticSpecies, metadataSummary, and focalCovariates CSVs are stored 
-externalFolder <- "data/external"
-# location where local environmental covariates are stored 
-localCovFolder <- "data/external/environmentalCovariates" 
-# location where externaly downloaded environmental covariates are to be saved
-downloadCovFolder <- "data/temp" 
 # spatial level on which regionGeometry will be defined as accepted by defineRegion()
 level <- "county"  
 # specific region to be used as accepted by defineRegion()

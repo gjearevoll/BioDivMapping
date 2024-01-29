@@ -20,7 +20,7 @@ sapply(list.files("functions", full.names = TRUE), source)
 
 # if it is not already, define dateAccessed
 if (!exists("dateAccessed")) {
-  dateAccessed <- as.character(Sys.Date())
+  stop("Please define a run date for the model first.")
 }
 # define repo folder names
 folderName <- paste0("data/run_", dateAccessed)

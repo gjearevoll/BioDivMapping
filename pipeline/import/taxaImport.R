@@ -21,8 +21,9 @@ sapply(list.files("functions", full.names = TRUE), source)
 
 # if it is not already, define dateAccessed
 if (!exists("dateAccessed")) {
-  dateAccessed <- as.character(Sys.Date())
+  stop("Please define a run date for the model first.")
 }
+
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 

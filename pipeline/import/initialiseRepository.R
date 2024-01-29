@@ -21,6 +21,7 @@ sapply(list.files("functions", full.names = TRUE), source)
 
 # if it is not already, define dateAccessed
 if (!exists("dateAccessed")) {
+  warning("You have not defined a date to assign this repository today. Pipeline will use today's date.")
   dateAccessed <- as.character(Sys.Date())
 }
 

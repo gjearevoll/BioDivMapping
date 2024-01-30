@@ -3,17 +3,15 @@
 
 #' @description The different models require different data. redListSpecies models require only red listed species, and only those who have enough data. redListeRichness models require only red listed species, and only presence data, and speciesRichness models require only presence data. This function applies those filters.
 #'
-#' @param modelRun The type of model you are running.
 #' @param speciesData The processed species data list.
+#' @param modelRun The type of model you are running. by default, all species will be modelled.
 #' 
 #' @return A new list of datasets.
 #'
 #' 
 #' 
 
-refineSpeciesData <- function(modelRun, speciesData) {
-  
-
+refineSpeciesData <- function(speciesData, modelRun = "allSpecies") {
   
   # Cut down to only red-listed species
   if (modelRun %in% c("redListRichness", "redListSpecies")) {

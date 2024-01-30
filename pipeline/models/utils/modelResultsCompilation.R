@@ -18,6 +18,10 @@ if (!exists("dateAccessed")) {
 folderName <- paste0("data/run_", dateAccessed)
 taxaRun <- list.dirs(paste0(folderName, "/modelOutputs"), recursive = FALSE, full.names = FALSE)
 
+# import project control parameters into the environment
+readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
+  list2env(envir = .GlobalEnv)
+
 # Import red list
 redList <- readRDS(paste0(folderName, "/redList.RDS"))
 

@@ -2,9 +2,6 @@
 
 #### MODEL RUNS ####
 
-# The following script imports our various forms of environmental data and processes them, based on the type of data
-# and other specifications related to the source.
-
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###
@@ -16,6 +13,9 @@ library(rgbif)
 library(terra)
 library(dplyr)
 
+# Import local functions
+sapply(list.files("functions", full.names = TRUE), source)
+
 # Ensure that modelRun and dateAccessed are specified
 if (!exists("modelRun")) stop("You need to specify the variable modelRun")
 if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
@@ -23,17 +23,13 @@ if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed
 # Specify folders for storage of all run data
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
-modelFolderName <- paste0(folderName, "/modelOutputs")
-if (!file.exists(modelFolderName)) {
-  dir.create(modelFolderName)
-}
 
-# Import local functions
-sapply(list.files("functions", full.names = TRUE), source)
+# import project control parameters into the environment
+readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
+  list2env(envir = .GlobalEnv)
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
-focalTaxa <- focalTaxa[focalTaxa$include,]
 redList <- readRDS(paste0(folderName, "/redList.RDS"))
 
 # Import datasets
@@ -43,7 +39,7 @@ speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 # Define speciesData based on run type and create predictionData
-modelSpeciesData <- refineSpeciesData(modelRun, speciesData)
+modelSpeciesData <- refineSpeciesData(speciesData, modelRun)
 predictionData <- createPredictionData(c(res/1000, res/1000), regionGeometry)
 
 # Prepare models
@@ -56,9 +52,9 @@ workflowList <- modelPreparation(focalTaxa, modelSpeciesData,
 focalTaxaRun <- names(workflowList)
 
 # Get bias fields
-if ("metadataSummary.csv" %in% list.files("data/external")) {
-  dataTypes <- read.csv("data/external/metadataSummary.csv")
-  redListUsed <- if (modelRun == "richness") NULL else redList
+if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
+  dataTypes <- read.csv(paste0(folderName, "/metadataSummary.csv"))
+  redListUsed <- if (modelRun %in% c("richness","allSpecies")) NULL else redList
   biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], modelSpeciesData, redListUsed)
 } else {
   biasFieldList <- rep(list(NULL), length(focalTaxonRun))
@@ -78,7 +74,7 @@ modelOutputs <- if(modelRun == "richness")
 print("Starting model run.")
 
 # Begin running different species groups
-for (i in 1:length(names(workflowList))) {
+for (i in seq_along(workflowList)) {
   
   # Define species group to create
   focalGroup <- names(workflowList)[i]

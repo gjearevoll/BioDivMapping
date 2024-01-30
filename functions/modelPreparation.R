@@ -94,7 +94,7 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, reg
     
     # Add datasets - note that for the moment this excludes the NTNU field notes and ANO,
     # the model will currently not run with these involved
-    for (l in c(1:length(focalSpeciesDataRefined))) {
+    for (l in seq_along(focalSpeciesDataRefined)) {
       dataset <- focalSpeciesDataRefined[[l]]
       
       

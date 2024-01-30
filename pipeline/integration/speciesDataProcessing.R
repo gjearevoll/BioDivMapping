@@ -11,36 +11,46 @@ library(sf)
 library(rgdal)
 library(terra)
 
+# Import local functions
+sapply(list.files("functions", full.names = TRUE), source)
+
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###
 
-# Defiine whether or not we want to upload this data to Wallace
-uploadToWallace <- FALSE
-
-# First thing is to bring in imported data
+# if it is not already, define dateAccessed
 if (!exists("dateAccessed")) {
-  dateAccessed <- as.character(Sys.Date())
+  stop("Please define a run date for the model first.")
 }
-
-
-# Import datasets
+# define repo folder names
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
+
+# import project control parameters into the environment
+readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
+  list2env(envir = .GlobalEnv)
+
+# import regionGeometry list
+if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
+  regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
+} else {
+  stop("Please source defineRegionGeometry.R first.")
+}
+
+# Import datasets
 speciesDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))
 speciesData <- speciesDataList[["species"]]
 redList <- speciesDataList[["redList"]]
 metadata <- speciesDataList$metadata$metadata
-regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 
 # Import taxa list and polyphyletic species
 focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 focalTaxon <- focalTaxon[focalTaxon$include,]
-polyphyleticSpecies <- read.csv("data/external/polyphyleticSpecies.csv") %>%
-  filter(taxa %in% focalTaxon$taxa)
 
-# Import local functions
-sapply(list.files("functions", full.names = TRUE), source)
+# import polyphyletic groups
+if(file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
+  polyphyleticSpecies <- read.csv(paste0(folderName, "/polyphyleticSpecies.csv"), header = T)
+} 
 
 ###----------------###
 ### 2. Processing ####
@@ -66,6 +76,8 @@ for (ds in seq_along(speciesData)) {
   newDataset <- NULL
   
   source("pipeline/integration/utils/defineProcessing.R")
+  if (is.null(newDataset)) {break}
+  
   # add simpleScientificName column
   newDataset <- newDataset %>%
     mutate(
@@ -74,13 +86,16 @@ for (ds in seq_along(speciesData)) {
         str_extract(acceptedScientificName, "^[A-Za-z]+\\s+[a-z]+")        # Extract binomial name
       ),
       # Replace space with underscore in simpleScientificName
-      simpleScientificName = str_replace(simpleScientificName, " ", "_")
+      simpleScientificName = gsub("×","", gsub(" ", "_", simpleScientificName))
     )
   
   # Add in polyphyletic taxa
   newDataset$taxa <- ifelse(newDataset$acceptedScientificName %in% polyphyleticSpecies$acceptedScientificName, 
                             polyphyleticSpecies$taxa[match(newDataset$acceptedScientificName, polyphyleticSpecies$acceptedScientificName)], 
                             newDataset$taxa)
+  
+  # convert year to numeric
+  newDataset$year <- as.numeric(newDataset$year)
   
   # Save and name new dataset
   processedData[[ds]] <- newDataset
@@ -106,7 +121,8 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(processedData), FUN = fu
   if (datasetType == "PO") {
     dataset$individualCount <- 1
   }
-  datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType", "taxonKeyProject")]
+  datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType", 
+                              "taxonKeyProject", "simpleScientificName")]
   datasetShort$dsName <- datasetName
   datasetShort
 }))
@@ -114,13 +130,13 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(processedData), FUN = fu
 # Remove absences, combine into one data frame and add date accessed
 processedPresenceData <- processedDataCompiled[processedDataCompiled$individualCount > 0,]
 processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
-saveRDS(processedPresenceData, "visualisation/hotspotMaps/data/processedPresenceData.RDS")
+saveRDS(processedPresenceData, paste0(folderName, "/processedPresenceData.RDS"))
 
 ###-----------------------###
 ### 4. Upload to Wallace ####
 ###-----------------------###
 
-if (uploadToWallace == TRUE) {
+if (uploadToWallace) {
   source("pipeline/integration/uploadToWallace.R")
 }
 
@@ -132,7 +148,6 @@ if (uploadToWallace == TRUE) {
 redListSpecies <- filterByRedList(redList$GBIFName, processedPresenceData, redListThreshold)
 redList$valid <- redList$GBIFName %in% redListSpecies$validSpecies
 saveRDS(redList, paste0(folderName, "/redList.RDS"))
-saveRDS(redList, "visualisation/hotspotMaps/data/redList.RDS")
 
 ###-----------------------------------###
 ### 6. Produce species richness data ####
@@ -142,12 +157,12 @@ saveRDS(redList, "visualisation/hotspotMaps/data/redList.RDS")
 blankRaster <- terra::project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]],
                               "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs")
 allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, blankRaster)
-writeRaster(allSpeciesRichness$rasters, "visualisation/hotspotMaps/data/speciesRichnessData.tiff", overwrite=TRUE)
+writeRaster(allSpeciesRichness$rasters, paste0(folderName, "/speciesRichnessData.tiff"), overwrite=TRUE)
 saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))
 
 if(nrow(processedRedListPresenceData) > 0){
   redListRichness <- speciesRichnessConverter(regionGeometry, processedRedListPresenceData, blankRaster)
-  writeRaster(redListRichness$rasters, "visualisation/hotspotMaps/data/redListRichnessData.tiff", overwrite=TRUE)
+  writeRaster(redListRichness$rasters, paste0(folderName, "/redListRichnessData.tiff"), overwrite=TRUE)
   saveRDS(redListRichness$richness, paste0(folderName, "/redListRichnessData.RDS"))
 }
 
@@ -157,7 +172,6 @@ if(nrow(processedRedListPresenceData) > 0){
 
 # To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
 rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
-file.copy(paste0(folderName, "/speciesMetadata.html"), "visualisation/hotspotMaps", overwrite = TRUE)
 
 
 ###---------------------###

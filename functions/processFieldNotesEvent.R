@@ -36,6 +36,7 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   
   # Get all species surveyed
   surveyedSpecies <-  unique(occurrence$scientificName)
+  surveyedSpecies <- surveyedSpecies[!is.na(surveyedSpecies)]
   
   # Find only eventIDs within our regionGeometry
   eventLocations <- events %>%
@@ -47,6 +48,12 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
                                crs = "+proj=longlat +ellps=WGS84")
   eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry) %>%
     filter(coordinateUncertaintyInMeters <= 100)
+  
+  # At this point we may find that there are no relevant points from this dataset available - 
+  # in this case we want to finish the function early
+  if (nrow(eventLocationsSF) == 0) {
+    return(NULL)
+  }
   
   # Make sure we have a 'year' column
   if (!("year" %in% colnames(events))) {

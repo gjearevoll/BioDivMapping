@@ -58,6 +58,12 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
                                crs = "+proj=longlat +ellps=WGS84")
   eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry)
   
+  # At this point we may find that there are no relevant points from this dataset available - 
+  # in this case we want to finish the function early
+  if (nrow(eventLocationsSF) == 0) {
+    return(NULL)
+  }
+  
   # Get a dates table to match years to events
   eventDates <- occurrence %>%
     dplyr::select(year, eventID) %>%

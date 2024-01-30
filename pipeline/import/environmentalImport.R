@@ -21,26 +21,35 @@ sapply(list.files("functions", full.names = TRUE), source)
 ### 1. Preparation ####
 ###-----------------###
 
-# Run script to define geographical region and resolution we are working with 
-# Initialise folders for storage of all run data
+# if it is not already, define dateAccessed
 if (!exists("dateAccessed")) {
-  dateAccessed <- as.character(Sys.Date())
+  stop("Please define a run date for the model first.")
 }
-
-# Add folder name
+# define repo folder names
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 
-regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
+# import project control parameters into the environment
+readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
+  list2env(envir = .GlobalEnv)
 
-# The following is a list of the various environmental variables we have available.
-# Define initial species list.
+# Import focal covariates
 if(file.exists(paste0(folderName, "/focalCovariates.csv"))){
   parameters <- read.csv( paste0(folderName, "/focalCovariates.csv"), header = T)
 } else {
-  parameters <- read.csv("data/external/focalCovariates.csv")  # save for reference
-  write.csv(parameters, paste0(folderName, "/focalCovariates.csv"), row.names = FALSE)
+  stop("Please source initialiseRepository.R first.")
 }
+
+# import regionGeometry list
+if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
+  regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
+} else {
+  stop("Please source defineRegionGeometry.R first.")
+}
+
+###--------------------###
+### 2. Dataset Import ####
+###--------------------###
 
 selectedParameters <- parameters$parameters[parameters$selected]
 
@@ -51,22 +60,21 @@ if (length(emptyParameters) > 0) {
                {
                  vec <- paste0("'", emptyParameters, "'")
                  if (length(vec) == 1) { as.character(vec)
-                   } else if (length(vec) == 2) { paste(vec[1], "and", vec[2])
-                     } else { paste0(paste(vec[-length(vec)], collapse = ", "), ", and ", vec[length(vec)])
-                       }
-                 },
+                 } else if (length(vec) == 2) { paste(vec[1], "and", vec[2])
+                 } else { paste0(paste(vec[-length(vec)], collapse = ", "), ", and ", vec[length(vec)])
+                 }
+               },
                if (length(vec) == 1) "a source" else "sources"))}
-
-
-###--------------------###
-### 2. Dataset Import ####
-###--------------------###
 
 # convert crs to format accepted by sf, terra, and intSDM (& dependencies) 
 projCRS <- sf::st_crs(crs)$proj4string
 
 # define region to download as bounding box of buffered and projected mesh/regionGeometry
-regionGeometryBuffer <- st_union(if(exists("mesh")) mesh else regionGeometry) |>
+regionGeometryBuffer <- st_union(if(exists("myMesh")) {
+  meshTest(myMesh, regionGeometry, print = F, crs = crs) |>
+    inlaMeshToSf()
+}
+  else regionGeometry) |>
   st_buffer(20000) |>
   st_transform(projCRS) |> 
   st_bbox() |> 
@@ -80,60 +88,30 @@ baseRaster <- terra::rast(extent = ext(regionGeometryBuffer), res = res, crs = p
 # download environmental data
 parameterList <- list()
 
-for (parameter in seq_along(selectedParameters)) {
+for(parameter in seq_along(selectedParameters)) {
+  rasterisedVersion <- NULL
   focalParameter <- selectedParameters[parameter]
   
   ### 1. Check if the data needs to be downloaded externally.
   external <- parameters$external[parameters$parameters == focalParameter]
   
-  if (external) {
+  if(external) {
     dataSource <- parameters$dataSource[parameters$parameters == focalParameter]
     
     ### 2. Check whether we have previously downloaded a version of the external data that encompasses the area we need.
-    raster_found <- FALSE
-    if(dir.exists(paste0("data/temp/", dataSource))){
-      ## List all files in the directory that match the parameter
-      file_list <- list.files(path = paste0("data/temp/", dataSource), 
-                              pattern = paste0(focalParameter, "_.*\\.tiff$"), 
-                              full.names = TRUE)
-      # Check files
-      for (file in file_list) {
-        rast <- rast(file)
-        if (isSubset(regionGeometryBuffer, rast)) {
-          rasterisedVersion <- rast
-          raster_found <- TRUE
-          cat(sprintf("Raster for '%s' encompassing region found and imported successfully!\n",
-                      focalParameter))
-          break
-        } 
-      }   
+    dataPath <- file.path(downloadCovFolder, dataSource)
+    if(dir.exists(dataPath)){
+      rasterisedVersion <- checkAndImportRast(focalParameter, regionGeometryBuffer, dataPath)
       # 3. Create new temp folder to download necessary external data.
     } else {
-      dir.create(paste0("data/temp/", dataSource))
+      dir.create(dataPath)
     }
-    if (!raster_found) {
+    if(is.null(rasterisedVersion)) {
       # download file
       source(paste0("pipeline/import/utils/defineEnvSource.R"))
-      # get info to save
-      info <- crs(rasterisedVersion, describe = T)
-      if(!is.na(info$authority)){
-        ext <- ext(rasterisedVersion)
-        info <- sprintf("%s%s_X%s_%s_Y%s_%s",
-                        info$authority, info$code, 
-                        ext[1], ext[2], ext[3], ext[4])
-      } else {
-        info <- digest(list(crs(rasterisedVersion), ext(rasterisedVersion)))
-      }
-      #  Construct the filename and save with raster information
-      file_path <- sprintf("data/temp/%s/%s_%s.tiff",
-                           dataSource,focalParameter, info)
-      x <- rasterisedVersion
-      if(!file.exists(file_path)){
-        writeRaster(x, filename = file_path, overwrite = TRUE)
-      }
     }
   } else {
-    rasterisedVersion <- rast(paste0("data/external/environmentalCovariates/",focalParameter, ".tiff"))
+    rasterisedVersion <- rast(file.path(localCovFolder, paste0(focalParameter, ".tiff")))
   }
   parameterList[[parameter]] <- rasterisedVersion
 }
@@ -146,16 +124,16 @@ for (parameter in seq_along(selectedParameters)) {
 parametersCropped <- parameterList |> 
   lapply(function(x) {
     # Crop each covariate to extent of regionGeometryBuffer
-    out <- crop(x, as.polygons(project(regionGeometryBuffer, x), extent = TRUE), snap = "out", mask = TRUE)
+    out <- terra::crop(x, as.polygons(terra::project(regionGeometryBuffer, x), extent = TRUE), snap = "out", mask = TRUE)
     # Project all rasters to baseRaster and combine
     if(is.factor(x)) {
       # project categorical rasters
-      out <- project(out, baseRaster, method = "mode")
+      out <- terra::project(out, baseRaster, method = "mode")
       levels(out) <- levels(x)  # reassign levels 
       out
     } else {
       # project & scale continuous rasters
-      project(out, baseRaster) |>
+      terra::project(out, baseRaster) |>
         scale()  
     }}) |>  
   rast() |>  # combine raster layers
@@ -181,6 +159,5 @@ agg <- function(x, fact){
 parametersAggregated <- sapp(x = parametersCropped, fun = agg, fact = 2) |>
   crop(baseRaster)
 
-writeRaster(parametersAggregated, "visualisation/hotspotMaps/data/covariateDataList.tiff", overwrite=TRUE)
-writeRaster(parametersAggregated, paste0("data/run_", dateAccessed,"/environmentalDataImported.tiff"), overwrite=TRUE)
+writeRaster(parametersAggregated, paste0(folderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
 

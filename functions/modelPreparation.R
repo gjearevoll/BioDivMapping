@@ -37,16 +37,8 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, reg
     
     # We need to use only species that are 
     # a) in the right taxa
-    # b) are in our list of red list species to model (this can also be removed if we just want to model all species)
-    # c) have a valid accepted scientific name
     focalSpeciesDataRefined <- lapply(speciesData, FUN = function(x) {
-      focalDataset <- x[x$taxa %in% focalTaxon & 
-                          if(is.null(redListModelled)) {
-                            T
-                          } else {
-                            x$acceptedScientificName %in% redListModelled
-                          } &
-                          !is.na(x$acceptedScientificName),]
+      focalDataset <- x[x$taxa %in% focalTaxon,]
       if (nrow(focalDataset) == 0) {
         focalDataset <- NA
       }
@@ -67,8 +59,8 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, reg
     })))
     
     # identify functional groups in species with data for focal taxonomic group
-    focalSpeciesWithData <- focalTaxon[focalTaxon$key %in% uniqueTaxaSpecies &  # species with data
-                                         focalTaxon$taxa %in% focalTaxon,]  # and of focal taxa (in case same species in different taxa)
+    focalSpeciesWithData <- focalTaxa[focalTaxa$key %in% uniqueTaxaSpecies &  # species with data
+                                        focalTaxa$taxa %in% focalTaxa,]  # and of focal taxa (in case same species in different taxa)
     # if any species are to be modelled as functional groups
     if(any(!is.na(focalSpeciesWithData$functionalGroup) & focalSpeciesWithData$functionalGroup != "")){
       # update data
@@ -102,7 +94,7 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, reg
     
     # Add datasets - note that for the moment this excludes the NTNU field notes and ANO,
     # the model will currently not run with these involved
-    for (l in c(1:length(focalSpeciesDataRefined))) {
+    for (l in seq_along(focalSpeciesDataRefined)) {
       dataset <- focalSpeciesDataRefined[[l]]
       
       

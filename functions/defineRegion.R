@@ -75,5 +75,10 @@ defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, ext
     regionGeometry <- st_buffer(regionGeometry, dist = 1)
   }
   
+  # assign attributes
+  attr(regionGeometry, "level") <- level
+  attr(regionGeometry, "region") <- region
+  
+  # return
   return(regionGeometry)
 }

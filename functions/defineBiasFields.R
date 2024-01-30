@@ -32,11 +32,13 @@ defineBiasFields <- function(focalTaxaRun, dataTypes, speciesData, redList = NUL
       useableDatasets <- sapply(speciesData, FUN = function(x) {nrow(x)})
       useableDatasets <- names(useableDatasets[useableDatasets != 0])
     } else {
-      # See which individual species will be modelled
-      redListedSpecies <- redList$GBIFName[redList$taxa %in% focalTaxaRun[t] & redList$valid == TRUE]
+      # See which individual species will be used in modelling. If individual species models, get rid of all species that
+      # are 'invalid'. If red-listed richness, keep all red listed species.
+      speciesModelled <- if (modelRun == "redListSpecies") redList$GBIFName[redList$taxa %in% focalTaxaRun[t] & redList$valid == TRUE] else
+        redList$GBIFName[redList$taxa %in% focalTaxaRun[t]]
       
       # Find which datasets have data for this taxa
-      useableDatasets <- sapply(speciesData, FUN = function(x) {nrow(x[x$acceptedScientificName %in% redListedSpecies,])})
+      useableDatasets <- sapply(speciesData, FUN = function(x) {nrow(x[x$acceptedScientificName %in% speciesModelled,])})
       useableDatasets <- names(useableDatasets[useableDatasets != 0])
     }
     

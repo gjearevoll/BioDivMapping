@@ -117,7 +117,12 @@ if (dataSource == "geonorge") {
 ### 7. NIBIO ###
 } else if (dataSource == "nibio") {
   rasterisedVersion <- get_nibio(regionGeometryBuffer)
-}
+  
+  
+### 10. MET ###  
+} else if (dataSource == "met") {
+  rasterisedVersion <- get_met(focalParameter, dataPath)
+}  
 
 ### merge with requested download area to make missing data explicit
 rasterisedVersion <- extend(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion), snap = "out")

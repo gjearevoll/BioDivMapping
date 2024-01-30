@@ -19,14 +19,14 @@ forest_NATD6.tif,FALSE,FALSE,
 forest_NATD7.tif,FALSE,FALSE,
 forest_treeheight.tif,FALSE,FALSE,
 land.tif,FALSE,FALSE,
-precipitation,TRUE,TRUE,worldclim
+precipitation,FALSE,TRUE,worldclim
 slope,TRUE,TRUE,geonorge
 soil_coarse_fraction,TRUE,FALSE,
 soil_moisture,TRUE,FALSE,
 soil_organic_carbon,FALSE,FALSE,
 soil_ph,FALSE,FALSE,
 solar_radiation,FALSE,FALSE,
-temperature,TRUE,TRUE,worldclim
+temperature,FALSE,TRUE,worldclim
 human_density,FALSE,FALSE,ssb
 building_density,FALSE,FALSE,ssb
 net_primary_productivity,TRUE,TRUE,modis
@@ -36,3 +36,7 @@ distance_water,TRUE,TRUE,geonorge
 snow_cover,TRUE,TRUE,chelsa
 distance_roads,TRUE,TRUE,geonorge
 forest_line,TRUE,TRUE,nibio
+kalkinnhold,TRUE,TRUE,artsdatabanken
+losmasse,TRUE,TRUE,ngu
+summer_precipitation,TRUE,TRUE,met
+summer_temperature,TRUE,TRUE,met

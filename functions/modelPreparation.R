@@ -109,9 +109,9 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
     }
     
     # Add environmental characteristics
-    env <- if(is.null(environmentalDataList)) 0 else seq(nlyr(environmentalDataList))
+    env <- focalCovariates$parameters[focalCovariates[,paste0("selected_", focalTaxon)]]
     for (e in env) {
-      cat(sprintf("Adding covariate '%s' to the model.\n", names(environmentalDataList)[e]))
+      cat(sprintf("Adding covariate '%s' to the model.\n", e))
       workflow$addCovariates(Object = environmentalDataList[[e]])
     }
     

@@ -1,9 +1,9 @@
 
 
-#### SPECIES RICHNESS CONVERSION ####
+#### FORMAT SCHEDULED DOWNLOAD ####
 
 # This script takes your download key and downloads and produces a data frame containing all your 
-# relevant species occurrences.
+# relevant species occurrences. It also adds a few important columns.
 
 # Download and unzip the file from GBIF
 downloadGet <- occ_download_get(key=downloadKey$key, path=paste0(tempFolderName), overwrite=TRUE)
@@ -14,7 +14,7 @@ occurrences <- occurrences[,c("acceptedScientificName", "decimalLongitude", "dec
                               "year", "month", "datasetKey", "datasetName", "taxonRank", "kingdomKey", "phylumKey", "classKey", "orderKey",
                               "familyKey", "genusKey", "speciesKey", "issue")]
 
-# Filter down to relevant datasets
+# Remove any occurrences with certain issues attached to them
 issuesToFlag <- c("ZERO_COORDINATE|COORDINATE_OUT_OF_RANGE|COORDINATE_INVALID|COORDINATE_PRECISION_INVALID|COORDINATE_UNCERTAINTY_METRES_INVALID")
 occurrences <- occurrences %>%
   filter(datasetKey %in% dataTypes$datasetKey[!is.na(dataTypes$processing)]) %>%

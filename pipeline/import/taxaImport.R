@@ -27,7 +27,8 @@ if (!exists("dateAccessed")) {
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 
-# import project control parameters into the environment
+
+# Import project control parameters into the environment
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
 
@@ -161,6 +162,8 @@ names(GBIFLists) <- unique(GBIFImportCompiled$name)
 ### 4. ANO Import ####
 ###----------------###
 
+# Import data from external sources using specialised scripts. For now, the only external data imported
+# is from ANO.
 GBIFLists[["ANOData"]] <- importANOData(tempFolderName, regionGeometry, focalTaxon)
 
 ###--------------------###

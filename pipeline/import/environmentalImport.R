@@ -3,9 +3,10 @@
 #### ENVIRONMENTAL DATA IMPORT ####
 
 # The following script imports our various forms of environmental data and processes them, based on the type of data
-# and other specifications related to the source.
+# and other specifications related to the source. Descriptions of all external data sources can be found here:
+# https://github.com/gjearevoll/BioDivMapping/tree/main/data/temp
 
-# NOTE: Before runnign this script, the speciesImport.R script needs to have been run.
+# NOTE: Before running this script, the speciesImport.R script needs to have been run.
 
 library(raster)
 library(terra)
@@ -115,7 +116,11 @@ for(parameter in seq_along(selectedParameters)) {
   parameterList[[parameter]] <- rasterisedVersion
 }
 
-# crop, reproject, and combine raster layers
+###------------------------###
+### 3. Data Consolidation ####
+###------------------------###
+
+# Crop, match projections and compile raster layers into one object
 parametersCropped <- parameterList |> 
   lapply(function(x) {
     # Crop each covariate to extent of regionGeometryBuffer
@@ -135,7 +140,7 @@ parametersCropped <- parameterList |>
   setNames(selectedParameters)  # assign names
 
 ###--------------------###
-### 3. Dataset Upload ####
+### 4. Dataset Upload ####
 ###--------------------###
 
 # save projCRS
@@ -147,13 +152,12 @@ writeRaster(parametersCropped, paste0(tempFolderName,"/environmentalDataImported
 # Create aggregated version for all non-land cover visualisation and reference data
 agg <- function(x, fact){
   if(is.factor(x))
-    terra::aggregate(x, fact, fun = "modal") else
+    # If the variable is a factor, use the most common result as the average
+    terra::aggregate(x, fact, fun = "modal") else 
       terra::aggregate(x, fact)
 }
 parametersAggregated <- sapp(x = parametersCropped, fun = agg, fact = 2) |>
   crop(baseRaster)
 
 writeRaster(parametersAggregated, paste0(folderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
-
-
 

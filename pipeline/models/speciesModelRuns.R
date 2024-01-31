@@ -34,6 +34,7 @@ redList <- readRDS(paste0(folderName, "/redList.RDS"))
 
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
+focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
 speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
@@ -43,7 +44,7 @@ modelSpeciesData <- refineSpeciesData(speciesData, modelRun)
 predictionData <- createPredictionData(c(res/1000, res/1000), regionGeometry)
 
 # Prepare models
-workflowList <- modelPreparation(focalTaxa, modelSpeciesData, 
+workflowList <- modelPreparation(focalTaxa, focalCovariates, modelSpeciesData, 
                                  redListModelled = redList$GBIFName[redList$valid], 
                                  regionGeometry = regionGeometry,
                                  modelFolderName = modelFolderName, 

@@ -16,7 +16,7 @@
 #' @importFrom sf st_sf
 #' @importFrom intSDM startWorkflow
 #' 
-modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
+modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListModelled = NULL, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
   
   if(is.null(crs)){
     if(!is.null(environmentalDataList)){

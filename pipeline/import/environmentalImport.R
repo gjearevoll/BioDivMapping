@@ -51,6 +51,7 @@ if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
 ### 2. Dataset Import ####
 ###--------------------###
 
+parameters$selected <- rowSums(parameters[,grepl("selected", colnames(parameters))]) > 0
 selectedParameters <- parameters$parameters[parameters$selected]
 
 # Check that any parameters we're downloading externally have a source

@@ -122,10 +122,14 @@ if (dataSource == "geonorge") {
 ### 7. NIBIO ###
 } else if (dataSource == "nibio") {
   rasterisedVersion <- get_nibio(regionGeometryBuffer)
-
+  
 ### 8. Artsdatabanken ###
 } else if (dataSource == "artsdatabanken") {
   rasterisedVersion <- get_artsdatabanken()
+
+### 9. NGU ###
+} else if (dataSource == "ngu") {
+  rasterisedVersion <- get_ngu(regionGeometry, projCRS)
 }
 
 ### merge with requested download area to make missing data explicit

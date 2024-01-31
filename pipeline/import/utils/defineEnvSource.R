@@ -2,10 +2,15 @@
 ### ENVIRONMENTAL SOURCE DEFINITION ####
 
 # This script defines parameters for extracting the necessary environmental data from their
-# various sources. It relies on the functions found in fucntions/import/environment.
+# various sources. It relies on the functions found in functions/import/environment that begin
+# with 'get_'. A full description of each data source can be found at 
+# https://github.com/gjearevoll/BioDivMapping/tree/main/data/temp 
+
+
 if(inherits(regionGeometryBuffer, c("sf", "sfc"))){
   regionGeometryBuffer <- terra::vect(regionGeometryBuffer)
 }
+
 ### 1. geonorge ####
 if (dataSource == "geonorge") { 
   
@@ -118,7 +123,14 @@ if (dataSource == "geonorge") {
 } else if (dataSource == "nibio") {
   rasterisedVersion <- get_nibio(regionGeometryBuffer)
   
-  
+### 8. Artsdatabanken ###
+} else if (dataSource == "artsdatabanken") {
+  rasterisedVersion <- get_artsdatabanken()
+
+### 9. NGU ###
+} else if (dataSource == "ngu") {
+  rasterisedVersion <- get_ngu(regionGeometry, projCRS)
+
 ### 10. MET ###  
 } else if (dataSource == "met") {
   rasterisedVersion <- get_met(focalParameter, dataPath)

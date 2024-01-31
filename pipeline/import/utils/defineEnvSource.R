@@ -130,7 +130,11 @@ if (dataSource == "geonorge") {
 ### 9. NGU ###
 } else if (dataSource == "ngu") {
   rasterisedVersion <- get_ngu(regionGeometry, projCRS)
-}
+
+### 10. MET ###  
+} else if (dataSource == "met") {
+  rasterisedVersion <- get_met(focalParameter, dataPath)
+}  
 
 ### merge with requested download area to make missing data explicit
 rasterisedVersion <- extend(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion), snap = "out")

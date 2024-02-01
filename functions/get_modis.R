@@ -41,7 +41,7 @@ get_modis <- function(regionGeometry, projCRS, parameter) {
     
     # 2020 is missing, skip that year
     for (i in c(2002:2019,2021,2022)) {
-      NPPfiles <- list.files('data/temp/modis/mod',
+      NPPfiles <- list.files('data/temp/modis/nppMod',
                              paste0("A", i), full.names = T)
       NPPrast <- sprc(lapply(NPPfiles, function(x) rast(x, lyrs="Npp_500m")))
       NPPrastall <- merge(NPPrast)

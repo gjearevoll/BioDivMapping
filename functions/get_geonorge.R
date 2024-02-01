@@ -92,9 +92,9 @@ get_geonorge <- function(repo = "Basisdata", dataName = "DTM10UTM33", targetDir,
     
     # Narrow down to correct category
     if (focalParameter == "distance_water") {
-      vectorData <- terra::subset(vectorBase, vectorBase$objtype %in% c("Innsjø", "Elv", "InnsjøRegulert"))
+      vectorData <- terra::subset(vectorData, vectorData$objtype %in% c("Innsjø", "Elv", "InnsjøRegulert"))
     } else {
-      vectorData <- terra::subset(vectorBase, vectorBase$typeveg %in% "enkelBilveg")
+      vectorData <- terra::subset(vectorData, vectorData$typeveg %in% "enkelBilveg")
     }
     
     return(vectorData)

@@ -55,23 +55,52 @@ source("pipeline/import/initialiseRepository.R")
 # Next, we will run defineRegionGeometry.R, which will create the requires that you
 # define a spatial level on which to run the pipeline, as well as a region within Norway. The options are
 # "country", "county", "municipality", or "points", which is a box created by latitudinal and longitudinal 
+
 # points (example given below). The default options are set for the whole of Norway. Codes for
+
+# points (example given below). The default options are set for the county of TrC8ndelag. Codes for
+
 # different municipalities and couunites in Norway can be found at this link:
 # https://kartverket.no/til-lands/kommunereform/tekniske-endringer-ved-sammenslaing-og-grensejustering/komendr2020
 
 # pointsExample <- c(4.641979, 57.97976, 31.05787, 71.18488)
 # names(pointsExample) <- c("north", "south", "east", "west")
 
+
 source("pipeline/import/defineRegionGeometry.R")
+
+level <- "county"
+region <- 50
+
+crs <- 25833  # as accepted by sf::st_crs()
+res <- 1000 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
+
 
 # You also need to define whether or not you want to use a scheduled download. Scheduled downloads produce a DOI,
 # and enable handling of much larger datasets. If you're playing around with a small dataset, you can probably hit 
 # FALSE here.
 
+
+scheduledDownload <- TRUE
+waitForGbif <- TRUE
+focalTaxonIndex <- c("spiders", "beetles")
+
 source("pipeline/import/taxaImport.R")
 
 # Next we run the environmental import script, which brings in a set of rasters that apply to the region
 # we defined in the last step.
+
+
+myMesh <- list(cutoff = 25000, max.edge=c(109000, 120000), offset= 80000)
+mesh <- meshTest(myMesh, regionGeometry, print = T, crs = crs) |>
+  inlaMeshToSf()
+
+
+environmentalCovariates <- c("aspect", 
+                             "elevation", 
+                             "precipitation", 
+                             "temperature")
+
 
 source("pipeline/import/environmentalImport.R")
 

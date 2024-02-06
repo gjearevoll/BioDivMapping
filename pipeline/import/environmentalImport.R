@@ -40,6 +40,7 @@ if(file.exists(paste0(folderName, "/focalCovariates.csv"))){
   stop("Please source initialiseRepository.R first.")
 }
 
+
 # import regionGeometry list
 if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
   regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
@@ -51,7 +52,16 @@ if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
 ### 2. Dataset Import ####
 ###--------------------###
 
+
+if(exists("environmentalCovariates")){
+  parameters$selected <- rep(FALSE, nrow(parameters))
+  parameters$selected[parameters$parameters %in% environmentalCovariates] <- rep(TRUE, length(focalTaxonIndex))
+  selectedParameters <- parameters$parameters[parameters$selected]
+} else {
+
 selectedParameters <- parameters$parameters[parameters$selected]
+
+}
 
 # Check that any parameters we're downloading externally have a source
 emptyParameters <- parameters$parameters[parameters$external & parameters$dataSource == ""]

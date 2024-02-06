@@ -39,10 +39,23 @@ if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
   stop("Please source initialiseRepository.R first.")
 }
 
+
 # import polyphyletic groups
 if(file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
   polyphyleticSpecies <- read.csv(paste0(folderName, "/polyphyleticSpecies.csv"), header = T)
 } 
+
+# Refine focal taxon
+#
+if(is.null(focalTaxonIndex)){
+  focalTaxon <- focalTaxon[focalTaxon$include,]
+} else {
+  focalTaxon$include <- rep(FALSE, nrow(focalTaxon))
+  focalTaxon$include[focalTaxon$taxa %in% focalTaxonIndex] <- rep(TRUE, length(focalTaxonIndex))
+  focalTaxon <- focalTaxon[focalTaxon$include,]
+}
+
+#focalTaxon <- focalTaxon[focalTaxon$include,]
 
 # import regionGeometry list
 if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){

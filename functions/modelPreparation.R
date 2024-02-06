@@ -60,7 +60,11 @@ modelPreparation <- function(focalTaxa, speciesData, redListModelled = NULL, reg
     
     # identify functional groups in species with data for focal taxonomic group
     focalSpeciesWithData <- focalTaxa[focalTaxa$key %in% uniqueTaxaSpecies &  # species with data
+
                                         focalTaxa$taxa %in% focalTaxa,]  # and of focal taxa (in case same species in different taxa)
+
+
+
     # if any species are to be modelled as functional groups
     if(any(!is.na(focalSpeciesWithData$functionalGroup) & focalSpeciesWithData$functionalGroup != "")){
       # update data

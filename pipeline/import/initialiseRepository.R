@@ -15,9 +15,9 @@ library(rinat)
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
 
-###-----------------------###
-### 1. Initialise folders ###
-###-----------------------###
+###------------------------###
+### 1. Initialise folders ####
+###------------------------###
 
 # if it is not already, define dateAccessed
 if (!exists("dateAccessed")) {
@@ -47,7 +47,7 @@ localCovFolder <- "data/external/environmentalCovariates"
 downloadCovFolder <- "data/temp" 
 
 ###-----------------------------###
-### 2. Save control parameters  ###
+### 2. Save control parameters ####
 ###-----------------------------###
 
 if(file.exists(paste0(folderName,"/controlPars.RDS"))){
@@ -74,8 +74,18 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
   saveRDS(controlPars, paste0(folderName,"/controlPars.RDS"))
 }
 
+###----------------------###
+### 3. Download redList ####
+###----------------------###
+
+# Download raw red list from artsdatabanken to tempFolderName for desired cats
+if (!file.exists(paste0(tempFolderName, "/redList.RDS"))) {
+  importRedList(redListCategories) |>
+    saveRDS(paste0(tempFolderName, "/redList.RDS"))  
+}  
+
 ###-----------------------###
-### 3. Process focalTaxa  ###
+### 4. Process focalTaxa ####
 ###-----------------------###
 
 # save copy of focalTaxa.csv
@@ -97,7 +107,7 @@ focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey]
 write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 
 ###---------------------------------###
-### 4. Process polyphyleticSpecies  ###
+### 5. Process polyphyleticSpecies ####
 ###---------------------------------###
 
 # save copy of polyphyletic groups
@@ -109,7 +119,7 @@ if(!file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
 }
 
 ###-----------------------------###
-### 5. Process metadataSummary  ###
+### 6. Process metadataSummary ####
 ###-----------------------------###
 
 # save copy of metadataSummary groups
@@ -120,7 +130,7 @@ if ("metadataSummary.csv" %in% list.files(externalFolder) &
 }
 
 ###-----------------------------###
-### 6. Process focalCovariates  ###
+### 7. Process focalCovariates ####
 ###-----------------------------###
 
 # save for reference

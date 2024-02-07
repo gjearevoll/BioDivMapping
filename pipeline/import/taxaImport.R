@@ -32,6 +32,13 @@ tempFolderName <- paste0(folderName, "/temp")
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
 
+# Import red list
+if (file.exists(paste0(tempFolderName, "/redList.RDS"))) {
+  redList <- readRDS(paste0(tempFolderName, "/redList.RDS"))
+} else {
+  stop("Please source initialiseRepository.R first.")
+}
+
 # import species list
 if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
   focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -57,31 +64,23 @@ if(file.exists(paste0(folderName, "/metadataSummary.csv"))){
 } 
 
 ###---------------------###
-### 2. Import Red list  ###
+### 2. Filter Red list ####
 ###---------------------###
 
-# Import red list
-if (file.exists(paste0(tempFolderName, "/redList.RDS"))) {
-  redList <- readRDS(paste0(tempFolderName, "/redList.RDS"))
-} else {
-  # redListCategories <- c("VU", "EN", "CR")
-  redList <- importRedList(redListCategories)
-  
-  # Match to accepted names
-  speciesBackbones <- getGbifBackbone(redList$species)
-  redList$taxaKey <- matchBackboneKeys(speciesBackbones, focalTaxon$key)
-  redList$taxa <- focalTaxon$taxa[match(redList$taxaKey, focalTaxon$key[!is.na(focalTaxon$key)])]
-  redList$GBIFName <- speciesBackbones$scientificName
-  
-  # Add polyphyletic taxa
-  polyphylaTaxaVector <-  polyphyleticSpecies$taxa[match(redList$GBIFName, polyphyleticSpecies$acceptedScientificName)]
-  redList$taxa <- ifelse(redList$GBIFName %in% polyphyleticSpecies$acceptedScientificName, 
-                         polyphylaTaxaVector, redList$taxa)
-  
-  # Cut out NAs and save redList
-  redList <- redList[!is.na(redList$taxa),]
-  saveRDS(redList, paste0(tempFolderName, "/redList.RDS"))  
-}
+# Match to accepted names
+speciesBackbones <- getGbifBackbone(redList$species)
+redList$taxaKey <- matchBackboneKeys(speciesBackbones, focalTaxon$key)
+redList$taxa <- focalTaxon$taxa[match(redList$taxaKey, focalTaxon$key[!is.na(focalTaxon$key)])]
+redList$GBIFName <- speciesBackbones$scientificName
+
+# Add polyphyletic taxa
+polyphylaTaxaVector <-  polyphyleticSpecies$taxa[match(redList$GBIFName, polyphyleticSpecies$acceptedScientificName)]
+redList$taxa <- ifelse(redList$GBIFName %in% polyphyleticSpecies$acceptedScientificName, 
+                       polyphylaTaxaVector, redList$taxa)
+
+# Cut out NAs and save redList
+redList <- redList[!is.na(redList$taxa),]
+
 
 ###-----------------###
 ### 3. GBIF Import ####

@@ -24,6 +24,9 @@ if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 
+# model output folder
+modelFolderName <- paste0(folderName, "/modelOutputs")
+
 # import project control parameters into the environment
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)

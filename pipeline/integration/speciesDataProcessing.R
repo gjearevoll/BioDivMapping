@@ -110,7 +110,7 @@ saveRDS(processedData, paste0(folderName, "/speciesDataProcessed.RDS"))
 
 
 ###--------------------------------###
-### 3. COmpile into one dataframe ####
+### 3. Compile into one data.frame ####
 ###--------------------------------###
 
 # Edit data frames to have the same number of columns

@@ -12,7 +12,7 @@
 get_artsdatabanken <- function() {
 
   focalURL <- "https://data.artsdatabanken.no/Natur_i_Norge/Natursystem/Milj%C3%B8variabler/Kalkinnhold/grid.32633.tif"
-  message(sprintf("Downloading, %s raster from chelsa.", parameter))
+  message(sprintf("Downloading, %s raster from artsdatabanken.", parameter))
   raster <- terra::rast(focalURL)
   rasterFactor <- as.factor(raster)
   

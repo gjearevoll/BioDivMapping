@@ -113,7 +113,10 @@ if (dataSource == "geonorge") {
   } else if (focalParameter == "habitat_heterogeneity") {
     message("Calculating heterogeneity based on raster data.")
     croppedRaster <- crop(rasterisedVersion, ext(terra::project(regionGeometryBuffer, rasterisedVersion)))
+    library(rasterdiv)
     rasterisedVersion <- Shannon(raster(croppedRaster), window = 5)
+    rasterisedVersion <- rast(rasterisedVersion)
+    # And back into raster form
     }
   
 ### 6. Chelsa ###  

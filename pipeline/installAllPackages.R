@@ -14,6 +14,6 @@ if(!("intSDM" %in% row.names(installedPackages))) {
 # Now we bring int he rest of the necessary packages
 necessaryPackages <- c("rgbif", "sf", "stringr", "dplyr", "rinat", "raster", "csmaps", "ggplot2",
                        "shiny", "shinydashboard", "PointedSDMs", "terra",
-                       "shinyjs", "inlabru", "randomcoloR", "plotKML", "fasterize", "httr", "jsonlite", "tidyterra")
+                       "shinyjs", "inlabru", "randomcoloR", "plotKML", "fasterize", "httr", "jsonlite", "tidyterra", "rasterdiv")
 uninstalledPackages <- necessaryPackages[!(necessaryPackages %in% row.names(installedPackages))]
 install.packages(uninstalledPackages)

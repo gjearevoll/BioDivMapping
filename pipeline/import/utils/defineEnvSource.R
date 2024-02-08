@@ -110,7 +110,11 @@ if (dataSource == "geonorge") {
     rasterisedVersion <- terra::distance(rasterisedVersion) 
     # round to nearest 10m to reduce file size
     rasterisedVersion <- round(rasterisedVersion/10)*10
-  }
+  } else if (focalParameter == "habitat_heterogeneity") {
+    message("Calculating heterogeneity based on raster data.")
+    croppedRaster <- crop(rasterisedVersion, ext(terra::project(regionGeometryBuffer, rasterisedVersion)))
+    rasterisedVersion <- Shannon(raster(croppedRaster), window = 5)
+    }
   
 ### 6. Chelsa ###  
 } else if (dataSource == "chelsa") {

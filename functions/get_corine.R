@@ -63,8 +63,24 @@ get_corine <- function(zip_path = NA, output_path = NA) {
     levels(corine)[[1]][,2] <- gsub(",", "", levels(corine)[[1]][,2])
   }
   
+  
+  # If we want, we can now reclassifiy CORINE's layers. We do this using a csv file name "corineReclassification" that should be
+  # uploaded to the same data/temp/corine folder you are storing corine rasters. The file should have two columns, one names 
+  # corineCategory (with existing corine categories) and the second (with your reclassifications) called newCategory.
+  if(!file.exists("data/temp/corine/corineReclassification.csv")) {
+    warning("No CORINE reclassification system has been provided. Using all 52 potential categories.")
+  } else {
+    corineReclassification <- read.csv("data/temp/corine/corineReclassification.csv", header = TRUE)
+    reclassTable <- levels(corine)[[1]]
+    names(reclassTable) <- c("value", "label")
+    reclassTable$newLabel <- corineReclassification$newCategory[match(reclassTable$label, corineReclassification$corineCategory)]
+    reclassTable <- reclassTable[,c("value", "newLabel")] %>% rename(label = newLabel)
+    corine <- addCats(corine, reclassTable, merge = TRUE)
+  }
+  
+  
   if(!is.na(output_path)) {
-    writeRaster(corine, file.path(output_path, "corine.tif"))
+    writeRaster(newRaster, file.path(output_path, "corine.tif"))
   }
   
   out <- corine

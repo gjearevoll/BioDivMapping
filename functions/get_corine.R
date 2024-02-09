@@ -72,6 +72,7 @@ get_corine <- function(zip_path = NA, output_path = NA) {
   } else {
     corineReclassification <- read.csv("data/temp/corine/corineReclassification.csv", header = TRUE)
     reclassTable <- levels(corine)[[1]]
+    names(reclassTable) <- c("value", "label")
     reclassTable$newLabel <- corineReclassification$newCategory[match(reclassTable$label, corineReclassification$corineCategory)]
     reclassTable <- reclassTable[,c("value", "newLabel")] %>% rename(label = newLabel)
     corine <- addCats(corine, reclassTable, merge = TRUE)

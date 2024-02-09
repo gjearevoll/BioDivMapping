@@ -2,6 +2,25 @@
 
 #### MODEL RUNS ####
 
+###----------------------###
+### 0. Bash preparation ####
+###----------------------###
+
+args <- commandArgs(TRUE)
+
+# THis should only run if the script is being run from the command line
+if (length(args) != 0) {
+  # Set arguments
+  dateAccessed <- args[1]
+  modelRun <- args[2]
+  # Set the working directory
+  setwd("~/BioDivMapping")
+}
+
+# You can run this from the command line using for example
+# Rscript filePath/speciesModelRuns.R 2024-02-08 allSPecies
+
+
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###

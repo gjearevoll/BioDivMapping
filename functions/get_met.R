@@ -13,17 +13,24 @@
 
 
 
-get_met <- function(parameter, dataPath) {
-  if (parameter == "summer_temperature") {
-    focalURL <- "https://thredds.met.no/thredds/fileServer/KSS/Gridded_climate_normals_1991-2020/temperature/tm_normal_jja_1991-2020.nc"
-  } else if (parameter == "summer_precipitation") {
-    focalURL <- "https://thredds.met.no/thredds/fileServer/KSS/Gridded_climate_normals_1991-2020/precipitation/rr_normal_jja_1991-2020.nc"
-  }
-  message(sprintf("Downloading, %s raster from met", parameter))
-  file_path <- paste0(dataPath, "/", parameter, ".nc")
-  download.file(focalURL, destfile = file_path)
+get_met <- function(focalParameter, projCRS, ncPath = NA) {
   
-  rastNC <- terra::rast(file_path) %>%
+  if (focalParameter == "summer_temperature") {
+    focalURL <- "https://thredds.met.no/thredds/catalog/KSS/Gridded_climate_normals_1991-2020/temperature/catalog.html?dataset=KSS/Gridded_climate_normals_1991-2020/temperature/tm_normal_jja_1991-2020.nc"
+    filePath <- paste0(ncPath, "/tm_normal_jja_1991-2020.nc")
+  } else if (focalParameter == "summer_precipitation") {
+    focalURL <- "https://thredds.met.no/thredds/catalog/KSS/Gridded_climate_normals_1991-2020/precipitation/catalog.html?dataset=KSS/Gridded_climate_normals_1991-2020/precipitation/rr_normal_jja_1991-2020.nc"
+    filePath <- paste0(ncPath, "/rr_normal_jja_1991-2020.nc")
+  }
+  
+  if (is.na(ncPath)) {
+    message("'ncPath' not specified, please select the ", focalParameter," nc file. Data can be downloaded from ", focalURL, 
+            ". Select the HTTP server data.")
+    filePath <- file.choose()
+  }
+  
+  message(sprintf("Uploadingras %s raster", focalParameter))
+  rastNC <- terra::rast(filePath) %>%
     terra::project(projCRS)
 
   return(rastNC)

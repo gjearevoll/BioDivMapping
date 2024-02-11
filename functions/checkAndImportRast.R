@@ -4,7 +4,7 @@ checkAndImportRast <- function(parameter, regionGeometry, dataPath, fileType = "
   raster <- NULL
   
   # List all files in the directory that match the parameter
-  filePattern <- paste0(parameter, sprintf("_.*\\.%s$", fileType))
+  filePattern <- paste0(parameter, sprintf(".*\\.%s$", fileType))
   fileList <- list.files(path = dataPath, pattern = filePattern, full.names = TRUE)
   
   # Check each file

@@ -54,13 +54,10 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
     
     # Combine species by functionalGroup if requested (else leave as separate)
     # identify species with data
-    uniqueTaxaSpecies <- unique(unlist(lapply(focalSpeciesDataRefined, function(ds){
-      as.character(ds$taxonKeyProject)
-    })))
-    
+    uniqueTaxaSpecies <- unique(bind_rows(focalSpeciesDataRefined)$taxonKeyProject)
     # identify functional groups in species with data for focal taxonomic group
     focalSpeciesWithData <- focalTaxa[focalTaxa$key %in% uniqueTaxaSpecies &  # species with data
-                                        focalTaxa$taxa %in% focalTaxa,]  # and of focal taxa (in case same species in different taxa)
+                                        focalTaxa$taxa %in% focalTaxon,]  # and of focal taxa (in case same species in different taxa)
     # if any species are to be modelled as functional groups
     if(any(!is.na(focalSpeciesWithData$functionalGroup) & focalSpeciesWithData$functionalGroup != "")){
       # update data

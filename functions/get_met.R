@@ -3,8 +3,9 @@
 
 #' @description Chelsa has a range of climate data - this function downloads them based on the parameter chosen. All dataset links can be found here https://envicloud.wsl.ch/#/?prefix=chelsa%2Fchelsa_V2%2FGLOBAL%2F.
 #'
-#' @param parameter The chosen parameter. The function has the relevant link to the dataset built in.
-#' @param dataPath The folder where the downloaded nc file should be saved.
+#' @param focalParameter The chosen parameter. The function has the relevant link to the dataset built in.
+#' @param projCRS Project crs
+#' @param ncPath The folder where the downloaded nc file should be saved.
 #'
 #' @import terra
 #' 
@@ -23,13 +24,17 @@ get_met <- function(focalParameter, projCRS, ncPath = NA) {
     filePath <- paste0(ncPath, "/rr_normal_jja_1991-2020.nc")
   }
   
+  if (!(file.exists(filePath))) {
+    stop("nc file not found at specified path. Can be found at ",focalURL, ". File name should be ", filePath, ".")
+  }
+  
   if (is.na(ncPath)) {
     message("'ncPath' not specified, please select the ", focalParameter," nc file. Data can be downloaded from ", focalURL, 
             ". Select the HTTP server data.")
     filePath <- file.choose()
   }
   
-  message(sprintf("Uploadingras %s raster", focalParameter))
+  message(sprintf("Uploading %s raster", focalParameter))
   rastNC <- terra::rast(filePath) %>%
     terra::project(projCRS)
 

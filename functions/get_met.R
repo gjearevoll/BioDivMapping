@@ -10,24 +10,22 @@
 #' 
 #' @return A SpatRaster of a climate variable.
 
-
-
-
 get_met <- function(parameter, dataPath) {
   if (parameter == "summer_temperature") {
     focalURL <- "https://thredds.met.no/thredds/fileServer/KSS/Gridded_climate_normals_1991-2020/temperature/tm_normal_jja_1991-2020.nc"
   } else if (parameter == "summer_precipitation") {
     focalURL <- "https://thredds.met.no/thredds/fileServer/KSS/Gridded_climate_normals_1991-2020/precipitation/rr_normal_jja_1991-2020.nc"
   }
+  if(!urlFileExist(focalURL)){
+    stop("Could not download ",parameter ," parameter. No valid file found at URL: ",focalURL, ". Servers may be inaccessible or path may have changed. Please download files manually.")
+  }
   message(sprintf("Downloading, %s raster from met", parameter))
   file_path <- paste0(dataPath, "/", parameter, ".nc")
-  download.file(focalURL, destfile = file_path)
+  download.file(focalURL, destfile = file_path, mode = "wb")
   
-  rastNC <- terra::rast(file_path) %>%
-    terra::project(projCRS)
-
+  rastNC <- terra::rast(file_path)
+  
   return(rastNC)
 }
-
 
 

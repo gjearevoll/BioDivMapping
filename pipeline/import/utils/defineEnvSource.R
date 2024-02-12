@@ -135,7 +135,7 @@ if (dataSource == "geonorge") {
 
 ### 10. MET ###  
 } else if (dataSource == "met") {
-  rasterisedVersion <- get_met(focalParameter, projCRS, ncPath)
+  rasterisedVersion <- get_met(focalParameter, dataPath)
 }  
 
 ### merge with requested download area to make missing data explicit

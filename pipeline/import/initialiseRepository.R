@@ -100,9 +100,11 @@ focalTaxon <- focalTaxon[focalTaxon$include,]
 
 # get missing keys
 missingKey <- is.na(focalTaxon$key) & focalTaxon$level != "polyphyla"
-focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
-                                           rank = focalTaxon$level[missingKey], 
-                                           strict = T)
+if (missingKey) {
+  focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
+                                             rank = focalTaxon$level[missingKey], 
+                                             strict = T)
+}
 # save for reference
 write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 

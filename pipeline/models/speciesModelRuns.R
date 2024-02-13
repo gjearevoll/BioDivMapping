@@ -50,6 +50,11 @@ modelFolderName <- paste0(folderName, "/modelOutputs")
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
 
+# Redefine modelRun after controlPars import using args if necessary
+if (length(args) != 0) {
+  modelRun <- args[2]
+}
+
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 redList <- readRDS(paste0(folderName, "/redList.RDS"))

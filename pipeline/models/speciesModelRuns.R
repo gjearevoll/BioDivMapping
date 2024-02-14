@@ -50,7 +50,7 @@ modelFolderName <- paste0(folderName, "/modelOutputs")
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
 
-# Redefine modelRun using args if necessary
+# Redefine modelRun after controlPars import using args if necessary
 if (length(args) != 0) {
   modelRun <- args[2]
 }

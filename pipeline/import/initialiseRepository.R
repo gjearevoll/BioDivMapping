@@ -105,6 +105,7 @@ if (missingKey) {
                                              rank = focalTaxon$level[missingKey], 
                                              strict = T)
 }
+
 # save for reference
 write.csv(focalTaxon, paste0(folderName, "/focalTaxa.csv"), row.names = FALSE)
 

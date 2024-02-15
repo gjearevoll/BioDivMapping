@@ -21,13 +21,13 @@ occurrences <- occurrences %>%
   filter(!grepl(issuesToFlag,issue))
 
 # Assign a taxon key based on what level of taxonomy the key is valid for
-occurrences$taxonKeyProject <- ifelse(occurrences$kingdomKey %in% focalTaxon$key, occurrences$kingdomKey,
-                                      ifelse(occurrences$phylumKey %in% focalTaxon$key, occurrences$phylumKey,
-                                             ifelse(occurrences$classKey %in% focalTaxon$key, occurrences$classKey,
+occurrences$taxonKeyProject <- ifelse(occurrences$speciesKey %in% focalTaxon$key, occurrences$speciesKey,
+                                      ifelse(occurrences$genusKey %in% focalTaxon$key, occurrences$genusKey,
+                                             ifelse(occurrences$familyKey %in% focalTaxon$key, occurrences$familyKey,
                                                     ifelse(occurrences$orderKey %in% focalTaxon$key, occurrences$orderKey,
-                                                           ifelse(occurrences$familyKey %in% focalTaxon$key, occurrences$familyKey,
-                                                                  ifelse(occurrences$genusKey %in% focalTaxon$key, occurrences$genusKey,
-                                                                         ifelse(occurrences$speciesKey %in% focalTaxon$key, occurrences$speciesKey, NA)))))))
+                                                           ifelse(occurrences$classKey %in% focalTaxon$key, occurrences$classKey,
+                                                                  ifelse(occurrences$phylumKey %in% focalTaxon$key, occurrences$phylumKey,
+                                                                         ifelse(occurrences$kingdomKey %in% focalTaxon$key, occurrences$kingdomKey, NA)))))))
 
 # Add taxa and reduce to relevant columns
 occurrences$taxa <- focalTaxon$taxa[match(occurrences$taxonKeyProject, focalTaxon$key)]

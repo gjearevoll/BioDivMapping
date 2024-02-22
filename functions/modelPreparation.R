@@ -16,7 +16,8 @@
 #' @importFrom sf st_sf
 #' @importFrom intSDM startWorkflow
 #' 
-modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListModelled = NULL, regionGeometry, modelFolderName, environmentalDataList = NULL, crs = NULL) {
+modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListModelled = NULL, regionGeometry, 
+                             modelFolderName, environmentalDataList = NULL, crs = NULL, segmentation = FALSE) {
   
   if(is.null(crs)){
     if(!is.null(environmentalDataList)){
@@ -31,14 +32,46 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
     }
   }
   
+  # Create a list of different species combinations to lower simultaneous computing requirements for larger datasets
+  if (segmentation) {
+    speciesLists <- list()
+    for (focalTaxon in unique(focalTaxa$taxa)) {
+      
+      # Find the most common species to include in each run
+      predictionDataset <- focalTaxa$predictionDataset[focalTaxa$taxa == focalTaxon]
+      speciesCounts <- sort(table(unlist(lapply(speciesData, FUN = function(x) {
+        x$simpleScientificName
+        }))), TRUE)
+      fullSpeciesList <- names(speciesCounts)
+      speciesCounts <- speciesCounts[fullSpeciesList %in% unique(speciesData[[predictionDataset]]$simpleScientificName)]
+      commonSpecies <- names(speciesCounts)[1:2]
+      restOfSpecies <- fullSpeciesList[!(fullSpeciesList %in% commonSpecies)]
+      
+      # Segment rest of species into lists of 8 species
+      segmentedList <- split(restOfSpecies, ceiling(seq_along(restOfSpecies)/8))
+      speciesNames <- lapply(segmentedList, FUN = function(x) {
+        c(x, commonSpecies)
+      })
+      names(speciesNames) <- paste0(focalTaxon, seq(length(speciesNames)))
+      speciesLists[[focalTaxon]] <- speciesNames
+    }
+    totalList <- do.call(c, speciesLists)
+    
+    # Create taxa names to use
+    names(totalList) <- unlist(lapply(strsplit(names(totalList), '.', fixed = TRUE), '[', 2))
+    taxaNames <- names(totalList)
+  } else {
+    taxaNames <- unique(focalTaxa$taxa)
+  }
+  
   workflowList <- list()
   # Begin running different species groups
-  for (focalTaxon in unique(focalTaxa$taxa)) {
+  for (focalTaxon in taxaNames) {
     
     # We need to use only species that are 
     # a) in the right taxa
     focalSpeciesDataRefined <- lapply(speciesData, FUN = function(x) {
-      focalDataset <- x[x$taxa %in% focalTaxon,]
+      focalDataset <- if (segmentation) x[x$simpleScientificName %in% totalList[[focalTaxon]],] else x[x$taxa %in% focalTaxon,]
       if (nrow(focalDataset) == 0) {
         focalDataset <- NA
       }

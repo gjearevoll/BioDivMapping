@@ -100,7 +100,7 @@ focalTaxon <- focalTaxon[focalTaxon$include,]
 
 # get missing keys
 missingKey <- is.na(focalTaxon$key) & focalTaxon$level != "polyphyla"
-if (missingKey) {
+if (length(missingKey[missingKey])>0) {
   focalTaxon$key[missingKey] <- getUsageKeys(focalTaxon$scientificName[missingKey], 
                                              rank = focalTaxon$level[missingKey], 
                                              strict = T)

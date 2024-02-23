@@ -11,13 +11,13 @@
 
 matchBackboneKeys <- function(speciesBackbones, taxaKeys){
   # filter taxa key  
-  out <- ifelse(speciesBackbones$kingdomKey %in% taxaKeys, speciesBackbones$kingdomKey,
-                ifelse(speciesBackbones$phylumKey %in% taxaKeys, speciesBackbones$phylumKey,
-                       ifelse(speciesBackbones$classKey %in% taxaKeys, speciesBackbones$classKey,
+  out <- ifelse(speciesBackbones$speciesKey %in% taxaKeys, speciesBackbones$speciesKey,
+                ifelse(speciesBackbones$genusKey %in% taxaKeys, speciesBackbones$genusKey,
+                       ifelse(speciesBackbones$familyKey %in% taxaKeys, speciesBackbones$familyKey,
                               ifelse(speciesBackbones$orderKey %in% taxaKeys, speciesBackbones$orderKey,
-                                     ifelse(speciesBackbones$familyKey %in% taxaKeys, speciesBackbones$familyKey,
-                                            ifelse(speciesBackbones$genusKey %in% taxaKeys, speciesBackbones$genusKey,
-                                                   ifelse(speciesBackbones$speciesKey %in% taxaKeys, speciesBackbones$speciesKey, NA)))))))
+                                     ifelse(speciesBackbones$classKey %in% taxaKeys, speciesBackbones$classKey,
+                                            ifelse(speciesBackbones$phylumKey %in% taxaKeys, speciesBackbones$phylumKey,
+                                                   ifelse(speciesBackbones$kingdomKey %in% taxaKeys, speciesBackbones$kingdomKey, NA)))))))
   # return
   return(out)
 }

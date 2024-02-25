@@ -68,6 +68,8 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
   # Begin running different species groups
   for (focalTaxon in taxaNames) {
     
+    if (segmentation) focalGroup <- gsub('[[:digit:]]+', '', focalTaxon) else focalTaxon
+    
     # We need to use only species that are 
     # a) in the right taxa
     focalSpeciesDataRefined <- lapply(speciesData, FUN = function(x) {
@@ -90,7 +92,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
     uniqueTaxaSpecies <- unique(bind_rows(focalSpeciesDataRefined)$taxonKeyProject)
     # identify functional groups in species with data for focal taxonomic group
     focalSpeciesWithData <- focalTaxa[focalTaxa$key %in% uniqueTaxaSpecies &  # species with data
-                                        focalTaxa$taxa %in% focalTaxon,]  # and of focal taxa (in case same species in different taxa)
+                                        focalTaxa$taxa %in% focalGroup,]  # and of focal taxa (in case same species in different taxa)
     # if any species are to be modelled as functional groups
     if(any(!is.na(focalSpeciesWithData$functionalGroup) & focalSpeciesWithData$functionalGroup != "")){
       # update data
@@ -140,8 +142,8 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
     
     # Add environmental characteristics. If there is a corresponding column for the focalTaxon in the environmental covariate matrix use that,
     # if not, use all calculated env covariates
-    if (paste0("selected_",focalTaxon) %in% colnames(focalCovariates)) {
-      env <- focalCovariates$parameters[focalCovariates[,paste0("selected_", focalTaxon)]]
+    if (paste0("selected_",focalGroup) %in% colnames(focalCovariates)) {
+      env <- focalCovariates$parameters[focalCovariates[,paste0("selected_", focalGroup)]]
     } else {
       env <- if(is.null(environmentalDataList)) 0 else names(environmentalDataList)
     }

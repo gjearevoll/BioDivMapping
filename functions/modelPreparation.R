@@ -68,7 +68,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
   # Begin running different species groups
   for (focalTaxon in taxaNames) {
     
-    if (segmentation) focalGroup <- gsub('[[:digit:]]+', '', focalTaxon) else focalTaxon
+    focalGroup <- if (segmentation) gsub('[[:digit:]]+', '', focalTaxon) else focalTaxon
     
     # We need to use only species that are 
     # a) in the right taxa

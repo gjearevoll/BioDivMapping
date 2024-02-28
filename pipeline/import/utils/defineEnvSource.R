@@ -114,7 +114,8 @@ if (dataSource == "geonorge") {
     message("Calculating heterogeneity based on raster data.")
     croppedRaster <- crop(rasterisedVersion, ext(terra::project(regionGeometryBuffer, rasterisedVersion)))
     library(rasterdiv)
-    rasterisedVersion <- Shannon(croppedRaster, window = 5)
+    cropFactor <- ifelse(res > 1000, 3, ifelse(res <= 100, 9, 5))
+    rasterisedVersion <- Shannon(croppedRaster, window = cropFactor)
     }
   
 ### 6. Chelsa ###  

@@ -68,7 +68,9 @@ projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 # Define speciesData based on run type and create predictionData
 modelSpeciesData <- refineSpeciesData(speciesData, modelRun)
+segmentation <- modelRun %in% c("richness", "redListRichness")
 predictionData <- createPredictionData(c(res/1000, res/1000), regionGeometry)
+
 
 # Prepare models
 workflowList <- modelPreparation(focalTaxa, focalCovariates, modelSpeciesData, 
@@ -76,7 +78,7 @@ workflowList <- modelPreparation(focalTaxa, focalCovariates, modelSpeciesData,
                                  regionGeometry = regionGeometry,
                                  modelFolderName = modelFolderName, 
                                  environmentalDataList = environmentalDataList, 
-                                 crs = projCRS)
+                                 crs = projCRS, segmentation)
 focalTaxaRun <- names(workflowList)
 
 # Get bias fields
@@ -107,6 +109,10 @@ for (i in seq_along(workflowList)) {
   # Define species group to create
   focalGroup <- names(workflowList)[i]
   workflow <- workflowList[[focalGroup]]
+  
+  # Find prediction dataset
+  predictionDataset <- focalTaxa$predictionDataset[focalTaxa$taxa == gsub('[[:digit:]]+', '', focalGroup)]
+  predictionDatasetShort <- gsub(" ", "", gsub("[[:punct:]]", "", predictionDataset))
 
   # Add model characteristics (mesh, priors, output)
   workflow$addMesh(cutoff= myMesh$cutoff, max.edge=myMesh$max.edge, offset= myMesh$offset)
@@ -114,7 +120,7 @@ for (i in seq_along(workflowList)) {
                           prior.sigma = c(500, 0.2)) #100
   workflow$workflowOutput(modelOutputs)
   workflow$modelOptions(INLA = list(num.threads = 12, control.inla=list(int.strategy = 'eb', cmin = 0),safe = TRUE),
-                        Richness = list(predictionIntercept = 'ANOData'))
+                        Richness = list(predictionIntercept = predictionDatasetShort))
   
   # Add bias fields if necessary
   if (!is.null(biasFieldList[[i]])) {

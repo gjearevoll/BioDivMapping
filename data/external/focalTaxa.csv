@@ -1,33 +1,33 @@
-taxa,key,level,scientificName,include,functionalGroup,predictionDataset
-amphibiansReptiles,11592253,class,Squamata,FALSE,,
-amphibiansReptiles,131,class,Amphibia,FALSE,,
-spiders,367,class,Arachnida,FALSE,,
-beetles,1470,order,Coleoptera,FALSE,,NationalinsectmonitoringinNorway
-cockroaches,800,order,Blattodea,FALSE,,NationalinsectmonitoringinNorway
-snakeflies,786,order,Raphidioptera,FALSE,,NationalinsectmonitoringinNorway
-scorpionflies,1000,order,Mecoptera,FALSE,,NationalinsectmonitoringinNorway
-bugs,809,order,Hemiptera,FALSE,,NationalinsectmonitoringinNorway
-netWingedInsects,1501,order,Neuroptera,FALSE,,NationalinsectmonitoringinNorway
-grasshopperLikeInsects,1458,order,Orthoptera,FALSE,,NationalinsectmonitoringinNorway
-earwigs,1224,order,Dermaptera,FALSE,,NationalinsectmonitoringinNorway
-butterfliesMoths,797,order,Lepidoptera,FALSE,,NationalinsectmonitoringinNorway
-flies,811,order,Diptera,FALSE,,NationalinsectmonitoringinNorway
-hymenopterans,1457,order,Hymenoptera,FALSE,,NationalinsectmonitoringinNorway
-aquaticInsects,1225,order,Ephemeroptera,FALSE,,NationalinsectmonitoringinNorway
-aquaticInsects,1003,order,Tricoptera,FALSE,,NationalinsectmonitoringinNorway
-aquaticInsects,787,order,Plecoptera,FALSE,,NationalinsectmonitoringinNorway
-aquaticInsects,789,order,Odonata,FALSE,,NationalinsectmonitoringinNorway
-aquaticInsects,1451,order,Megaloptera,FALSE,,NationalinsectmonitoringinNorway
-vascularPlants,7707728,phylum,Tracheophyta,TRUE,,ANOData
-mosses,35,phylum,Bryophyta,FALSE,,
-mammals,803,order,Soricomorpha,FALSE,,
-mammals,785,order,Lagomorpha,FALSE,,
-mammals,1459,order,Rodentia,FALSE,,
-mammals,829,order,Erinaceomorpha,FALSE,,
-mammals,5307,family,Mustelidae,FALSE,,
-fungi,5,kingdom,Fungi,FALSE,,
-lichens,NA,polyphyla,Lichens,FALSE,,
-groundNestingBirds,NA,polyphyla,Ground-Nesting Birds,FALSE,,
-woodpeckers,9333,family,Picidae,FALSE,,
-birds,212,class,Aves,FALSE,,
-bats,734,order,Chiroptera,FALSE,,
+taxa,key,level,scientificName,include,functionalGroup,predictionDataset,summer_precipitation,summer_temperature,snow_cover,aspect,slope,kalkinnhold,net_primary_productivity,land_cover_corine,human_density,distance_roads,distance_water,forest_line,habitat_heterogeneity
+amphibiansReptiles,11592253,class,Squamata,FALSE,,,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+amphibiansReptiles,131,class,Amphibia,FALSE,,,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+spiders,367,class,Arachnida,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+beetles,1470,order,Coleoptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+cockroaches,800,order,Blattodea,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+snakeflies,786,order,Raphidioptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+scorpionflies,1000,order,Mecoptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+bugs,809,order,Hemiptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+netWingedInsects,1501,order,Neuroptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+grasshopperLikeInsects,1458,order,Orthoptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+earwigs,1224,order,Dermaptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+butterfliesMoths,797,order,Lepidoptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+flies,811,order,Diptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+hymenopterans,1457,order,Hymenoptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+aquaticInsects,1225,order,Ephemeroptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+aquaticInsects,1003,order,Tricoptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+aquaticInsects,787,order,Plecoptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+aquaticInsects,789,order,Odonata,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+aquaticInsects,1451,order,Megaloptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
+vascularPlants,7707728,phylum,Tracheophyta,TRUE,,ANO Data,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE
+mosses,35,phylum,Bryophyta,FALSE,,,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE
+mammals,803,order,Soricomorpha,FALSE,,,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE
+mammals,785,order,Lagomorpha,FALSE,,,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE
+mammals,1459,order,Rodentia,FALSE,,,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE
+mammals,829,order,Erinaceomorpha,FALSE,,,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE
+mammals,5307,family,Mustelidae,FALSE,,,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE
+fungi,5,kingdom,Fungi,FALSE,,,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE
+lichens,NA,polyphyla,Lichens,FALSE,,,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE
+groundNestingBirds,NA,polyphyla,Ground-Nesting Birds,FALSE,,,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+woodpeckers,9333,family,Picidae,FALSE,,,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+birds,212,class,Aves,FALSE,,,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+bats,734,order,Chiroptera,FALSE,,,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE

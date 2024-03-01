@@ -39,6 +39,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
       
       # Find the most common species to include in each run
       predictionDataset <- focalTaxa$predictionDataset[focalTaxa$taxa == focalTaxon]
+      if (length(predictionDataset) > 1) {predictionDataset <- unique(predictionDataset)}
       speciesCounts <- sort(table(unlist(lapply(speciesData, FUN = function(x) {
         x$simpleScientificName
         }))), TRUE)
@@ -142,11 +143,12 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
     
     # Add environmental characteristics. If there is a corresponding column for the focalTaxon in the environmental covariate matrix use that,
     # if not, use all calculated env covariates
-    if (paste0("selected_",focalGroup) %in% colnames(focalCovariates)) {
-      env <- focalCovariates$parameters[focalCovariates[,paste0("selected_", focalGroup)]]
-    } else {
-      env <- if(is.null(environmentalDataList)) 0 else names(environmentalDataList)
-    }
+    # Reduce focalTaxa to focalCovariates
+    env <- colnames(focalTaxa)[colnames(focalTaxa) %in% focalCovariates$parameters]
+    focalTaxa <- focalTaxa[,c("taxa", env)]
+    focalTaxa <- focalTaxa[focalTaxa$taxa %in% focalGroup,]
+    env <- env[apply(focalTaxa[,-1], 2, any)]
+    
     for (e in env) {
       cat(sprintf("Adding covariate '%s' to the model.\n", e))
       workflow$addCovariates(Object = environmentalDataList[[e]])

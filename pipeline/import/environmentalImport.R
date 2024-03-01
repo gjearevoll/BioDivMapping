@@ -40,6 +40,13 @@ if(file.exists(paste0(folderName, "/focalCovariates.csv"))){
   stop("Please source initialiseRepository.R first.")
 }
 
+# Import focal taxa
+if(file.exists(paste0(folderName, "/focalTaxa.csv"))){
+  focalTaxa <- read.csv( paste0(folderName, "/focalTaxa.csv"), header = T)
+} else {
+  stop("Please source initialiseRepository.R first.")
+}
+
 # import regionGeometry list
 if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
   regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
@@ -51,8 +58,10 @@ if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
 ### 2. Dataset Import ####
 ###--------------------###
 
-parameters$selected <- rowSums(parameters[,grepl("selected", colnames(parameters))]) > 0
-selectedParameters <- parameters$parameters[parameters$selected]
+# Reduce focalTaxa to focalCovariates
+selectedParameters <- colnames(focalTaxa)[colnames(focalTaxa) %in% parameters$parameters]
+focalTaxa <- focalTaxa[,c("taxa", selectedParameters)]
+selectedParameters <- selectedParameters[apply(focalTaxa[,-1], 2, any)]
 
 # Check that any parameters we're downloading externally have a source
 emptyParameters <- parameters$parameters[parameters$external & parameters$dataSource == ""]
@@ -76,7 +85,7 @@ regionGeometryBuffer <- st_union(if(exists("myMesh")) {
     inlaMeshToSf()
 }
   else regionGeometry) |>
-  st_buffer(20000) |>
+  st_buffer(2000) |>
   st_transform(projCRS) |> 
   st_bbox() |> 
   st_as_sfc() |>

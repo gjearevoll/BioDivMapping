@@ -85,7 +85,7 @@ regionGeometryBuffer <- st_union(if(exists("myMesh")) {
     inlaMeshToSf()
 }
   else regionGeometry) |>
-  st_buffer(20000) |>
+  st_buffer(2000) |>
   st_transform(projCRS) |> 
   st_bbox() |> 
   st_as_sfc() |>

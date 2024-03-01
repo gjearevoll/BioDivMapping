@@ -39,6 +39,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
       
       # Find the most common species to include in each run
       predictionDataset <- focalTaxa$predictionDataset[focalTaxa$taxa == focalTaxon]
+      if (length(predictionDataset) > 1) {predictionDataset <- unique(predictionDataset)}
       speciesCounts <- sort(table(unlist(lapply(speciesData, FUN = function(x) {
         x$simpleScientificName
         }))), TRUE)

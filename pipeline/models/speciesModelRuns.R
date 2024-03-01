@@ -57,7 +57,8 @@ if (length(args) != 0) {
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
-redList <- readRDS(paste0(folderName, "/redList.RDS"))
+redList <- if(modelRun %in% c("allSpecies")) NULL else
+  readRDS(paste0(folderName, "/redList.RDS"))
 
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))

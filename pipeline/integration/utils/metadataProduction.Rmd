@@ -46,7 +46,7 @@ infoNames <- c("Date",
                "Total species",
                "Total datasets used", 
                "DOI")
-info <- c(dateAccessed, paste(focalTaxa, collapse = ", "), level, region, totalSpecies,
+info <- c(dateAccessed, paste(focalTaxa, collapse = ", "), level,  paste(region, collapse = ", "), totalSpecies,
           length(unique(processedDataDF$dsName)), downloadKey$doi)
 basicInfo <- data.frame(Characteristic = infoNames, Value = info)
 knitr::kable(basicInfo)

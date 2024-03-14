@@ -117,8 +117,9 @@ for (i in seq_along(workflowList)) {
 
   # Add model characteristics (mesh, priors, output)
   workflow$addMesh(cutoff= myMesh$cutoff, max.edge=myMesh$max.edge, offset= myMesh$offset)
-  workflow$specifySpatial(prior.range = c(300000, 0.05),
-                          prior.sigma = c(500, 0.2)) #100
+  workflow$specifySpatial(prior.range = prior.range,
+                          prior.sigma = prior.sigma)
+  # workflow$workflowOutput(c('Predictions', 'Bias', 'Model', 'Maps'))
   workflow$workflowOutput(modelOutputs)
   workflow$modelOptions(INLA = list(num.threads = 12, control.inla=list(int.strategy = 'eb', cmin = 0),safe = TRUE),
                         Richness = list(predictionIntercept = predictionDatasetShort))

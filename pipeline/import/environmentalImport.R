@@ -95,6 +95,13 @@ regionGeometryBuffer <- st_union(if(exists("myMesh")) {
 # define working project raster 
 baseRaster <- terra::rast(extent = ext(regionGeometryBuffer), res = res, crs = projCRS)
 
+# rasterise regionGeometry
+regionGeometryRast <- regionGeometry |>
+  st_as_sf() |>
+  st_transform(projCRS) |> 
+  vect() |>
+  terra::rasterize(baseRaster, FUN = "mode") 
+
 # download environmental data
 parameterList <- list()
 
@@ -143,7 +150,8 @@ parametersCropped <- parameterList |>
       out
     } else {
       # project & scale continuous rasters
-      terra::project(out, baseRaster) |>
+      ifel(is.na(regionGeometryRast), NA,
+           terra::project(out, baseRaster)) |>
         scale()  
     }}) |>  
   rast() |>  # combine raster layers

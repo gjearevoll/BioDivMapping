@@ -57,7 +57,8 @@ if (length(args) != 0) {
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
-redList <- readRDS(paste0(folderName, "/redList.RDS"))
+redList <- if(modelRun %in% c("allSpecies")) NULL else
+  readRDS(paste0(folderName, "/redList.RDS"))
 
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
@@ -69,7 +70,7 @@ projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 # Define speciesData based on run type and create predictionData
 modelSpeciesData <- refineSpeciesData(speciesData, modelRun)
 segmentation <- modelRun %in% c("richness", "redListRichness")
-predictionData <- createPredictionData(c(res/1000, res/1000), regionGeometry)
+predictionData <- createPredictionData(c(res, res), regionGeometry, projCRS)
 
 
 # Prepare models
@@ -116,8 +117,9 @@ for (i in seq_along(workflowList)) {
 
   # Add model characteristics (mesh, priors, output)
   workflow$addMesh(cutoff= myMesh$cutoff, max.edge=myMesh$max.edge, offset= myMesh$offset)
-  workflow$specifySpatial(prior.range = c(300000, 0.05),
-                          prior.sigma = c(500, 0.2)) #100
+  workflow$specifySpatial(prior.range = prior.range,
+                          prior.sigma = prior.sigma)
+  # workflow$workflowOutput(c('Predictions', 'Bias', 'Model', 'Maps'))
   workflow$workflowOutput(modelOutputs)
   workflow$modelOptions(INLA = list(num.threads = 12, control.inla=list(int.strategy = 'eb', cmin = 0),safe = TRUE),
                         Richness = list(predictionIntercept = predictionDatasetShort))

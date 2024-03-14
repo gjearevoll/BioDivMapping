@@ -95,6 +95,13 @@ regionGeometryBuffer <- st_union(if(exists("myMesh")) {
 # define working project raster 
 baseRaster <- terra::rast(extent = ext(regionGeometryBuffer), res = res, crs = projCRS)
 
+# rasterise regionGeometry
+regionGeometryRast <- regionGeometry |>
+  st_as_sf() |>
+  st_transform(projCRS) |> 
+  vect() |>
+  terra::rasterize(baseRaster, FUN = "mode") 
+
 # download environmental data
 parameterList <- list()
 
@@ -129,12 +136,12 @@ for(parameter in seq_along(selectedParameters)) {
 ###------------------------###
 ### 3. Data Consolidation ####
 ###------------------------###
-
 # Crop, match projections and compile raster layers into one object
 parametersCropped <- parameterList |> 
   lapply(function(x) {
+    regionExt <- as.polygons(terra::project(regionGeometryBuffer, x), extent = TRUE)
     # Crop each covariate to extent of regionGeometryBuffer
-    out <- terra::crop(x, as.polygons(terra::project(regionGeometryBuffer, x), extent = TRUE), snap = "out", mask = TRUE)
+    out <- terra::crop(x, regionExt, snap = "out")
     # Project all rasters to baseRaster and combine
     if(is.factor(x)) {
       # project categorical rasters
@@ -143,7 +150,8 @@ parametersCropped <- parameterList |>
       out
     } else {
       # project & scale continuous rasters
-      terra::project(out, baseRaster) |>
+      ifel(is.na(regionGeometryRast), NA,
+           terra::project(out, baseRaster)) |>
         scale()  
     }}) |>  
   rast() |>  # combine raster layers

@@ -17,7 +17,8 @@
 #' @importFrom intSDM startWorkflow
 #' 
 modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListModelled = NULL, regionGeometry, 
-                             modelFolderName, environmentalDataList = NULL, crs = NULL, segmentation = FALSE) {
+                             modelFolderName, environmentalDataList = NULL, crs = NULL, segmentation = FALSE,
+                             nSegment = NULL) {
   
   if(is.null(crs)){
     if(!is.null(environmentalDataList)){
@@ -45,11 +46,14 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
         }))), TRUE)
       fullSpeciesList <- names(speciesCounts)
       speciesCounts <- speciesCounts[fullSpeciesList %in% unique(speciesData[[predictionDataset]]$simpleScientificName)]
-      commonSpecies <- names(speciesCounts)[1:2]
-      restOfSpecies <- fullSpeciesList[!(fullSpeciesList %in% commonSpecies)]
+      commonSpecies <- names(speciesCounts)[1]
+      restOfSpecies <- fullSpeciesList#[!(fullSpeciesList %in% commonSpecies)]
       
       # Segment rest of species into lists of 8 species
-      segmentedList <- split(restOfSpecies, ceiling(seq_along(restOfSpecies)/8))
+     # print(paste("Splitting ", length(restOfSpecies), "species into", length(restOfSpecies)/nSegment, "groups"))
+      segmentedList <- split(restOfSpecies, ceiling(seq_along(restOfSpecies)/nSegment))
+      #segments <- rep(1:ceiling(length(restOfSpecies)/nSegment), nSegment)[1:length(restOfSpecies)]
+      #segmentedList <- split(restOfSpecies, segments)
       speciesNames <- lapply(segmentedList, FUN = function(x) {
         c(x, commonSpecies)
       })
@@ -66,6 +70,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
   }
   
   workflowList <- list()
+  focaltaxa <- focalTaxa
   # Begin running different species groups
   for (focalTaxon in taxaNames) {
     
@@ -123,7 +128,10 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
       Species = speciesList,
       saveOptions = list(projectDirectory = modelFolderName, projectName =  focalTaxon), Save = TRUE
     )
-    workflow$addArea(Object = st_sf(regionGeometry))
+
+    geometryWithWeight <- st_sf(regionGeometry)
+    #geometryWithWeight$weight <- 0.001
+    workflow$addArea(Object = st_sf(geometryWithWeight))
     
     # Add datasets - note that for the moment this excludes the NTNU field notes and ANO,
     # the model will currently not run with these involved
@@ -148,11 +156,13 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
     focalTaxa <- focalTaxa[,c("taxa", env)]
     focalTaxa <- focalTaxa[focalTaxa$taxa %in% focalGroup,]
     env <- env[apply(focalTaxa[,-1], 2, any)]
-    
+
     for (e in env) {
       cat(sprintf("Adding covariate '%s' to the model.\n", e))
       workflow$addCovariates(Object = environmentalDataList[[e]])
     }
+
+     focalTaxa <- focaltaxa
     
     workflowList[[focalTaxon]] <- workflow
     

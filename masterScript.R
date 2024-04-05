@@ -21,7 +21,7 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # in the working folder for reproducibility.
 
 # Date of analysis from which working directory will be create/access
-dateAccessed <- "2024-01-26"  
+dateAccessed <- "2024-04-04"  
 # spatial level on which regionGeometry will be defined as accepted by defineRegion()
 level <- "county"  
 # specific region to be used as accepted by defineRegion()
@@ -31,7 +31,8 @@ crs <- 25833
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
 res <- 1000 
 # Parameters to define mesh for random fields
-myMesh <- list(cutoff = 25000, max.edge=c(109000, 120000), offset= 80000)
+#myMesh <- list(cutoff = 25000, max.edge=c(109000, 120000), offset= 80000)
+myMesh <- list(cutoff = 176, max.edge=c(26385, 175903), offset= c(1760, 18))
 # Defiine whether or not we want to upload this data to Wallace
 uploadToWallace <- FALSE
 # whether to use schedule download for GBIF data
@@ -43,7 +44,8 @@ redListThreshold <- 30
 # which categories are to be used for filtering/analysing red list species
 redListCategories <- c("VU", "EN", "CR")
 # the type of model that will be fitted to the data
-modelRun <- "redListSpecies"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
+modelRun <- "richness"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
+
 # model priors
 prior.range <- c(1000, 0.05)
 prior.sigma <- c(3, 0.05)

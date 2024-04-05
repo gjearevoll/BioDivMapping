@@ -18,7 +18,7 @@ aquaticInsects,1003,order,Tricoptera,FALSE,,National insect monitoring in Norway
 aquaticInsects,787,order,Plecoptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
 aquaticInsects,789,order,Odonata,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
 aquaticInsects,1451,order,Megaloptera,FALSE,,National insect monitoring in Norway,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE
-vascularPlants,7707728,phylum,Tracheophyta,TRUE,,ANO Data,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE
+vascularPlants,7707728,phylum,Tracheophyta,TRUE,,ANO Data,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE
 mosses,35,phylum,Bryophyta,FALSE,,,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE
 mammals,803,order,Soricomorpha,FALSE,,,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE
 mammals,785,order,Lagomorpha,FALSE,,,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE

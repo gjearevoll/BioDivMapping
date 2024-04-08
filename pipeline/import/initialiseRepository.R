@@ -143,3 +143,4 @@ if(!file.exists(paste0(folderName, "/focalCovariates.csv"))){
   read.csv(file.path(externalFolder, "focalCovariates.csv")) %>% 
     write.csv(paste0(folderName, "/focalCovariates.csv"), row.names = FALSE)
 }
+

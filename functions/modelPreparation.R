@@ -55,7 +55,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
       #segments <- rep(1:ceiling(length(restOfSpecies)/nSegment), nSegment)[1:length(restOfSpecies)]
       #segmentedList <- split(restOfSpecies, segments)
       speciesNames <- lapply(segmentedList, FUN = function(x) {
-        c(x, commonSpecies)
+        c(x)#, commonSpecies)
       })
       names(speciesNames) <- paste0(focalTaxon, seq(length(speciesNames)))
       speciesLists[[focalTaxon]] <- speciesNames

@@ -12,6 +12,9 @@
 # Now, before you hit play and get stuck in, you need to make sure you've got all necessary R packages installed,
 # of which there are quite a few. Luckily, we've set up this utils file for just that purpose (although since R
 # doesn't always automatically acquiesce when setting up new packages you may need to go through it yourself).
+#Sys.setlocale(locale='no_NB.utf8')
+#Sys.setlocale("LC_ALL", "nb-NO.UTF-8")
+#Sys.setlocale("LC_ALL", "Norwegian Bokm??l_Norway.utf8")
 
 source("pipeline/installAllPackages.R")
 
@@ -47,8 +50,11 @@ redListCategories <- c("VU", "EN", "CR")
 modelRun <- "richness"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
 
 # model priors
-prior.range <- c(1000, 0.05)
+prior.range <- c(25000, 0.05)
 prior.sigma <- c(3, 0.05)
+
+# Indicates whether you want to run the model in parallel
+parallelisation <- FALSE
 
 # Let's get started! The first script initialiseRepository.R, which will create 
 # a folder for the specified dateAccessed, filters focalTaxa for taxa to be analyzed 
@@ -95,8 +101,13 @@ meshTest(myMesh, regionGeometry, crs = crs)
 # likely to take the longest, so grab a coffee or other beverage of choice. There are three choices of modelRun, 
 # 'richness' (estimates species richness), 'redListRichness' (same but only for red-listed species) and 'redListSpecies'
 # (individual species models for red-listed species). We suggest running these individually.
-source("pipeline/models/speciesModelRuns.R")
 
+if(parallelisation){
+source("pipeline/parallelModelRun/modelPreparationForParallelRun.R")
+  source("pipeline/parallelModelRun/scheduleParallelRun.R")
+}else{
+  source("pipeline/models/speciesModelRuns.R")
+}
 # Now that all the necessary data has been produced, we can compile and export it for use in the app. Just use the 
 # function below to compile and move the necessary results into the visualisation folder. Here, date accessed is a 
 # required input.

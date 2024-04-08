@@ -9,6 +9,7 @@
 library(foreach)
 library(parallel)
 library(doParallel)
+library(dplyr)
 
 #### MODEL RUNS ####
 
@@ -16,47 +17,15 @@ library(doParallel)
 ### 0. Bash preparation ####
 ###----------------------###
 # iter is the row index for the focalTaxa we are interested in
-
+rm("i")
 iter = 1
-#.libPaths(c("/cluster/projects/nn11017k/BioDivMapping/R", .libPaths()))
-args <- commandArgs(TRUE)
+# define repo folder names
+#folderName <- paste0("data/run_", dateAccessed)
+#tempFolderName <- paste0(folderName, "/temp")
 
-# Date of analysis from which working directory will be create/access
-dateAccessed <- "2024-04-04"  
-# spatial level on which regionGeometry will be defined as accepted by defineRegion()
-level <- "country"  
-# specific region to be used as accepted by defineRegion()
-region <- "Norway"  
-# coordinate reference system to use for project. as accepted by sf::st_crs()
-crs <- 25833 
-# resolution in units of CRS (eg m in UTM, or degrees in lat/long)
-res <- 1000 
-# Parameters to define mesh for random fields
-#myMesh <- list(cutoff = 250, max.edge=c(10, 20), offset= 800)
-#meshTest(myMesh, regionGeometry, crs = crs)
-# Defiine whether or not we want to upload this data to Wallace
-uploadToWallace <- FALSE
-# whether to use schedule download for GBIF data
-scheduledDownload <- TRUE
-# whether to wait and automatically download GBIF data when it is ready
-waitForGbif <- TRUE
-# minimum number of points for a species to be retained in the analysis
-redListThreshold <- 30
-# which categories are to be used for filtering/analysing red list species
-redListCategories <- c("VU", "EN", "CR")
-# the type of model that will be fitted to the data
-modelRun <- "richness" 
-
-nClusters = 20
-
-# This should only run if the script is being run from the command line
-#if (length(args) != 0) {
-# Set arguments
-# dateAccessed <- args[1]
-# modelRun <- args[2]
-# Set the working directory
-#  setwd("~/BioDivMapping")
-#}
+# load the control parameters
+#readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
+ # list2env(envir = .GlobalEnv)
 
 # You can run this from the command line using for example
 # Rscript filePath/speciesModelRuns.R 2024-02-08 allSPecies
@@ -89,36 +58,30 @@ tempFolderName <- paste0(folderName, "/temp")
 # model output folder
 modelFolderName <- paste0(folderName, "/modelOutputs")
 
-# import project control parameters into the environment
-#readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
- # list2env(envir = .GlobalEnv)
 
-# Redefine modelRun after controlPars import using args if necessary
-#if (length(args) != 0) {
-#  modelRun <- args[2]
-#}
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 redList <- readRDS(paste0(folderName, "/redList.RDS"))
 #head(redList)
 
+# $`Vascular Plant Herbarium, UiB`
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 #regionGeometry$weight <- 0.0001 #changes the weight 
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
 speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
+#changing names with norwegian texts
+speciesDatanameToChange <- names(speciesData)[which(grepl("[^\x01-\x7F]+", names(speciesData)))]
+print(paste("Changing name of this dataset:", speciesDatanameToChange))
+speciesDatanameChanged <- gsub('[^\x01-\x7F]+', ' ', speciesDatanameToChange)
+names(speciesData)[names(speciesData) %in% speciesDatanameToChange] <- speciesDatanameChanged
+
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 cat("All data loaded.", length(speciesData), "species datasets successfully loaded.")
 
-#focalCovariates$selected_vascularPlants[focalCovariates$parameters == "ndvi_peak"] <- FALSE
-#focalCovariates$selected_vascularPlants[focalCovariates$parameters == "elevation"] <- FALSE
-#focalCovariates$selected_vascularPlants[focalCovariates$parameters == "distance_roads"] <- FALSE
-#focalCovariates$selected_vascularPlants[focalCovariates$parameters == "land_cover_corine"] <- FALSE
-#focalCovariates$selected_vascularPlants[focalCovariates$parameters == "losmasse"] <- FALSE
-#focalCovariates$selected_vascularPlants[focalCovariates$parameters == "kalkinnhold"] <- FALSE
 
 focalTaxa$forest_line <- FALSE
 focalTaxa$aspect <- FALSE
@@ -148,7 +111,7 @@ workflowList <- modelPreparation(focalTaxa[iter, ], focalCovariates, modelSpecie
                                  environmentalDataList = environmentalDataList, 
                                  crs = projCRS, 
                                  segmentation = segmentation,
-                                 nSegment = 10)
+                                 nSegment = 4)
 focalTaxaRun <- names(workflowList)
 
 
@@ -171,7 +134,7 @@ modelOutputs <- if(modelRun == "richness")
       c('Predictions', 'Model')
 
 
-save.image(file = "beetleRichness.RData")
+save.image(file = "workflowWorkspace.RData")
 saveRDS(workflowList, file = "beetleRichnessWorkflowList.rds")
 saveRDS(predictionData, file = "beetleRichnessPredictionData.rds")
 

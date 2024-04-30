@@ -47,6 +47,8 @@ modelRun <- "redListSpecies"  # one of: "redListSpecies", "redListRichness", "ri
 # model priors
 prior.range <- c(1000, 0.05)
 prior.sigma <- c(3, 0.05)
+# whether to model random field
+spatialField <- "copy"  # maps to pointedSDMs::intModel's `pointsSpatial` Argument (can be "shared", "individual", "copy" (shared with INLA's "copy" feature), or NULL (not field is fitted) 
 
 # Let's get started! The first script initialiseRepository.R, which will create 
 # a folder for the specified dateAccessed, filters focalTaxa for taxa to be analyzed 

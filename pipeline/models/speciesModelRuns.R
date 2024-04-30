@@ -119,6 +119,10 @@ for (i in seq_along(workflowList)) {
   workflow$addMesh(cutoff= myMesh$cutoff, max.edge=myMesh$max.edge, offset= myMesh$offset)
   workflow$specifySpatial(prior.range = prior.range,
                           prior.sigma = prior.sigma)
+  
+  # spatial field
+  workflow$modelOptions(ISDM = list(pointsSpatial = spatialField))
+  
   # workflow$workflowOutput(c('Predictions', 'Bias', 'Model', 'Maps'))
   workflow$workflowOutput(modelOutputs)
   workflow$modelOptions(INLA = list(num.threads = 12, control.inla=list(int.strategy = 'eb', cmin = 0),safe = TRUE),

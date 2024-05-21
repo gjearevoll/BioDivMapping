@@ -106,6 +106,7 @@ regionGeometryRast <- regionGeometry |>
 parameterList <- list()
 
 for(parameter in seq_along(selectedParameters)) {
+  print(parameter)
   rasterisedVersion <- NULL
   focalParameter <- selectedParameters[parameter]
   
@@ -130,7 +131,12 @@ for(parameter in seq_along(selectedParameters)) {
   } else {
     rasterisedVersion <- rast(file.path(localCovFolder, paste0(focalParameter, ".tiff")))
   }
-  parameterList[[parameter]] <- rasterisedVersion
+  #if(focalParameter %in% c("aspect", "forest_line")){
+ #crs(rasterisedVersion) <- "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs"
+  #parameterList[[parameter]] <- rasterisedVersion
+ # }else{
+    parameterList[[parameter]] <- rasterisedVersion 
+  #}
 }
 
 ###------------------------###
@@ -139,9 +145,13 @@ for(parameter in seq_along(selectedParameters)) {
 # Crop, match projections and compile raster layers into one object
 parametersCropped <- parameterList |> 
   lapply(function(x) {
-    regionExt <- as.polygons(terra::project(regionGeometryBuffer, x), extent = TRUE)
+  
+    # Is the cropping needed?
+    
+    #regionExt <- as.polygons(terra::project(regionGeometryBuffer, x), extent = TRUE)
     # Crop each covariate to extent of regionGeometryBuffer
-    out <- terra::crop(x, regionExt, snap = "out")
+    out <- x#terra::crop(x, regionExt, snap = "out")
+   # print(x)
     # Project all rasters to baseRaster and combine
     if(is.factor(x)) {
       # project categorical rasters
@@ -152,8 +162,9 @@ parametersCropped <- parameterList |>
       # project & scale continuous rasters
       ifel(is.na(regionGeometryRast), NA,
            terra::project(out, baseRaster)) |>
-        scale()  
-    }}) |>  
+        scale()
+    }
+    }) |>  
   rast() |>  # combine raster layers
   setNames(selectedParameters)  # assign names
 

@@ -5,7 +5,7 @@
 ###----------------------###
 
 # The lib paths is for the cluster
-#.libPaths(c("/cluster/projects/nn11017k/R", .libPaths()))
+.libPaths(c("/cluster/projects/nn11017k/R", .libPaths()))
 library(foreach)
 library(parallel)
 library(doParallel)
@@ -17,15 +17,16 @@ library(dplyr)
 ### 0. Bash preparation ####
 ###----------------------###
 # iter is the row index for the focalTaxa we are interested in
-rm("i")
+#rm("i")
 iter = 1
 # define repo folder names
-#folderName <- paste0("data/run_", dateAccessed)
-#tempFolderName <- paste0(folderName, "/temp")
+dateAccessed <- "2024-04-09" 
+folderName <- paste0("data/run_", dateAccessed)
+tempFolderName <- paste0(folderName, "/temp")
 
 # load the control parameters
-#readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
- # list2env(envir = .GlobalEnv)
+readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
+  list2env(envir = .GlobalEnv)
 
 # You can run this from the command line using for example
 # Rscript filePath/speciesModelRuns.R 2024-02-08 allSPecies
@@ -52,8 +53,8 @@ if (!exists("modelRun")) stop("You need to specify the variable modelRun")
 if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
 
 # Specify folders for storage of all run data
-folderName <- paste0("data/run_", dateAccessed)
-tempFolderName <- paste0(folderName, "/temp")
+#folderName <- paste0("data/run_", dateAccessed)
+#tempFolderName <- paste0(folderName, "/temp")
 
 # model output folder
 modelFolderName <- paste0(folderName, "/modelOutputs")
@@ -83,16 +84,17 @@ projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 cat("All data loaded.", length(speciesData), "species datasets successfully loaded.")
 
 
-focalTaxa$forest_line <- FALSE
-focalTaxa$aspect <- FALSE
-focalTaxa$land_cover_corine <- FALSE
-focalTaxa$snow_cover <- FALSE
-focalTaxa$kalkinnhold <- FALSE
-focalTaxa$net_primary_productivity <- FALSE
-focalTaxa$slope <- FALSE
-focalTaxa$distance_roads <- FALSE
+# focalTaxa$forest_line <- FALSE
+# focalTaxa$aspect <- FALSE
+# focalTaxa$land_cover_corine <- FALSE
+# focalTaxa$snow_cover <- FALSE
+# focalTaxa$kalkinnhold <- FALSE
+# focalTaxa$net_primary_productivity <- FALSE
+# focalTaxa$slope <- FALSE
+# focalTaxa$distance_roads <- FALSE
 #focalTaxa <- focalTaxa[-c(1,2), ]
 #focalTaxa <- focalTaxa[-c(2,3), ]
+focalTaxa$habitat_heterogeneity <- FALSE
 
 # Define speciesData based on run type and create predictionData
 modelSpeciesData <- refineSpeciesData(speciesData, redList, modelRun)
@@ -111,7 +113,7 @@ workflowList <- modelPreparation(focalTaxa[iter, ], focalCovariates, modelSpecie
                                  environmentalDataList = environmentalDataList, 
                                  crs = projCRS, 
                                  segmentation = segmentation,
-                                 nSegment = 4)
+                                 nSegment = 20)
 focalTaxaRun <- names(workflowList)
 
 
@@ -134,9 +136,16 @@ modelOutputs <- if(modelRun == "richness")
       c('Predictions', 'Model')
 
 
+#remove the list that are not needed
+# rm(list=ls()[! ls() %in% c("workflowList","predictionData",
+#                            "folderName", "dataAccessed",
+#                            "speciesData", "focalTaxa",
+#                            "biasFieldList", "tempFolderName",
+#                            "modelOutputs", "modelRun")])
+
 save.image(file = "workflowWorkspace.RData")
-saveRDS(workflowList, file = "beetleRichnessWorkflowList.rds")
-saveRDS(predictionData, file = "beetleRichnessPredictionData.rds")
+#saveRDS(workflowList, file = "beetleRichnessWorkflowList.rds")
+#saveRDS(predictionData, file = "beetleRichnessPredictionData.rds")
 
 
 

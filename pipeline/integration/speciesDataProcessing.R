@@ -66,6 +66,7 @@ if(file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
 processedData <- list()
 namesProcessedData <- c()
 for (ds in seq_along(speciesData)) {
+  print(ds)
   focalData <- speciesData[[ds]]
   
   # If the dataset is empty, skip it
@@ -86,7 +87,7 @@ for (ds in seq_along(speciesData)) {
         str_extract(acceptedScientificName, "^[A-Za-z]+\\s+[a-z]+")        # Extract binomial name
       ),
       # Replace space with underscore in simpleScientificName
-      simpleScientificName = gsub("-", "", gsub("×","", gsub(" ", "_", simpleScientificName)))
+      simpleScientificName = gsub("-", "", gsub("C","", gsub(" ", "_", simpleScientificName)))
     )
   
   # Add in polyphyletic taxa

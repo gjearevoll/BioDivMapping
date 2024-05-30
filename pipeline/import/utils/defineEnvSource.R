@@ -22,7 +22,10 @@ if (dataSource == "geonorge") {
       # download
       elevation <- get_geonorge(targetDir = tempFolderName, dataFormat = "TIFF")
       # save
-      file_path <- generateRastFileName(elevation, dataSource, "elevation", dataPath)
+      file_path <- generateRastFileName(raster = elevation, 
+                                       # dataSource, 
+                                        parameter =  "elevation", 
+                                        dataPath = dataPath)
       writeRaster(elevation, filename = file_path, overwrite = TRUE)
     }
     

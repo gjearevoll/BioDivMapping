@@ -30,7 +30,8 @@ meshTest <- function(meshList, regionGeometry, print = TRUE, crs = NULL) {
   
   # Create mesh using INLA and inlabru
   mesh <- inla.mesh.2d(boundary = fm_as_inla_mesh_segment(st_transform(regionGeometry, crs)),
-                             crs = fm_crs(crs),
+    #boundary = st_transform(regionGeometry, crs),                         
+    crs = fm_crs(crs),
                              cutoff = meshList$cutoff, 
                              max.edge = meshList$max.edge, 
                              offset = meshList$offset)

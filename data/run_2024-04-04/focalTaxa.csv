@@ -1,2 +1,0 @@
-"taxa","key","level","scientificName","include","functionalGroup","predictionDataset","summer_precipitation","summer_temperature","snow_cover","aspect","slope","kalkinnhold","net_primary_productivity","land_cover_corine","human_density","distance_roads","distance_water","forest_line","habitat_heterogeneity"
-"vascularPlants",7707728,"phylum","Tracheophyta",TRUE,NA,"ANO Data",TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE

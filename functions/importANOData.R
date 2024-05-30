@@ -1,7 +1,7 @@
 
 #' @title \emph{importANOData}: Import a dataset of species from the ANO database.
 
-#' @description This function downloads data relating to a given list of taxonomicgroups from the Arealrepresentativ naturovervåking (ANO) dataset.
+#' @description This function downloads data relating to a given list of taxonomicgroups from the Arealrepresentativ naturovervC%king (ANO) dataset.
 #'
 #' @param destinationFolder A character string giving the folder in which your ANO data should be saved,
 #' @param regionGeometry An sf object encompassing our region of study, as produced by defineRegion.
@@ -14,7 +14,7 @@
 # This source file is activated after line 74 of the speciesImport.R script
 
 # Create destination folder for ANO data
-importANOData <- function(destinationFolder, regionGeometry, focalTaxon,
+importANOData <- function(destinationFolder, regionGeometry, focalTaxon, download = TRUE,
                           ANOEndpoint = "https://nedlasting.miljodirektoratet.no/naturovervaking/naturovervaking_eksport.gdb.zip") {
   
   if (!file.exists(destinationFolder)) {
@@ -22,11 +22,17 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon,
   }
   
   # Download and unzip ANO data from endpoint
+  if(download){
   ANOfile <- download.file(url=ANOEndpoint, 
                            destfile=paste0(destinationFolder, "/naturovervaking_eksport.gdb.zip"), mode = "wb")
   unzip(paste0(destinationFolder, "/naturovervaking_eksport.gdb.zip"), 
         exdir = destinationFolder)
   ANOUnzippedFolder <- paste0(destinationFolder, "/naturovervaking_eksport.gdb")
+  } else {
+    unzip("data/external/Naturovervaking_eksport.gpkg.zip", 
+          exdir = destinationFolder)
+    ANOUnzippedFolder <- paste0(destinationFolder, "/Naturovervaking_eksport.gpkg")
+  }
   
   # Import geometry data to later match to species occurrnece
   ANOPoints <- st_read(ANOUnzippedFolder, layer="ANO_SurveyPoint")
@@ -38,9 +44,15 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon,
   ANOPoints <- st_intersection(ANOPoints, regionGeometry)
   
   # Import list of species
-  ANOSpeciesFull <- st_read(ANOUnzippedFolder, layer="ANO_Art") %>%
-    filter(ParentGlobalID %in% ANOPoints$GlobalID)
+  ANOSpeciesFull <- st_read(ANOUnzippedFolder, layer="ANO_Art")%>%
+    dplyr::filter(ParentGlobalID %in% ANOPoints$GlobalID)
   
+  #Let's remove NAs from the names
+  ANOSpeciesFull <- ANOSpeciesFull[complete.cases(ANOSpeciesFull[, c("art_navn")]), ]
+  # Remove names with encoding problems
+ # gsub('[^\x01-\x7F]+', ' ', ANOSpeciesFull$art_navn)
+ # ANOSpeciesFull <-   ANOSpeciesFull[which(grepl("[^[:punct:]]+", ANOSpeciesFull$art_navn)), ]
+  #speciesDatanameToChange <- names(speciesData)[which(grepl("[^\x01-\x7F]+", names(speciesData)))]
   
   # Narrow down to only species within our taxa
   taxaLegend <- data.frame(speciesName = unique(ANOSpeciesFull$art_navn))
@@ -54,14 +66,26 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon,
   # Add in extra values
   ANOSpeciesFull$year <- format(ANOSpeciesFull$EditDate, format="%Y")
   ANOSpeciesFull$taxaKey <- taxaLegend$taxonKey[match(ANOSpeciesFull$art_navn, taxaLegend$speciesName)]
-  ANOSpeciesFull <- ANOSpeciesFull[,c("GlobalID", "ParentGlobalID", "art_navn", "year", "taxaKey")]
+  ANOSpeciesFull <- ANOSpeciesFull[,c("GlobalID", "ParentGlobalID", "art_navn", "year", "taxaKey", "Creator", "Editor", "EditDate")]
   
   
   if(any(!is.na(ANOSpeciesFull$taxaKey))){
-    ANOSpecies <- ANOSpeciesFull[!is.na(ANOSpeciesFull$taxaKey),]
+    ANOSpeciesToUse <- ANOSpeciesFull[!is.na(ANOSpeciesFull$taxaKey),]
+    
+    keys <- (focalTaxon[focalTaxon$include == TRUE, ])$key
+    
+    uniqueKeys <- unique(ANOSpeciesToUse$taxaKey)
+    
+    # Let's filter the ANOData with the taxa key we are interested in
+    if(length(uniqueKeys) > 1){
+      ANOSpeciesList <- list()
+      for(i in 1:lengthUniqueKeys){
+    ANOSpecies <- ANOSpeciesToUse %>%
+      filter(taxaKey %in% uniqueKeys[i])
+    
     ANOSpeciesTable <- as.data.frame(table(ANOSpecies$ParentGlobalID, ANOSpecies$art_navn), 
                                      stringsAsFactors = FALSE)
-    
+  
     # Get the year to match the parent global ID
     ANOYearID <- ANOSpecies[!duplicated(ANOSpecies$ParentGlobalID),c("ParentGlobalID", "year")]
     
@@ -75,11 +99,38 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon,
     ANOSpeciesTable$taxa <- taxaLegend$taxa[match(ANOSpeciesTable$speciesName, taxaLegend$speciesName)]
     ANOSpeciesTable$processing <- "ANO"
     ANOSpeciesTable$taxonKeyProject <- unique(ANOSpecies$taxaKey)
+    ANOSpeciesList[[i]] <- ANOSpeciesTable
+      }
+      
+  # Put the dataset together
+      ANOSpeciesTable <- do.call("rbind", ANOSpeciesList)
+    } else {
+      ANOSpecies <- ANOSpeciesToUse %>%
+        filter(taxaKey %in% uniqueKeys)
+      
+      ANOSpeciesTable <- as.data.frame(table(ANOSpecies$ParentGlobalID, ANOSpecies$art_navn), 
+                                       stringsAsFactors = FALSE)
+      
+      # Get the year to match the parent global ID
+      ANOYearID <- ANOSpecies[!duplicated(ANOSpecies$ParentGlobalID),c("ParentGlobalID", "year")]
+      
+      # Convert anything more than 2 to a presence
+      ANOSpeciesTable$Freq[ANOSpeciesTable$Freq > 0] <- 1
+      colnames(ANOSpeciesTable) <- c("GlobalID", "speciesName", "individualCount")
+      ANOSpeciesTable$year <- ANOYearID$year[match(ANOSpeciesTable$GlobalID, ANOYearID$ParentGlobalID)]
+      
+      # Add taxa and accepted scientific name
+      ANOSpeciesTable$acceptedScientificName <- GBIFNameTable$GBIFName[match(ANOSpeciesTable$speciesName, GBIFNameTable$speciesName)]
+      ANOSpeciesTable$taxa <- taxaLegend$taxa[match(ANOSpeciesTable$speciesName, taxaLegend$speciesName)]
+      ANOSpeciesTable$processing <- "ANO"
+      ANOSpeciesTable$taxonKeyProject <- unique(ANOSpecies$taxaKey)
+    }
     
     # Add geometry data
     ANOData <- merge(ANOSpeciesTable, ANOPoints[,c("GlobalID")], 
                      by="GlobalID", all.x=TRUE) %>%
       rename(geometry = SHAPE)
+    
     return(ANOData)
   } else {
     return(NULL)

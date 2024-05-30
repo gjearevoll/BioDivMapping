@@ -48,6 +48,8 @@ redListThreshold <- 30
 redListCategories <- c("VU", "EN", "CR")
 # the type of model that will be fitted to the data
 modelRun <- "richness"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
+# number of species per group in richness model:
+nSegment <- 10
 
 # model priors
 prior.range <- c(25000, 0.05)

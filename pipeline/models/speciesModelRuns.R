@@ -79,7 +79,7 @@ workflowList <- modelPreparation(focalTaxa, focalCovariates, modelSpeciesData,
                                  regionGeometry = regionGeometry,
                                  modelFolderName = modelFolderName, 
                                  environmentalDataList = environmentalDataList, 
-                                 crs = projCRS, segmentation)
+                                 crs = projCRS, segmentation, nSegment = nSegment)
 focalTaxaRun <- names(workflowList)
 
 # Get bias fields

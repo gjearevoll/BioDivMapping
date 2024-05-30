@@ -71,7 +71,8 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
                       redListThreshold = redListThreshold,
                       modelRun = modelRun,
                       prior.range = prior.range,
-                      prior.sigma = prior.sigma)
+                      prior.sigma = prior.sigma,
+                      nSegment = nSegment)
   # save
   saveRDS(controlPars, paste0(folderName,"/controlPars.RDS"))
 }

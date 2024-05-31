@@ -71,7 +71,9 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
                       redListThreshold = redListThreshold,
                       modelRun = modelRun,
                       prior.range = prior.range,
-                      prior.sigma = prior.sigma)
+                      prior.sigma = prior.sigma,
+                      nSegment = nSegment,
+                      downloadANOData = downloadANOData)
   # save
   saveRDS(controlPars, paste0(folderName,"/controlPars.RDS"))
 }
@@ -143,3 +145,4 @@ if(!file.exists(paste0(folderName, "/focalCovariates.csv"))){
   read.csv(file.path(externalFolder, "focalCovariates.csv")) %>% 
     write.csv(paste0(folderName, "/focalCovariates.csv"), row.names = FALSE)
 }
+

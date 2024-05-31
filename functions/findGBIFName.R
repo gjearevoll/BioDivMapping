@@ -9,7 +9,7 @@
 #' 
 
 findGBIFName <- function(scientificName) {
-  
+  if(is.na(scientificName)) return(NA)
   if (str_detect(substr(scientificName,1,1),"[[:lower:]]")) {
     substr(scientificName,1,1) <- toupper(substr(scientificName,1,1))
   }

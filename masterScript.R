@@ -12,6 +12,9 @@
 # Now, before you hit play and get stuck in, you need to make sure you've got all necessary R packages installed,
 # of which there are quite a few. Luckily, we've set up this utils file for just that purpose (although since R
 # doesn't always automatically acquiesce when setting up new packages you may need to go through it yourself).
+#Sys.setlocale(locale='no_NB.utf8')
+#Sys.setlocale("LC_ALL", "nb-NO.UTF-8")
+#Sys.setlocale("LC_ALL", "Norwegian Bokm??l_Norway.utf8")
 
 source("pipeline/installAllPackages.R")
 
@@ -21,17 +24,22 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # in the working folder for reproducibility.
 
 # Date of analysis from which working directory will be create/access
-dateAccessed <- "2024-01-26"  
+dateAccessed <- "2024-05-06" 
+
+# There are instances you want to re-initialise repository and delete some files that should be re-run
+refresh <- FALSE
+
 # spatial level on which regionGeometry will be defined as accepted by defineRegion()
-level <- "county"  
+level <- "country"  
 # specific region to be used as accepted by defineRegion()
-region <- "50" 
+region <- "Norway" 
 # coordinate reference system to use for project. as accepted by sf::st_crs()
 crs <- 25833 
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
 res <- 1000 
 # Parameters to define mesh for random fields
-myMesh <- list(cutoff = 25000, max.edge=c(109000, 120000), offset= 80000)
+#myMesh <- list(cutoff = 25000, max.edge=c(109000, 120000), offset= 80000)
+myMesh <- list(cutoff = 30000, max.edge=c(4000000, 380000), offset= c(4000, 10000))
 # Defiine whether or not we want to upload this data to Wallace
 uploadToWallace <- FALSE
 # whether to use schedule download for GBIF data
@@ -43,10 +51,25 @@ redListThreshold <- 30
 # which categories are to be used for filtering/analysing red list species
 redListCategories <- c("VU", "EN", "CR")
 # the type of model that will be fitted to the data
-modelRun <- "redListSpecies"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
+modelRun <- "richness"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
+# number of species per group in richness model:
+nSegment <- 10
+
 # model priors
-prior.range <- c(1000, 0.05)
-prior.sigma <- c(3, 0.05)
+prior.range <- c(10, 0.01)
+prior.sigma <- c(1, 0.01)
+
+# Indicates whether you want to run the model in parallel
+parallelisation <- FALSE
+
+# Indicates whether we want to download the ANOData or use the data from file
+downloadANOData <- TRUE
+
+# If we have already run some code with the same dateAccessed and we want to 
+# re-start the initialisation process:
+if(refresh){
+  deleteFilesToRestart(dateAccessed)
+}
 
 # Let's get started! The first script initialiseRepository.R, which will create 
 # a folder for the specified dateAccessed, filters focalTaxa for taxa to be analyzed 
@@ -93,8 +116,13 @@ meshTest(myMesh, regionGeometry, crs = crs)
 # likely to take the longest, so grab a coffee or other beverage of choice. There are three choices of modelRun, 
 # 'richness' (estimates species richness), 'redListRichness' (same but only for red-listed species) and 'redListSpecies'
 # (individual species models for red-listed species). We suggest running these individually.
-source("pipeline/models/speciesModelRuns.R")
 
+if(parallelisation){
+source("pipeline/parallelModelRun/modelPreparationForParallelRun.R")
+  source("pipeline/parallelModelRun/scheduleParallelRun.R")
+}else{
+  source("pipeline/models/speciesModelRuns.R")
+}
 # Now that all the necessary data has been produced, we can compile and export it for use in the app. Just use the 
 # function below to compile and move the necessary results into the visualisation folder. Here, date accessed is a 
 # required input.

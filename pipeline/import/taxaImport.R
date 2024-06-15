@@ -163,7 +163,7 @@ names(GBIFLists) <- unique(GBIFImportCompiled$name)
 
 # Import data from external sources using specialised scripts. For now, the only external data imported
 # is from ANO.
-GBIFLists[["ANOData"]] <- importANOData(tempFolderName, regionGeometry, focalTaxon)
+GBIFLists[["ANOData"]] <- importANOData(tempFolderName, regionGeometry, focalTaxon, download = downloadANOData)
 
 ###--------------------###
 ### 5. Dataset Upload ####

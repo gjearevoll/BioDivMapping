@@ -54,8 +54,10 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon, downloa
   
   # Import list of species
   ANOSpeciesFull <- st_read(ANOUnzippedFolder, layer="ANO_Art") %>%
-    filter(ParentGlobalID %in% ANOPoints$GlobalID)
+    dplyr::filter(ParentGlobalID %in% ANOPoints$GlobalID)
   
+  #Let's remove NAs from the names
+  ANOSpeciesFull <- ANOSpeciesFull[complete.cases(ANOSpeciesFull[, c("art_navn")]), ]
   
   # Narrow down to only species within our taxa
   taxaLegend <- data.frame(speciesName = unique(ANOSpeciesFull$art_navn))

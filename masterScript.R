@@ -48,6 +48,9 @@ modelRun <- "redListSpecies"  # one of: "redListSpecies", "redListRichness", "ri
 prior.range <- c(1000, 0.05)
 prior.sigma <- c(3, 0.05)
 
+# Indicates whether we want to download the ANOData or use the data from file
+downloadANOData <- TRUE
+
 # Let's get started! The first script initialiseRepository.R, which will create 
 # a folder for the specified dateAccessed, filters focalTaxa for taxa to be analyzed 
 # and assigns missing usageKeys. Last, it saves a copy of focalTaxa.csv, polyphyleticSpecies.csv,

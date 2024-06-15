@@ -14,7 +14,7 @@
 # This source file is activated after line 74 of the speciesImport.R script
 
 # Create destination folder for ANO data
-importANOData <- function(destinationFolder, regionGeometry, focalTaxon,
+importANOData <- function(destinationFolder, regionGeometry, focalTaxon, download = TRUE,
                           ANOEndpoint = "https://nedlasting.miljodirektoratet.no/naturovervaking/naturovervaking_eksport.gdb.zip") {
   
   if (!file.exists(destinationFolder)) {
@@ -22,11 +22,26 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon,
   }
   
   # Download and unzip ANO data from endpoint
-  ANOfile <- download.file(url=ANOEndpoint, 
-                           destfile=paste0(destinationFolder, "/naturovervaking_eksport.gdb.zip"), mode = "wb")
-  unzip(paste0(destinationFolder, "/naturovervaking_eksport.gdb.zip"), 
-        exdir = destinationFolder)
-  ANOUnzippedFolder <- paste0(destinationFolder, "/naturovervaking_eksport.gdb")
+  if(download){
+    ANOfile <- download.file(url=ANOEndpoint, 
+                             destfile=paste0(destinationFolder, "/naturovervaking_eksport.gdb.zip"), mode = "wb")
+    unzip(paste0(destinationFolder, "/naturovervaking_eksport.gdb.zip"), 
+          exdir = destinationFolder)
+    ANOUnzippedFolder <- paste0(destinationFolder, "/naturovervaking_eksport.gdb")
+  } else {
+    externalANOFolder <- "data/external/naturovervaking_eksport.gpkg.zip"
+    
+    # Stop code if file doesn't exist locally already
+    if (!file.exists(externalANOFolder)) {
+      stop("You are requesting a local download of ANO data but do not have the requisite file stored locally. Please save file at ",
+           externalANOFolder,"and retry.")
+    }
+    
+    # Otherwise, extract locally
+    unzip("data/external/naturovervaking_eksport.gpkg.zip", 
+          exdir = destinationFolder)
+    ANOUnzippedFolder <- paste0(destinationFolder, "/naturovervaking_eksport.gpkg")
+  }
   
   # Import geometry data to later match to species occurrnece
   ANOPoints <- st_read(ANOUnzippedFolder, layer="ANO_SurveyPoint")

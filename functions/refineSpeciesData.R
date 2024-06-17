@@ -11,7 +11,7 @@
 #' 
 #' 
 
-refineSpeciesData <- function(speciesData, redList, modelRun = "allSpecies") {
+refineSpeciesData <- function(speciesData, modelRun = "allSpecies") {
   
   # Cut down to only red-listed species
   if (modelRun %in% c("redListRichness", "redListSpecies")) {

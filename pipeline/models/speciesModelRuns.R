@@ -68,7 +68,7 @@ speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 # Define speciesData based on run type and create predictionData
-modelSpeciesData <- refineSpeciesData(speciesData, modelRun)
+modelSpeciesData <- refineSpeciesData(speciesData, redList, modelRun)
 segmentation <- modelRun %in% c("richness", "redListRichness")
 predictionData <- createPredictionData(c(res, res), regionGeometry, projCRS)
 

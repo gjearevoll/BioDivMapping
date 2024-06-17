@@ -73,6 +73,7 @@ for (ds in seq_along(speciesData)) {
   
   dataType <- unique(focalData$processing)
   datasetName <- names(speciesData)[ds]
+  cat("Currently processing dataset '", datasetName,"' \n", sep = "")
   newDataset <- NULL
   
   source("pipeline/integration/utils/defineProcessing.R")
@@ -87,6 +88,7 @@ for (ds in seq_along(speciesData)) {
       ),
       # Replace space with underscore in simpleScientificName
       simpleScientificName = gsub("-", "", gsub("×","", gsub(" ", "_", simpleScientificName)))
+      
     )
   
   # Add in polyphyletic taxa

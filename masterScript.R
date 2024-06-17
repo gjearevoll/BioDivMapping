@@ -22,6 +22,10 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 
 # Date of analysis from which working directory will be create/access
 dateAccessed <- "2024-01-26"  
+
+# There are instances you want to re-initialise repository and delete some files that should be re-run
+refresh <- FALSE
+
 # spatial level on which regionGeometry will be defined as accepted by defineRegion()
 level <- "county"  
 # specific region to be used as accepted by defineRegion()
@@ -50,6 +54,13 @@ prior.sigma <- c(3, 0.05)
 
 # Indicates whether we want to download the ANOData or use the data from file
 downloadANOData <- TRUE
+
+# If we have already run some code with the same dateAccessed and we want to 
+# re-start the initialisation process:
+if(refresh){
+  deleteFilesToRestart(dateAccessed)
+}
+
 
 # Let's get started! The first script initialiseRepository.R, which will create 
 # a folder for the specified dateAccessed, filters focalTaxa for taxa to be analyzed 

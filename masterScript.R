@@ -52,11 +52,15 @@ modelRun <- "redListSpecies"  # one of: "redListSpecies", "redListRichness", "ri
 prior.range <- c(1000, 0.05)
 prior.sigma <- c(3, 0.05)
 
+# Indicates whether we want to download the ANOData or use the data from file
+downloadANOData <- TRUE
+
 # If we have already run some code with the same dateAccessed and we want to 
 # re-start the initialisation process:
 if(refresh){
   deleteFilesToRestart(dateAccessed)
 }
+
 
 # Let's get started! The first script initialiseRepository.R, which will create 
 # a folder for the specified dateAccessed, filters focalTaxa for taxa to be analyzed 

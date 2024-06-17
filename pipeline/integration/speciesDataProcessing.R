@@ -75,6 +75,8 @@ for (ds in seq_along(speciesData)) {
   datasetName <- names(speciesData)[ds]
   newDataset <- NULL
   
+  cat("Currently processing dataset '", datasetName,"' \n", sep = "")
+  
   source("pipeline/integration/utils/defineProcessing.R")
   if (is.null(newDataset)) {break}
   

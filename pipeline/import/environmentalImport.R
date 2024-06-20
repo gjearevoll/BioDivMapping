@@ -139,9 +139,8 @@ for(parameter in seq_along(selectedParameters)) {
 # Crop, match projections and compile raster layers into one object
 parametersCropped <- parameterList |> 
   lapply(function(x) {
-    regionExt <- as.polygons(terra::project(regionGeometryBuffer, x), extent = TRUE)
     # Crop each covariate to extent of regionGeometryBuffer
-    out <- terra::crop(x, regionExt, snap = "out")
+    out <- x
     # Project all rasters to baseRaster and combine
     if(is.factor(x)) {
       # project categorical rasters

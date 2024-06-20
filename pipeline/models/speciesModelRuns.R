@@ -79,7 +79,8 @@ workflowList <- modelPreparation(focalTaxa, focalCovariates, modelSpeciesData,
                                  regionGeometry = regionGeometry,
                                  modelFolderName = modelFolderName, 
                                  environmentalDataList = environmentalDataList, 
-                                 crs = projCRS, segmentation)
+                                 crs = projCRS, segmentation,
+                                 nSegment = nSegment)
 focalTaxaRun <- names(workflowList)
 
 # Get bias fields
@@ -126,7 +127,9 @@ for (i in seq_along(workflowList)) {
   
   # Add bias fields if necessary
   if (!is.null(biasFieldList[[i]])) {
-    workflow$biasFields(biasFieldList[[i]], shareModel = TRUE)
+    #check the biasFiledList in the dataset
+    indx <- biasFieldList[[i]] %in% workflow$.__enclos_env__$private$datasetName
+    workflow$biasFields(biasFieldList[[i]][indx], shareModel = TRUE)
   }
   
   # Run model (this directly saves output to folder specified above)

@@ -17,7 +17,8 @@
 #' @importFrom intSDM startWorkflow
 #' 
 modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListModelled = NULL, regionGeometry, 
-                             modelFolderName, environmentalDataList = NULL, crs = NULL, segmentation = FALSE) {
+                             modelFolderName, environmentalDataList = NULL, crs = NULL, segmentation = FALSE,
+                             nSegment = NULL) {
   
   if(is.null(crs)){
     if(!is.null(environmentalDataList)){
@@ -35,26 +36,52 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
   # Create a list of different species combinations to lower simultaneous computing requirements for larger datasets
   if (segmentation) {
     speciesLists <- list()
+    
     for (focalTaxon in unique(focalTaxa$taxa)) {
       
       # Find the most common species to include in each run
       predictionDataset <- focalTaxa$predictionDataset[focalTaxa$taxa == focalTaxon]
-      if (length(predictionDataset) > 1) {predictionDataset <- unique(predictionDataset)}
+      
+      # Remove potential NAs from prediction datasets
+      if (length(predictionDataset) > 1) {
+        predictionDataset <- unique(predictionDataset)
+        predictionDataset <- predictionDataset[!is.na(predictionDataset)]
+      }
+      
       speciesCounts <- sort(table(unlist(lapply(speciesData, FUN = function(x) {
         x$simpleScientificName
         }))), TRUE)
       fullSpeciesList <- names(speciesCounts)
-      speciesCounts <- speciesCounts[fullSpeciesList %in% unique(speciesData[[predictionDataset]]$simpleScientificName)]
-      commonSpecies <- names(speciesCounts)[1:2]
-      restOfSpecies <- fullSpeciesList[!(fullSpeciesList %in% commonSpecies)]
+      speciesCountsInPredDataset <- speciesCounts[fullSpeciesList %in% unique(speciesData[[predictionDataset]]$simpleScientificName)]
+      
+      # These are the list of species in the prediction dataset
+      # So that we can have the prediction dataset and the rest of the species that 
+      # are not in the prediction dataset
+      speciesInPredictionDataset <- names(speciesCountsInPredDataset)
+      restOfSpecies <- fullSpeciesList[!(fullSpeciesList %in% speciesInPredictionDataset)]
+      
+      # Put the two datasets together
+      fullSpeciesList <- c(speciesInPredictionDataset, restOfSpecies)
       
       # Segment rest of species into lists of 8 species
-      segmentedList <- split(restOfSpecies, ceiling(seq_along(restOfSpecies)/8))
+      print(paste("Splitting ", length(fullSpeciesList), "species into", ceiling(length(fullSpeciesList)/nSegment), "groups")) 
+      groupings <- factor(rep(seq(1, floor(length(fullSpeciesList)/nSegment)), nSegment))
+      segmentedList <- split(fullSpeciesList, groupings)
+      
       speciesNames <- lapply(segmentedList, FUN = function(x) {
-        c(x, commonSpecies)
+        c(x)#, commonSpecies)
       })
+      
+      # Assign occurrences to each segmentation
+      nOccurences <- lapply(as.list(seq_along(segmentedList)), function(x){
+        # y <- 
+        speciesCounts[segmentedList[[x]]]
+      })
+      
       names(speciesNames) <- paste0(focalTaxon, seq(length(speciesNames)))
+      names(nOccurences) <- names(speciesNames)
       speciesLists[[focalTaxon]] <- speciesNames
+      saveRDS(nOccurences, paste0(tempFolderName, "/numberOfOccurrences.RDS"))
     }
     totalList <- do.call(c, speciesLists)
     
@@ -66,6 +93,8 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
   }
   
   workflowList <- list()
+  focaltaxa <- focalTaxa
+  
   # Begin running different species groups
   for (focalTaxon in taxaNames) {
     
@@ -110,12 +139,13 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
       next
     }  
     
-    
     # Get species list
     speciesList <- lapply(focalSpeciesDataRefined, FUN = function(x) {
       unique(x$simpleScientificName)
     })
     speciesList <- unique(do.call(c, speciesList))
+    
+    print(paste("Number of occurence records for", focalTaxon, "is", sum(nOccurences[[focalTaxon]])))
     
     # Initialise workflow, creating folder for model result storage
     workflow <- startWorkflow(
@@ -123,7 +153,8 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
       Species = speciesList,
       saveOptions = list(projectDirectory = modelFolderName, projectName =  focalTaxon), Save = TRUE
     )
-    workflow$addArea(Object = st_sf(regionGeometry))
+    geometryWithWeight <- st_sf(regionGeometry)
+    workflow$addArea(Object = st_sf(geometryWithWeight))
     
     # Add datasets - note that for the moment this excludes the NTNU field notes and ANO,
     # the model will currently not run with these involved
@@ -153,6 +184,8 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesData, redListMod
       cat(sprintf("Adding covariate '%s' to the model.\n", e))
       workflow$addCovariates(Object = environmentalDataList[[e]])
     }
+    
+    focalTaxa <- focaltaxa
     
     workflowList[[focalTaxon]] <- workflow
     

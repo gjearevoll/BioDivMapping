@@ -133,6 +133,7 @@ for(parameter in seq_along(selectedParameters)) {
   parameterList[[parameter]] <- rasterisedVersion
 }
 
+
 ###------------------------###
 ### 3. Data Consolidation ####
 ###------------------------###
@@ -155,6 +156,21 @@ parametersCropped <- parameterList |>
     }}) |>  
   rast() |>  # combine raster layers
   setNames(selectedParameters)  # assign names
+
+
+###----------------------------###
+### 3. Create quadratic terms ####
+###----------------------------###
+
+quadratics <- parameters[parameters$quadratic,]
+if (nrow(quadratics) > 0) {
+  for(i in seq_along(quadratics$quadratic)) {
+    parameter <- quadratics$parameters[i]
+    parametersCropped[[paste0(parameter, "_squared")]] <- parametersCropped[[parameter]]^2
+  }
+}
+
+
 
 ###--------------------###
 ### 4. Dataset Upload ####

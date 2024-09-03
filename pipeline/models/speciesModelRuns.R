@@ -69,9 +69,15 @@ projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
 # Define speciesData based on run type and create predictionData
 modelSpeciesData <- refineSpeciesData(speciesData, redList, modelRun)
-segmentation <- modelRun %in% c("richness", "redListRichness")
-predictionData <- createPredictionData(c(res, res), regionGeometry, projCRS)
+segmentation <- modelRun %in% c("richness")
 
+
+levels(environmentalDataList$land_cover_corine)[[1]][,2][is.na(levels(environmentalDataList$land_cover_corine)[[1]][,2])] <- "Water bodies"
+levels(environmentalDataList$land_cover_corine)[[1]][,2][28] <- "Moors and heathland"
+landCover <- environmentalDataList$land_cover_corine 
+
+values(environmentalDataList$land_cover_corine)[,1][is.nan(values(environmentalDataList$land_cover_corine)[,1])] <- 48
+levels(environmentalDataList$land_cover_corine) <- levels(landCover)
 
 # Prepare models
 workflowList <- modelPreparation(focalTaxa, focalCovariates, modelSpeciesData, 
@@ -79,8 +85,14 @@ workflowList <- modelPreparation(focalTaxa, focalCovariates, modelSpeciesData,
                                  regionGeometry = regionGeometry,
                                  modelFolderName = modelFolderName, 
                                  environmentalDataList = environmentalDataList, 
-                                 crs = projCRS, segmentation,
-                                 nSegment = nSegment)
+                                 crs = projCRS, 
+                                 segmentation = segmentation,
+                                 nSegment = nSegment,
+                                 speciesOccurenceThreshold = speciesOccurenceThreshold,
+                                 datasetOccurreneThreshold = datasetOccurreneThreshold, 
+                                 mergeDatasets = TRUE,
+                                 mergeAllDatasets = TRUE,
+                                 richness = TRUE)
 focalTaxaRun <- names(workflowList)
 
 # Get bias fields

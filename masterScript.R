@@ -21,7 +21,7 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # in the working folder for reproducibility.
 
 # Date of analysis from which working directory will be create/access
-dateAccessed <- "2024-01-26"  
+dateAccessed <- "2024-08-26"  
 
 # There are instances you want to re-initialise repository and delete some files that should be re-run
 refresh <- FALSE
@@ -33,24 +33,30 @@ region <- "50"
 # coordinate reference system to use for project. as accepted by sf::st_crs()
 crs <- 25833 
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
-res <- 1000 
+res <- 1000        # Resolution that covariates should be modelled at
 # Parameters to define mesh for random fields
-myMesh <- list(cutoff = 25000, max.edge=c(109000, 120000), offset= 80000)
+myMesh <- list(cutoff = 176, max.edge=c(26385, 175903), offset= c(1760, 18))
 # Defiine whether or not we want to upload this data to Wallace
 uploadToWallace <- FALSE
 # whether to use schedule download for GBIF data
 scheduledDownload <- TRUE
 # whether to wait and automatically download GBIF data when it is ready
-waitForGbif <- TRUE
+waitForGbif <- FALSE
 # minimum number of points for a species to be retained in the analysis
-redListThreshold <- 30
+redListThreshold <- 50
 # which categories are to be used for filtering/analysing red list species
 redListCategories <- c("VU", "EN", "CR")
 # the type of model that will be fitted to the data
-modelRun <- "redListSpecies"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
+modelRun <- "richness"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
+# number of species per group in richness model:
+nSegment <- 10
+speciesOccurenceThreshold <- 50
+datasetOccurreneThreshold <- 50000
 # model priors
-prior.range <- c(1000, 0.05)
-prior.sigma <- c(3, 0.05)
+prior.range <- c(15, 0.01)
+prior.sigma <- c(0.8, 0.01)
+# Indicates whether you want to run the model in parallel
+parallelisation <- TRUE
 
 # Indicates whether we want to download the ANOData or use the data from file
 downloadANOData <- TRUE
@@ -101,7 +107,7 @@ source("pipeline/integration/speciesDataProcessing.R")
 # FAQ page of the shiny app. If you want to try out some potential meshes, you can do so using the
 # util file and editing the default list below.
 
-meshTest(myMesh, regionGeometry, crs = crs)
+meshTest(myMesh, regionGeometry, print = TRUE, crs = crs)
 
 # Once you've figured that out, you can start running the models. Remember that this script is the one that's 
 # likely to take the longest, so grab a coffee or other beverage of choice. There are three choices of modelRun, 

@@ -104,12 +104,6 @@ if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
   biasFieldList <- rep(list(NULL), length(focalTaxonRun))
 }
 
-# Set model outputs
-modelOutputs <- if(modelRun == "richness") 
-  c('Richness', 'Bias') else if (modelRun == "redListRichness") 
-    'Richness' else
-    c('Predictions', 'Model')
-
 
 ###----------------###
 ### 2. Run models ####
@@ -127,15 +121,23 @@ for (i in seq_along(workflowList)) {
   # Find prediction dataset
   predictionDataset <- focalTaxa$predictionDataset[focalTaxa$taxa == gsub('[[:digit:]]+', '', focalGroup)]
   predictionDatasetShort <- gsub(" ", "", gsub("[[:punct:]]", "", predictionDataset))
-
+  
   # Add model characteristics (mesh, priors, output)
   workflow$addMesh(cutoff= myMesh$cutoff, max.edge=myMesh$max.edge, offset= myMesh$offset)
-  workflow$specifySpatial(prior.range = prior.range,
-                          prior.sigma = prior.sigma)
-  # workflow$workflowOutput(c('Predictions', 'Bias', 'Model', 'Maps'))
-  workflow$workflowOutput(modelOutputs)
-  workflow$modelOptions(INLA = list(num.threads = 12, control.inla=list(int.strategy = 'eb', cmin = 0),safe = TRUE),
-                        Richness = list(predictionIntercept = predictionDatasetShort))
+  workflow$specifySpatial(prior.range = c(15, 0.01),
+                          prior.sigma = c(0.8, 0.01))
+  workflow$workflowOutput("Model")
+  workflow$modelOptions(ISDM = list(pointCovariates = NULL,
+                                    Offset = NULL, pointsIntercept = TRUE, 
+                                    pointsSpatial = NULL))
+  workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetShort, 
+                                        speciesSpatial = 'replicate',samplingSize = 0.25))
+  workflow$specifyPriors(effectNames = "Intercept", Mean = 0, Precision = 1,
+                         priorIntercept = list(prior="loggamma", param = c(1, 5e-5), fixed = TRUE, inital = -10),
+                         priorGroup = list(model = "iid", hyper = list(prec = list(prior = "loggamma", param = c(1, 5e-5),  
+                                                                                   fixed = TRUE, inital = 2))))
+  
+  workflow$modelFormula(biasFormula = ~ distance_water + distance_roads)
   
   # Add bias fields if necessary
   if (!is.null(biasFieldList[[i]])) {
@@ -144,11 +146,13 @@ for (i in seq_along(workflowList)) {
     workflow$biasFields(biasFieldList[[i]][indx], shareModel = TRUE)
   }
   
-  # Run model (this directly saves output to folder specified above)
-  sdmWorkflow(workflow, predictionData = predictionData)
+  # To run a very quick model
+  sdmWorkflow(workflow,inlaOptions = list(num.threads = 4, control.inla=list(int.strategy = 'eb', cmin = 0.01,
+                                                                             control.vb= list(enable = FALSE)),
+                                          safe = TRUE, verbose = TRUE))
   
   # Change model name to ensure no overwrite of richness data
-  if (modelRun %in% c("richness", "redListRichness")) {
+  if (modelRun %in% c("richness")) {
     file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
                 paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Preds.rds"))
   }

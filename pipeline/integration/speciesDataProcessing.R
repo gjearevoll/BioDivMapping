@@ -8,7 +8,7 @@
 library(dplyr)
 library(stringr)
 library(sf)
-library(rgdal)
+#library(rgdal)
 library(terra)
 
 # Import local functions

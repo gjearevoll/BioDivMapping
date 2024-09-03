@@ -272,7 +272,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, redList
   workflowList <- list()
   focaltaxa <- focalTaxa
   # Begin running different species groups
-  for (focalTaxon in taxaNames[1:10]) {
+  for (focalTaxon in taxaNames) {
     
     focalGroup <- if (segmentation) gsub('[[:digit:]]+', '', focalTaxon) else focalTaxon
     

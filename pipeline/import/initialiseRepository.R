@@ -69,10 +69,10 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
                       myMesh = myMesh,
                       redListCategories = redListCategories,
                       redListThreshold = redListThreshold,
-                      modelRun = modelRun,
                       prior.range = prior.range,
                       prior.sigma = prior.sigma,
                       nSegment = nSegment,
+                      downloadANOData = downloadANOData,
                       speciesOccurenceThreshold = speciesOccurenceThreshold,
                       datasetOccurreneThreshold = datasetOccurreneThreshold)
   # save

@@ -61,10 +61,16 @@ defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, ext
                   , ncol =2, byrow = T
     )
     ## create polygon objects
-    regionGeometry <- st_polygon(list(res))
+    library(sf)
+    regionGeometry <- data.frame(lon = c(extentCoords['west'], extentCoords['east'])
+                                 , lat = c(extentCoords['south'], extentCoords['north'])) %>% 
+      st_as_sf(coords = c("lon", "lat"), 
+               crs = 25833) %>% 
+      st_bbox() %>% 
+      st_as_sfc()
     rm('res')
   }
-  
+  library(sf)
   # Align project coordinates with the rest of our polygons.
   regionGeometry <- st_transform(regionGeometry, crs =  "+proj=longlat +ellps=WGS84")
   

@@ -4,7 +4,7 @@
 "precipitation",FALSE,"worldclim",FALSE
 "slope",TRUE,"geonorge",FALSE
 "temperature",FALSE,"worldclim",FALSE
-"human_density",FALSE,"ssb",FALSE
+"human_density",TRUE,"ssb",FALSE
 "building_density",FALSE,"ssb",FALSE
 "net_primary_productivity",TRUE,"modis",FALSE
 "land_cover_corine",TRUE,"corine",FALSE

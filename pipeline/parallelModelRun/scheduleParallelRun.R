@@ -1,31 +1,26 @@
+# Load in all necessary parameters and environmental necessities
+
 args <- commandArgs(trailingOnly = TRUE)
 
 start <- Sys.time()
 
 i <- as.numeric(args[1])
 covariatesSquared <- TRUE
-
-#.libPaths(c("/cluster/projects/nn11017k/R"))
+.libPaths(c("/cluster/projects/nn11017k/R"))
 library(parallel)
 library(foreach)
 library(doParallel)
 getwd()
-interestedGroup <- "vascularPlants"
-load(paste0(interestedGroup, "workflowWorkspace.RData"))
 
-# For some reason i changes to 1 after loading the workspace
+interestedGroup <- "vascularPlants"
+load(paste0(interestedGroup,"workflowWorkspace.RData"))
 
 print(i)
-#Load packages
-#.libPaths(c("/cluster/projects/nn11017k/R"))
-#.libPaths(c("/cluster/projects/nn11017k/R", .libPaths()))
+
 library(intSDM)
 library(rgbif)
 library(terra)
 library(dplyr)
-
-# Load the workspace witht the workflowList object
-#load("workflowWorkspace.RData")
 
 focalGroup <- names(workflowList)[i]
 workflow <- workflowList[[focalGroup]]
@@ -49,9 +44,12 @@ datasetNames
 namesSpeciesData <- names(speciesData)
 namesSpeciesDataShort <- gsub(" ", "", gsub("[[:punct:]]", "", datasetNames))
 
+if(length(predictionDatasetShort) > 1){
+  predictionDatasetShort <- predictionDatasetShort[1]
+}
 
 if(!predictionDatasetShort %in% datasetNames){
-  predictionDatasetShort <-  "mergedDatasetPA" #namesSpeciesDataShort[1]
+  predictionDatasetShort <-  namesSpeciesDataShort[!predictionDatasetShort %in% namesSpeciesDataShort][1]
 }
 
 rm("speciesData") 
@@ -59,7 +57,7 @@ rm("speciesData")
 
 print(predictionDatasetShort)
 
-# create a mesh
+# create the mesh based on our predefined parameters
 meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = FALSE)
 # Add model characteristics (mesh, priors, output)
 #workflow$addMesh(cutoff= myMesh$cutoff/1000, max.edge=myMesh$max.edge/1000, offset= myMesh$offset/1000)
@@ -69,42 +67,27 @@ workflow$addMesh(Object = meshToUse)
 workflow$specifySpatial(prior.range = c(15, 0.01),
                         prior.sigma = c(0.8, 0.01))
 
-#modelOutputs
 
+modelOutputs <- c('Predictions', 'Model')
 
+workflow$workflowOutput(modelOutputs)
 
-workflow$workflowOutput("Model")
-print("lalala")
 
 workflow$modelOptions(ISDM = list(pointCovariates = NULL,
-                                  Offset = NULL, pointsIntercept = TRUE, 
+                                  Offset = NULL, 
+                                  pointsIntercept = TRUE, 
                                   pointsSpatial = NULL)
 )
-# workflow$modelOptions(ISDM = list(control.inla=list(int.strategy = 'eb', cmin = 0.01),
-#                                   # num.threads = 20,
-#                                   safe = TRUE, 
-#                                   verbose = TRUE, 
-#                                   debug = TRUE
-# ))
+
 
 workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetShort, 
-                                      speciesSpatial = "replicate",
-                                      samplingSize = 0.25
+                                      speciesSpatial = "replicate"
+                                      #samplingSize = 0.25
 ))
 
 
-# Add bias fields if necessary
-# if (!is.null(biasFieldList[[i]])) {
-#  indx <- biasFieldList[[i]] %in% c(datasetNames)
-#  workflow$biasFields(biasFieldList[[i]][indx], shareModel = TRUE)
-#}
 
-# I have to attach the environmental covariates again
-# For some reason it seems not to find the covariates raster after loading 
-# the previous workspace
-
-#focalTaxa$distance_water <- FALSE
-
+# Need to do a final edit of CORINE data
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
 levels(environmentalDataList$land_cover_corine)[[1]][,2][is.na(levels(environmentalDataList$land_cover_corine)[[1]][,2])] <- "Water bodies"
 levels(environmentalDataList$land_cover_corine)[[1]][,2][28] <- "Moors and heathland"
@@ -113,33 +96,34 @@ sort(unique(values(environmentalDataList$land_cover_corine)[,1]))
 values(environmentalDataList$land_cover_corine)[,1][is.nan(values(environmentalDataList$land_cover_corine)[,1])] <- 48
 levels(environmentalDataList$land_cover_corine) <- levels(landCover)
 
-
-
-
+# Now make sure the loaded and used environmental covariates match
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
+
+print(focalCovariates$parameters)
 env <- colnames(focalTaxa)[colnames(focalTaxa) %in% focalCovariates$parameters]
 focalTaxa <- focalTaxa[,c("taxa", env)]
 print( interestedGroup)
 focalTaxa <- focalTaxa[focalTaxa$taxa %in% interestedGroup,]
-env<- env[apply(focalTaxa[,-1], 2, any)]
+env <- env[apply(focalTaxa[,-1], 2, any)]
 
-quadratics <- focalCovariates[focalCovariates$quadratic & focalCovariates$parameters %in% env,]
-if (nrow(quadratics) > 0) {
-  for(i in seq_along(quadratics$quadratic)) {
-    parameter <- quadratics$parameters[i]
-    env <- c(env, paste0(parameter, "_squared"))
+# Ensure we have our quadratic terms applied
+if(covariatesSquared){
+  if("summer_precipitation" %in% env){
+    environmentalDataList$summer_precipitation_squared <- (environmentalDataList$summer_precipitation)^2
+    env <- c(env, "summer_precipitation_squared")
+  }
+  if("summer_temperature" %in% env){ 
+    environmentalDataList$summer_temperature_squared <- (environmentalDataList$summer_temperature)^2
+    env <- c(env,  "summer_temperature_squared")
   }
 }
 
-
-env <- names(environmentalDataList)
-
+# Add covariates to the model
 for (e in env) {
   cat(sprintf("Adding covariate '%s' to the model.\n", e))
   workflow$addCovariates(Object = environmentalDataList[[e]])
 }
 
-levels(workflow$.__enclos_env__$private$Covariates$land_cover_corine)
 
 # Specify formula for the model
 cat("Specifying priors for the model")
@@ -150,31 +134,31 @@ workflow$modelFormula(covariateFormula = NULL,
 # Specify priors for the precision of intercept and groups
 cat("Specifying priors for the hyperparameters in the model")
 
-# workflow$specifyPriors(priorIntercept = list(prior = 'pc.prec', param = c(0.1, 0.1)), 
-#                        priorGroup = list(prior = 'pc.prec', param = c(0.1, 0.1)),
-#                        effectName = 'Intercept', Mean = 0, Precision = 0.1) 
-
 # Run model (this directly saves output to folder specified above)
 workflow$specifyPriors(effectNames = c("Intercept"), Mean = 0, Precision = 1,
                        priorIntercept = list(initial = -10, fixed = TRUE),
                        priorGroup = list(model = "iid",
-                                         hyper = list(prec = list(initial = 2, fixed = TRUE))))
+                                         hyper = list(prec = list(initial = 0, fixed = TRUE))))
 
 cat("Fitting the models")
 intSDM::sdmWorkflow(workflow, 
-                    inlaOptions = list(control.inla=list(int.strategy = 'eb', cmin = 0.01,  
-                                                         control.vb= list(enable = FALSE)),
-                                       # num.threads = 20,
+                    predictionData = predictionData,
+                    inlaOptions = list(control.inla=list(int.strategy = 'eb', cmin = 0.01),
+                                       num.threads = 20,
+                                       #num.threads = 5, 
                                        safe = TRUE, 
                                        verbose = TRUE, 
-                                       debug = TRUE,
-                                       inla.mode = "experimental"
-                    )
+                                       debug = TRUE)
 )
 cat("Finished fitting the models")
 
 # Change model name to ensure no overwrite of richness data
 cat("Changing the names of the returned output.")
+if (modelRun %in% c("richness", "redListRichness")) {
+  file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
+              paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Preds.rds"))
+}
+print(folderName)
 print(focalGroup)
 
 end <- Sys.time()

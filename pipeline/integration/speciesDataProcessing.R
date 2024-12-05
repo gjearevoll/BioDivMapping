@@ -134,16 +134,9 @@ processedPresenceData <- processedDataCompiled[processedDataCompiled$individualC
 processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
 saveRDS(processedPresenceData, paste0(folderName, "/processedPresenceData.RDS"))
 
-###-----------------------###
-### 4. Upload to Wallace ####
-###-----------------------###
-
-if (uploadToWallace) {
-  source("pipeline/integration/uploadToWallace.R")
-}
 
 ###----------------------------###
-### 5. Produce red list check ####
+### 4. Produce red list check ####
 ###----------------------------###
 
 # Here we see which species have sufficient presence/count data to actually run an individual species model
@@ -152,7 +145,7 @@ redList$valid <- redList$GBIFName %in% redListSpecies$validSpecies
 saveRDS(redList, paste0(folderName, "/redList.RDS"))
 
 ###-----------------------------------###
-### 6. Produce species richness data ####
+### 5. Produce species richness data ####
 ###-----------------------------------###
 
 # Provide empty raster
@@ -169,7 +162,7 @@ if(nrow(processedRedListPresenceData) > 0){
 }
 
 ###----------------------###
-### 7. Produce metadata ####
+### 6. Produce metadata ####
 ###----------------------###
 
 # To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
@@ -177,7 +170,7 @@ rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_fi
 
 
 ###---------------------###
-### 8. Download photos ####
+### 7. Download photos ####
 ###---------------------###
 
 # We need to download photos from iNaturalist, including their URL and the user name of the individual

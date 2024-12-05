@@ -76,6 +76,7 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
                               acceptedScientificName = sapply(surveyedSpecies, FUN = findGBIFName),
                               taxonKey = sapply(surveyedSpecies, FUN = function(x) {taxaCheck(x, focalTaxon$key)})) %>%
     filter(!is.na(taxonKey))
+  if (nrow(speciesLegend) == 0) {return(NULL)}
   
   # Create table with all data combinations that we can match to
   eventTable <- expand.grid(species = speciesLegend$surveyedSpecies, eventID = unique(eventLocationsSF$eventID))

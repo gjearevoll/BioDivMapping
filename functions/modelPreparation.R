@@ -130,8 +130,10 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, redList
         cumsum(.)
       
       # We select datasets that do not meet a certain criterion
+      dataToMerge <- TRUE
+      if (length(speciesData) == 1) {dataToMerge <- FALSE}
       
-      if (mergeDatasets == TRUE) {
+      if (mergeDatasets == TRUE & dataToMerge == TRUE) {
         
         if(!mergeAllDatasets){
           
@@ -181,26 +183,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, redList
           st_as_sf()
         
         names(mergedDatasets)[i] <- paste0("mergedDataset", uniqueDataType)
-        #}
-        # } else {
-        #split the mergedDataset into two
-        # mergedDatasetsSplit <- split(mergedDataWithType$datasetName, c(1,2))
-        # 
-        # for(i in seq_along(mergedDatasetsSplit)){
-        #   mergedDatasets[[i]] <- speciesData[mergedDatasetsSplit[[i]]]%>%
-        #     do.call("rbind", .)%>%
-        #     as.data.frame(., row.names = NULL)
-        #   
-        #   rownames(mergedDatasets[[i]]) <- NULL
-        #   
-        #   mergedDatasets[[i]] <- mergedDatasets[[i]] %>%
-        #     st_as_sf()
-        #   
-        #   names(mergedDatasets)[i] <- paste0("mergedDataset",uniqueDataType, i)
-        # }
-        
-        
-        #names(occurrencesInEachDataset[occurrencesInEachDataset < datasetOccurreneThreshold])
+
         #Put the merged dataset together with the rest of the speciesData
         if(!is.null(unlist(speciesData[predictionDataset]))){  
           speciesData <- c(speciesData[predictionDataset], 
@@ -237,9 +220,12 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, redList
       
       # Segment rest of species into lists of 8 species
       cat(paste("Splitting ", length(fullSpeciesList), "species into", ceiling(length(fullSpeciesList)/nSegment), "groups")) 
+      if (length(fullSpeciesList) > 1) {
       groupings <- factor(rep(seq(1, floor(length(fullSpeciesList)/nSegment)), nSegment))
       segmentedList <- split(fullSpeciesList, groupings)
-      
+      } else {
+        segmentedList <- list(fullSpeciesList)
+      }
       # segmentedList <- split(fullSpeciesList, ceiling(seq_along(fullSpeciesList)/nSegment))
       #segments <- rep(1:ceiling(length(restOfSpecies)/nSegment), nSegment)[1:length(restOfSpecies)]
       #segmentedList <- split(restOfSpecies, segments)

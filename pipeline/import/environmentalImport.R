@@ -162,7 +162,11 @@ parametersCropped <- parameterList |>
 ### 3. Create quadratic terms ####
 ###----------------------------###
 
-quadratics <- parameters[parameters$quadratic,]
+# Check which parameters are needed to make sure we don't take the quadratic of an unwanted term
+useParam <- apply(focalTaxon[, colnames(focalTaxon) %in% parameters$parameters], 2, any)
+parametersForUse <- names(useParam)[useParam]
+
+quadratics <- parameters[parameters$quadratic & parameters$parameters %in% parametersForUse,]
 if (nrow(quadratics) > 0) {
   for(i in seq_along(quadratics$quadratic)) {
     parameter <- quadratics$parameters[i]

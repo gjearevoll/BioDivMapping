@@ -36,7 +36,6 @@ library(dplyr)
 sapply(list.files("functions", full.names = TRUE), source)
 
 # Ensure that modelRun and dateAccessed are specified
-if (!exists("modelRun")) stop("You need to specify the variable modelRun")
 if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
 
 # Specify folders for storage of all run data
@@ -50,15 +49,9 @@ modelFolderName <- paste0(folderName, "/modelOutputs")
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
 
-# Redefine modelRun after controlPars import using args if necessary
-if (length(args) != 0) {
-  modelRun <- args[2]
-}
-
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
-redList <- if(modelRun %in% c("allSpecies")) NULL else
-  readRDS(paste0(folderName, "/redList.RDS"))
+redList <- readRDS(paste0(folderName, "/redList.RDS"))
 
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
@@ -67,10 +60,19 @@ environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported
 speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
-# Define speciesData based on run type and create predictionData
-modelSpeciesData <- refineSpeciesData(speciesData, redList, modelRun)
-segmentation <- modelRun %in% c("richness")
+# Import bird data from TOV and remove all no-relevant birds from other datasets
+if ("birds" %in% focalTaxa$taxa) {
+  speciesData[["TOVData"]] <- st_transform(readRDS("localArchive/birdDataTOV.RDS"), st_crs(speciesData[[1]])) |>
+    st_crop(st_transform(regionGeometry, st_crs(speciesData[[1]])))
+  focalTaxa$predictionDataset[focalTaxa$taxa %in% c("birds", "groundNestingBirds", "woodpeckers")] <- "TOVData"
+  speciesData <- lapply(speciesData, FUN = function(x) {
+    x <- x[!(x$taxa %in% c("birds", "woodpeckers", "groundNestingBirds") &
+               !(x$acceptedScientificName %in% unique(speciesData$TOVData$acceptedScientificName))),]
+  })
+}
 
+# Define speciesData based on run type and create predictionData
+modelSpeciesData <- refineSpeciesData(speciesData, redList, "richness")
 
 levels(environmentalDataList$land_cover_corine)[[1]][,2][is.na(levels(environmentalDataList$land_cover_corine)[[1]][,2])] <- "Water bodies"
 levels(environmentalDataList$land_cover_corine)[[1]][,2][28] <- "Moors and heathland"
@@ -86,7 +88,7 @@ workflowList <- modelPreparation(focalTaxa, focalCovariates, modelSpeciesData,
                                  modelFolderName = modelFolderName, 
                                  environmentalDataList = environmentalDataList, 
                                  crs = projCRS, 
-                                 segmentation = segmentation,
+                                 segmentation = TRUE,
                                  nSegment = nSegment,
                                  speciesOccurenceThreshold = speciesOccurenceThreshold,
                                  datasetOccurreneThreshold = datasetOccurreneThreshold, 
@@ -98,7 +100,7 @@ focalTaxaRun <- names(workflowList)
 # Get bias fields
 if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
   dataTypes <- read.csv(paste0(folderName, "/metadataSummary.csv"))
-  redListUsed <- if (modelRun %in% c("richness","allSpecies")) NULL else redList
+  redListUsed <- NULL
   biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], modelSpeciesData, redListUsed)
 } else {
   biasFieldList <- rep(list(NULL), length(focalTaxonRun))
@@ -132,12 +134,16 @@ for (i in seq_along(workflowList)) {
                                     pointsSpatial = NULL))
   workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetShort, 
                                         speciesSpatial = 'replicate',samplingSize = 0.25))
-  workflow$specifyPriors(effectNames = "Intercept", Mean = 0, Precision = 1,
-                         priorIntercept = list(prior="loggamma", param = c(1, 5e-5), fixed = TRUE, inital = -10),
-                         priorGroup = list(model = "iid", hyper = list(prec = list(prior = "loggamma", param = c(1, 5e-5),  
-                                                                                   fixed = TRUE, inital = 2))))
+  # Run model (this directly saves output to folder specified above)
+  workflow$specifyPriors(effectNames = c("Intercept"), Mean = 0, Precision = 1,
+                         priorIntercept = list(initial = -10, fixed = TRUE),
+                         priorGroup = list(model = "iid",
+                                           hyper = list(prec = list(initial = 2, fixed = TRUE))))
   
-  workflow$modelFormula(biasFormula = ~ distance_water + distance_roads)
+  workflow$modelFormula(covariateFormula = ~ summer_precipitation + summer_temperature + aspect +
+                          net_primary_productivity + land_cover_corine + human_density + habitat_heterogeneity +
+                          summer_precipitation_squared + summer_temperature_squared, 
+                        biasFormula = ~ distance_water + distance_roads)
   
   # Add bias fields if necessary
   if (!is.null(biasFieldList[[i]])) {
@@ -149,13 +155,14 @@ for (i in seq_along(workflowList)) {
   # To run a very quick model
   sdmWorkflow(workflow,inlaOptions = list(num.threads = 4, control.inla=list(int.strategy = 'eb', cmin = 0.01,
                                                                              control.vb= list(enable = FALSE)),
-                                          safe = TRUE, verbose = TRUE))
+                                          safe = TRUE, verbose = FALSE, debug = TRUE,
+                                          inla.mode = "experimental"))
   
   # Change model name to ensure no overwrite of richness data
-  if (modelRun %in% c("richness")) {
-    file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
-                paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Preds.rds"))
-  }
+  # if (modelRun %in% c("richness")) {
+  #   file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
+  #               paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Preds.rds"))
+  # }
 }
 
 

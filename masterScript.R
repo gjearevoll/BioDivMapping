@@ -105,21 +105,22 @@ source("pipeline/integration/speciesDataProcessing.R")
 # We then run our models. NOTE: This is the point where defining a Mesh becomes important. You can read
 # more about what a Mesh is, and how it works in the README.md file in the head of the repository, or in the
 # FAQ page of the shiny app. If you want to try out some potential meshes, you can do so using the
-# util file and editing the default list below.
-
+# util file and editing the default list below. We've pre-defined a mesh here which is suitable for Norway.
+myMesh <- list(cutoff = 176, max.edge=c(26850, 175903), offset= c(1760, 1200)*10)
 meshTest(myMesh, regionGeometry, print = TRUE, crs = crs)
 
-# Once you've figured that out, you can start running the models. Remember that this script is the one that's 
-# likely to take the longest, so grab a coffee or other beverage of choice. There are three choices of modelRun, 
-# 'richness' (estimates species richness), 'redListRichness' (same but only for red-listed species) and 'redListSpecies'
-# (individual species models for red-listed species). We suggest running these individually.
+# Once you've figured that out, you can start running the models. Remember that this stage will be the longest.
+# If you are running this for all of Norway, at this point automation is unfortunately not an option, and you
+# will need to ignore the following two scripts and log onto Sigma2 to use their High Performance Computing 
+# infrastructure - you can find the files necessary to use this service in pipeline/parallelModelRun.
 source("pipeline/models/speciesModelRuns.R")
 
-# Now that all the necessary data has been produced, we can compile and export it for use in the app. Just use the 
-# function below to compile and move the necessary results into the visualisation folder. Here, date accessed is a 
-# required input.
+# Once the models are run, you can run the prediction scripts.
+source("pipeline/models/speciesPredictionRuns.R")
 
-source("pipeline/models/utils/modelResultsCompilation.R")
+# Now that the computing intensive scripts are finished, you can come back to the comfort of working in R.
+# We need to compute sampling densities, which can be done with the followign script.
+source("pipeline/models/samplingDensityProduction.R")
 
 # And you're done! Now all that's left to do is to open up the app, which you can do by opening either the
 # server.R or ui.R file in the visualisation/hotspotMaps folder and hitting "Run App".

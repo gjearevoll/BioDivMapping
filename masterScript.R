@@ -21,42 +21,36 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # in the working folder for reproducibility.
 
 # Date of analysis from which working directory will be create/access
-dateAccessed <- "2024-08-26"  
+dateAccessed <- "2025-02-03"
 
 # There are instances you want to re-initialise repository and delete some files that should be re-run
 refresh <- FALSE
 
 # spatial level on which regionGeometry will be defined as accepted by defineRegion()
-level <- "county"  
+level <- "county"
 # specific region to be used as accepted by defineRegion()
 region <- "50" 
 # coordinate reference system to use for project. as accepted by sf::st_crs()
-crs <- 25833 
+crs <- 32633 
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
-res <- 1000        # Resolution that covariates should be modelled at
+res <- 500        # Resolution that covariates should be modelled at
 # Parameters to define mesh for random fields
 myMesh <- list(cutoff = 176, max.edge=c(26385, 175903), offset= c(1760, 18))
-# Defiine whether or not we want to upload this data to Wallace
-uploadToWallace <- FALSE
 # whether to use schedule download for GBIF data
 scheduledDownload <- TRUE
 # whether to wait and automatically download GBIF data when it is ready
 waitForGbif <- FALSE
-# minimum number of points for a species to be retained in the analysis
-redListThreshold <- 50
 # which categories are to be used for filtering/analysing red list species
 redListCategories <- c("VU", "EN", "CR")
-# the type of model that will be fitted to the data
-modelRun <- "richness"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
 # number of species per group in richness model:
 nSegment <- 10
 speciesOccurenceThreshold <- 50
-datasetOccurreneThreshold <- 50000
+datasetOccurreneThreshold <- 5000
 # model priors
-prior.range <- c(15, 0.01)
+prior.range <- c(100, 0.01)
 prior.sigma <- c(0.8, 0.01)
 # Indicates whether you want to run the model in parallel
-parallelisation <- TRUE
+parallelisation <- FALSE
 
 # Indicates whether we want to download the ANOData or use the data from file
 downloadANOData <- TRUE
@@ -66,7 +60,6 @@ downloadANOData <- TRUE
 if(refresh){
   deleteFilesToRestart(dateAccessed)
 }
-
 
 # Let's get started! The first script initialiseRepository.R, which will create 
 # a folder for the specified dateAccessed, filters focalTaxa for taxa to be analyzed 
@@ -89,7 +82,7 @@ source("pipeline/import/defineRegionGeometry.R")
 
 # You also need to define whether or not you want to use a scheduled download. Scheduled downloads produce a DOI,
 # and enable handling of much larger datasets. If you're playing around with a small dataset, you can probably hit 
-# FALSE here.
+# FALSE above, at line 40.
 
 source("pipeline/import/taxaImport.R")
 
@@ -119,8 +112,7 @@ source("pipeline/models/speciesModelRuns.R")
 source("pipeline/models/speciesPredictionRuns.R")
 
 # Now that the computing intensive scripts are finished, you can come back to the comfort of working in R.
-# We need to compute sampling densities, which can be done with the followign script.
+# We need to compute sampling densities, which can be done with the following script.
 source("pipeline/models/samplingDensityProduction.R")
 
-# And you're done! Now all that's left to do is to open up the app, which you can do by opening either the
-# server.R or ui.R file in the visualisation/hotspotMaps folder and hitting "Run App".
+

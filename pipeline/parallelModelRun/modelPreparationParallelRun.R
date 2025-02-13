@@ -1,24 +1,26 @@
-#### MODEL RUNS ####
+
 
 ###----------------------###
 ### 0. Bash preparation ####
 ###----------------------###
-
-# The lib paths is for the cluster
 .libPaths(c("/cluster/projects/nn11017k/R"))
-library(foreach)
-library(parallel)
-library(doParallel)
+library(intSDM)
+library(rgbif)
+library(terra)
 library(dplyr)
+library(foreach)
 
-#### MODEL RUNS ####
+args <- commandArgs(trailingOnly = TRUE)
 
-###----------------------###
-### 0. Bash preparation ####
-###----------------------###
+start <- Sys.time()
+
+dateAccessed <- as.character(args[1])
+newSegmentNumber <- as.numeric(args[2])
+cat(dateAccessed)
+
+if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
 
 # define repo folder names
-dateAccessed <- "2024-12-04" 
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 
@@ -30,27 +32,23 @@ readRDS(paste0(folderName,"/controlPars.RDS")) %>%
 ### 1. Preparation ####
 ###-----------------###
 modelRun <- "richness" 
-cat("Preparing data for model run for date", dateAccessed, " and model run", modelRun)
-
-library(intSDM)
-library(rgbif)
-library(terra)
-library(dplyr)
-
-
+cat("\nPreparing data for model run for date", dateAccessed, " and model run", modelRun)
 
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
 
 # Ensure that modelRun and dateAccessed are specified
-if (!exists("modelRun")) stop("You need to specify the variable modelRun")
-if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
 
 # model output folder
 modelFolderName <- paste0(folderName, "/modelOutputs")
 
-# Use 500m grid
-res <- 500
+# create folder for workspaces
+if (!dir.exists(paste0(folderName, "/workspaces"))) {
+  dir.create(paste0(folderName, "/workspaces"))
+}
+
+# Use 10000m grid for practice predictions
+res <- 10000
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -72,26 +70,65 @@ names(speciesData)[names(speciesData) %in% speciesDatanameToChange] <- speciesDa
 # Proj CRS needs to match SSB's Rutenett
 projCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=km +no_defs"
 
-cat("All data loaded.", length(speciesData), "species datasets successfully loaded.")
+cat("\nAll data loaded.", length(speciesData), "species datasets successfully loaded.")
+
+
+# Import bird data from TOV and remove all no-relevant birds from other datasets
+if ("birds" %in% focalTaxa$taxa) {
+  speciesData[["TOVData"]] <- st_transform(readRDS("data/run_2025-01-04/temp/birdDataTOV.RDS"), st_crs(speciesData[[1]])) |>
+    st_crop(st_transform(regionGeometry, st_crs(speciesData[[1]])))
+  focalTaxa$predictionDataset[focalTaxa$taxa %in% c("birds", "groundNestingBirds", "woodpeckers")] <- "TOVData"
+  speciesData <- lapply(speciesData, FUN = function(x) {
+    x <- x[!(x$taxa %in% c("birds", "woodpeckers", "groundNestingBirds") &
+               !(x$acceptedScientificName %in% unique(speciesData$TOVData$acceptedScientificName))),]
+  })
+  cat("Birds data filtered on TOV species.")
+}
+
 
 
 # Define speciesData based on run type and create predictionData
-modelSpeciesData <- refineSpeciesData(speciesData, redList, modelRun)
-segmentation <- modelRun %in% c("richness", "redListRichness")
+modelSpeciesData <- refineSpeciesData(speciesData, redList, "richness")
 predictionData <- createPredictionData(c(res, res), regionGeometry)
 
-cat("Prediction data and model species data successfully created.")
+# Split up data for vascular plants
+# if (focalTaxa$taxa == "vascularPlants") {
+#   if (nrow(focalTaxa) > 1) {stop("cannot divide taxa data for more than one taxa simultaneously")}
+#   speciesDivisions <- 3
+#   # Get taxa species list
+#   modelSpeciesDataBasic <- do.call(rbind, lapply(modelSpeciesData, FUN = function(ds1) {
+#     st_drop_geometry(ds1[,c("simpleScientificName")])
+#   }))
+#   talliedData <- arrange(tally(group_by(modelSpeciesDataBasic, simpleScientificName)),-n)
+#   cleanedData <- talliedData[talliedData$n > 1 & !is.na(talliedData$simpleScientificName),]
+#   newTaxaNames <- paste0("vascularPlants", LETTERS[1:speciesDivisions])
+#   cleanedData$names <- rep(newTaxaNames, nrow(cleanedData)/speciesDivisions)[1:nrow(cleanedData)]
+
+#   modelSpeciesData <- lapply(modelSpeciesData, FUN = function(ds2) {
+#     ds2$taxa <- cleanedData$names[match(ds2$simpleScientificName, cleanedData$simpleScientificName)]
+#     ds2
+#   })
+#   focalTaxa <- do.call("rbind", replicate( 
+#     speciesDivisions, focalTaxa, simplify = FALSE)) 
+#   focalTaxa$taxa <- newTaxaNames
+#   cat("Plant data is being split up into ", speciesDivisions, " sections. New taxa names are ", focalTaxa$taxa)
+# }
+
+cat("\nPrediction data and model species data successfully created. Starting to create segments of ", newSegmentNumber, " species each.")
+
+# Create list of taxa run
+listSegments <- list()
 
 # Prepare models
-for(iter in 1:nrow(focalTaxa)){
+for(iter in 1:1){
   workflowList <- modelPreparation(focalTaxa[iter, ], focalCovariates, modelSpeciesData, 
                                    redListModelled = redList$GBIFName[redList$valid], 
                                    regionGeometry = regionGeometry,
                                    modelFolderName = modelFolderName, 
                                    environmentalDataList = environmentalDataList, 
                                    crs = projCRS, 
-                                   segmentation = segmentation,
-                                   nSegment = nSegment,
+                                   segmentation = TRUE,
+                                   nSegment = newSegmentNumber,
                                    speciesOccurenceThreshold = speciesOccurenceThreshold,
                                    datasetOccurreneThreshold = datasetOccurreneThreshold, 
                                    mergeAllDatasets = TRUE,
@@ -105,17 +142,17 @@ for(iter in 1:nrow(focalTaxa)){
   # Get bias fields
   if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
     dataTypes <- read.csv(paste0(folderName, "/metadataSummary.csv"))
-    redListUsed <- if (modelRun %in% c("richness","allSpecies")) NULL else redList
-    biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], modelSpeciesData, redListUsed)
+    biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], modelSpeciesData, NULL)
   } else {
     biasFieldList <- rep(list(NULL), length(focalTaxonRun))
   }
   
   
-  modelOutputs <- if(modelRun == "richness") 
-    c('Richness') else if (modelRun == "redListRichness") 
-      'Richness' else
-        c('Predictions', 'Model')
+  modelOutputs <- "Richness"
   
-  
-  save.image(file = paste0(focalTaxa[iter, 1], "workflowWorkspace.RData"))}
+  listSegments[[iter]] <- focalTaxaRun
+  if (grepl("vascularPlants", focalTaxa$taxa[iter])) {saveRDS(focalTaxaRun, paste0(folderName, "/segmentList", focalTaxa$taxa[iter] ,".RDS"))}
+  save.image(file = paste0(folderName,"/workspaces/",  focalTaxa[iter, 1], "workflowWorkspace.RData"))
+}
+
+saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))

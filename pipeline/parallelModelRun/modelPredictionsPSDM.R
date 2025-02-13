@@ -7,9 +7,12 @@ args <- commandArgs(trailingOnly = TRUE)
 start <- Sys.time()
 
 i <- as.numeric(args[1])
+dateToUse <- args[2]
 covariatesSquared <- TRUE
 .libPaths(c("/cluster/projects/nn11017k/R"))
-
+#devtools::install_github("skiptoniam/qrbp")
+# You can run this from the command line using for example
+# Rscript filePath/speciesModelRuns.R 2024-02-08 allSPecies
 
 ###-----------------###
 ### 1. Import data ####
@@ -26,24 +29,34 @@ library(tidyterra)
 library(stringr)
 #library(ppmData)
 
-interestedGroup <- "vascularPlants"
-load(paste0(interestedGroup,"workflowWorkspace.RData"))
-sampSize <- 0.25
+# Load in segment number and interested group name
+segmentList <- readRDS(paste0("data/run_", dateToUse, "/segmentList.RDS"))
 
-print(i)
+interestedGroup <- gsub('[[:digit:]]+', '', segmentList[i])
+load(paste0("data/run_", dateToUse, "/workspaces/", interestedGroup,"workflowWorkspace.RData"))
+
+# For some reason i changes to 1 after loading the workspace
+
+print(segmentList[i])
+#Load packages
+#.libPaths(c("/cluster/projects/nn11017k/R"))
 
 library(intSDM)
 library(rgbif)
 library(terra)
 library(dplyr)
 
+# Load the workspace witht the workflowList object
+#load("workflowWorkspace.RData")
 
-focalGroup <- names(workflowList)[i]
+focalGroup <- segmentList[i]
 workflow <- workflowList[[focalGroup]]
 print(focalGroup)
 
-rm("workflowList")
+sampSize <- focalTaxa$sampleSize[focalTaxa$taxa == interestedGroup]
+sampSize <- ifelse(is.na(sampSize), 1, sampSize)
 
+rm("workflowList")
 
 # load the control parameters
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
@@ -53,6 +66,7 @@ readRDS(paste0(folderName,"/controlPars.RDS")) %>%
 predictionDataset <- focalTaxa$predictionDataset[focalTaxa$taxa == gsub('[[:digit:]]+', '', focalGroup)]
 predictionDatasetShort <- gsub(" ", "", gsub("[[:punct:]]", "", predictionDataset))
 predictionDatasetShort <- predictionDatasetShort[1]
+print(predictionDatasetShort)
 # Choose one of the datasets within each segmentation as the prediction data
 # I prefer to choose the one with the smallest data points
 datasetNames <- workflow$.__enclos_env__$private$datasetName
@@ -64,9 +78,10 @@ namesSpeciesDataShort <- gsub(" ", "", gsub("[[:punct:]]", "", datasetNames))
 if(!predictionDatasetShort %in% datasetNames){
   predictionDatasetShort <-  namesSpeciesDataShort[!predictionDatasetShort %in% namesSpeciesDataShort][1]
 }
+cat("Prediction data used is",predictionDatasetShort)
 
 
-dateAccessed <- "2024-12-04" 
+dateAccessed <- dateToUse
 modelRun <- "richness"
 covariatesSquared <- TRUE
 # Import local functions
@@ -86,9 +101,16 @@ modelFolderName <- paste0(folderName, "/modelOutputs")
 # import project control parameters into the environment
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
+cat("Loaded contral pars")
+
 
 # Ensure that modelRun is specified
 if (!exists("modelRun")) stop("You need to specify the variable modelRun")
+
+# Redefine modelRun after controlPars import using args if necessary
+#if (length(args) != 0) {
+# modelRun <- args[2]
+#}
 
 # Prediction resolution in stated in the units used in preparing the data
 # That is metres
@@ -100,8 +122,14 @@ focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= 
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
 myMesh <- list(cutoff = 176, max.edge=c(26385, 175903), offset= c(1760, 18))
 mesh <- meshTest(myMesh, regionGeometry, crs = crs)
+#load("data/meshForProject.RData")
+#mesh <- meshToUse
+cat("Loaded mesh")
+if(covariatesSquared){
+  #environmentalDataList$summer_precipitation_squared <- (environmentalDataList$summer_precipitation)^2
+  environmentalDataList$summer_temperature_squared <- (environmentalDataList$summer_temperature)^2
+}
 
-# Re-edit corine data
 levels(environmentalDataList$land_cover_corine)[[1]][,2][is.na(levels(environmentalDataList$land_cover_corine)[[1]][,2])] <- "Water bodies"
 levels(environmentalDataList$land_cover_corine)[[1]][,2][28] <- "Moors and heathland"
 landCover <- environmentalDataList$land_cover_corine 
@@ -114,23 +142,30 @@ projCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_
 
 # Get the crs used in fitting the models
 modelCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=km +no_defs"
+#mesh <- mesh%>%
+#st_transform(., modelCRS)
+#environmentalDataList <- project(environmentalDataList, projCRS )
 
 # Import fitted models
-models <- lapply(paste0(modelFolderName, "/", interestedGroup, i), function(x){
+models <- lapply(paste0(modelFolderName, "/", focalGroup), function(x){
   try(list.files(x, pattern = paste0("richnessModel.rds"), recursive = TRUE, full.names = TRUE))
 })
+cat(modelFolderName, "/", focalGroup)
 
 ###-----------------###
 ### 2. Prep objects ###
 ###-----------------##
 
 # Define prediction raster grid
+
+
 types <- sapply(seq(nlyr(environmentalDataList)), function(x){
   environmentalDataList[[x]][,1] %>% unlist %>% class
 })
-
+cat("Loaded types")
 origCovs <- names(environmentalDataList)
 
+cat("Named env list")
 
 # define template prediction raster 
 # convert crs to format accepted by sf, terra, and intSDM (& dependencies) 
@@ -158,6 +193,8 @@ if(any(types == "factor")){
   predGrid <- terra::project(environmentalDataList, predRast, method = if(predRes <= res) "bilinear" else "average") 
 }
 
+cat("Defined prediction data")
+
 # The prediction data is in a bounded box, and for landCover, we have values within
 # the entire bounded box. We need to mask the covariates by the regionGeometry
 predGrid <- regionGeometry %>%
@@ -173,18 +210,25 @@ geometries <- xyFromCell(predGrid, seq(ncell(predGrid))) %>%
 
 
 origCovs <- names(environmentalDataList)
+cat(origCovs)
 # Define model outputs based on modelRun
-modelOutputs <- "Richness"
+modelOutputs <- if(modelRun == "richness") {
+  c('Richness')
+} else if (modelRun == "redListRichness") {
+  'Richness' 
+} else {
+  c('Predictions', 'Bias', 'Covs', 'Spatial')
+}
 
 ###-------------------------###
 ### 3. Generate predictions ###
 ###-------------------------###
 
-for(i in seq_along(models)){
+for(mod in seq_along(models)){
   # identify focal taxon
-  focalTaxon <- strsplit(models[i][[1]], split = "/")[[1]][[4]]
+  focalTaxon <- strsplit(models[mod][[1]], split = "/")[[1]][[4]]
   # import model
-  model <- readRDS(models[i][[1]])
+  model <- readRDS(models[mod][[1]])
   # identify species in model
   speciesIn <- model$species$speciesIn %>% unlist %>% unique
   # indentify if bias field
@@ -209,7 +253,7 @@ for(i in seq_along(models)){
   
   # get complete list of covariate columns from which to predict
   covs <- unique(c(covs, catCovs))
-  
+  cat("\nCompleted list of covs")
   
   # Obtain prediction data
   predData <- predGrid %>% 
@@ -222,19 +266,22 @@ for(i in seq_along(models)){
     st_sf()%>%
     #na.omit()%>%
     st_transform(., modelCRS)#%>% # transform the prediction data to the units used in model runs
-  # filter(rowSums(is.na(.)) != (ncol(.)-1)) # Now we take all the rows with sum of NAs equal to the number of columns of the dataframe minus the 
   
   # Transform predGrid
   transformedPredRast <- project(predRast, modelCRS)
+  cat("\nTransformed pred rast")
   
   regionGeometry <- regionGeometry %>%
     st_transform(modelCRS)
   
+  cat("Starting prediction")
   predData <- sf::st_intersection(predData, regionGeometry)
   # update names
   names(predData) <- c(covs,
                        paste(rep(speciesIn, each = length(covs)), 
                              covs, sep = "_"), "geometry")
+  
+  cat("Generated pred names")           
   # identify bias covs
   if(!is.null(model$spatCovs$biasFormula)){
     biasCovs <- covs[covs %in% attributes(terms(model$spatCovs$biasFormula))$term.labels]
@@ -242,34 +289,73 @@ for(i in seq_along(models)){
     covs <- covs[!covs %in% attributes(terms(model$spatCovs$biasFormula))$term.labels]
   }
   
+  cat("\nIdentified bias covs")
+  
   # Generate & convert & Save model/predicts (currently for all species grouped)
   for(type in modelOutputs){
     ret <- split(1:nrow(predData), seq(1, ceiling(nrow(predData) / 10000)))
-    
-    pred <- lapply(ret, function(x){
-      richnessEst <- intSDM:::obtainRichness(model, predictionData = predData[x, ], predictionIntercept = predictionDatasetShort, sampleSize = sampSize)
-      return(richnessEst$Probabilities)
-    })
-    
-    # species
-    species <- names(pred[[1]])
-    for(sp in species){
-      print(sp)
+    if(type == "Predictions") {
+      pred <- lapply(ret, function(x){
+        predict(model, data = predData[x, ], predictor = TRUE, mesh = mesh, num.threads = 10)
+      })
+    } else if(type == "Bias" && biasField) {
+      pred <- lapply(ret, function(x){
+        predict(model, data = predData[x, ], bias = TRUE, mesh = mesh, num.threads = 10) 
+      })
+      
+      head(pred[[1]])
+      #get species information and save
+      
       spPred <- lapply(pred, function(x){
-        res <-   x[[sp]]
+        res <-   x[[1]][[1]]#%>%
+        # dplyr::filter(speciesName == 1)
       })%>%
         do.call("rbind", .)%>%
         dplyr::select("mean", "sd", "q0.025", "q0.5", "q0.975", "median")
       
+      head(spPred)
+      
       spPred <- rasterize(spPred, transformedPredRast , names(spPred)[!names(spPred) %in% names(predData)])
       # define species directory & save prediction
-      path <- paste(c(strsplit(models[i][[1]], "/")[[1]][1:4], sp), collapse = "/")  # path
-      #make_path(path)
+      path <- paste(c(strsplit(models[mod][[1]], "/")[[1]][1:4], "Bias"), collapse = "/")  # path
+      # make_path(path)
       if(!file.exists(path)){
         dir.create(path)
       }
       saveRDS(spPred, file.path(path, paste0(type, ".rds")))
+      
+    } else if(type== "Covs") {
+      pred <- predict(model, data = predData, covariates = covs, mesh = mesh)  # model$spatCovs$name
+    } else if(type == "Spatial") {
+      pred <- predict(model, data = predData, spatial = TRUE, mesh = mesh)
+    } else if(type == "Richness" ){
+      pred <- lapply(ret, function(x){
+        richnessEst <- intSDM:::obtainRichness(model, predictionData = predData[x, ], predictionIntercept = predictionDatasetShort, sampleSize = sampSize)
+        return(richnessEst$Probabilities)
+      })
+      
+      # species
+      species <- names(pred[[1]])
+      for(sp in species){
+        print(sp)
+        spPred <- lapply(pred, function(x){
+          res <-   x[[sp]]
+        })%>%
+          do.call("rbind", .)%>%
+          dplyr::select("mean", "sd", "q0.025", "q0.5", "q0.975", "median")
+        
+        spPred <- rasterize(spPred, transformedPredRast , names(spPred)[!names(spPred) %in% names(predData)])
+        # define species directory & save prediction
+        path <- paste(c(strsplit(models[mod][[1]], "/")[[1]][1:4], sp), collapse = "/")  # path
+        #make_path(path)
+        if(!file.exists(path)){
+          dir.create(path)
+        }
+        saveRDS(spPred, file.path(path, paste0(type, ".rds")))
+      }
     }
+    
+    
   }
 }
 

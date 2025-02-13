@@ -5,6 +5,7 @@ args <- commandArgs(trailingOnly = TRUE)
 start <- Sys.time()
 
 i <- as.numeric(args[1])
+dateToUse <- args[2]
 covariatesSquared <- TRUE
 .libPaths(c("/cluster/projects/nn11017k/R"))
 library(parallel)
@@ -12,17 +13,20 @@ library(foreach)
 library(doParallel)
 getwd()
 
-interestedGroup <- "vascularPlants"
-load(paste0(interestedGroup,"workflowWorkspace.RData"))
+# Load in segment number and interested group name
+segmentList <- readRDS(paste0("data/run_", dateToUse, "/segmentList.RDS"))
 
-print(i)
+interestedGroup <- gsub('[[:digit:]]+', '', segmentList[i])
+load(paste0("data/run_", dateToUse, "/workspaces/", interestedGroup,"workflowWorkspace.RData"))
+
+print(segmentList[i])
 
 library(intSDM)
 library(rgbif)
 library(terra)
 library(dplyr)
 
-focalGroup <- names(workflowList)[i]
+focalGroup <- segmentList[i]
 workflow <- workflowList[[focalGroup]]
 print(focalGroup)
 
@@ -53,41 +57,52 @@ if(!predictionDatasetShort %in% datasetNames){
 }
 
 rm("speciesData") 
-
+gc()
 
 print(predictionDatasetShort)
 
-# create the mesh based on our predefined parameters
+
+# create a mesh
 meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = FALSE)
 # Add model characteristics (mesh, priors, output)
-#workflow$addMesh(cutoff= myMesh$cutoff/1000, max.edge=myMesh$max.edge/1000, offset= myMesh$offset/1000)
 workflow$addMesh(Object = meshToUse)
 
 # Add priors to the model
 workflow$specifySpatial(prior.range = c(15, 0.01),
                         prior.sigma = c(0.8, 0.01))
 
+#modelOutputs
 
-modelOutputs <- c('Predictions', 'Model')
+modelOutputs <- if(modelRun == "richness") 
+  c('Predictions', 'Model') else if (modelRun == "redListRichness") 
+    'Richness' else
+      c('Predictions', 'Model')
 
 workflow$workflowOutput(modelOutputs)
 
+if(modelRun == "richness" ){
+  workflow$modelOptions(ISDM = list(pointCovariates = NULL,
+                                    Offset = NULL, 
+                                    pointsIntercept = TRUE, 
+                                    pointsSpatial = NULL)
+  )
+  
+  
+  workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetShort, 
+                                        speciesSpatial = "replicate"
+                                        #samplingSize = 0.25
+  ))
+}else{
+  workflow$modelOptions(ISDM = list(pointCovariates = NULL,
+                                    Offset = NULL, pointsIntercept = TRUE, 
+                                    pointsSpatial = NULL), 
+                        Ipoints = list(method = 'direct')) 
+}
 
-workflow$modelOptions(ISDM = list(pointCovariates = NULL,
-                                  Offset = NULL, 
-                                  pointsIntercept = TRUE, 
-                                  pointsSpatial = NULL)
-)
 
+focalTaxa$snow_cover <- FALSE
+focalTaxa$forest_line <- FALSE
 
-workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetShort, 
-                                      speciesSpatial = "replicate"
-                                      #samplingSize = 0.25
-))
-
-
-
-# Need to do a final edit of CORINE data
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
 levels(environmentalDataList$land_cover_corine)[[1]][,2][is.na(levels(environmentalDataList$land_cover_corine)[[1]][,2])] <- "Water bodies"
 levels(environmentalDataList$land_cover_corine)[[1]][,2][28] <- "Moors and heathland"
@@ -96,7 +111,7 @@ sort(unique(values(environmentalDataList$land_cover_corine)[,1]))
 values(environmentalDataList$land_cover_corine)[,1][is.nan(values(environmentalDataList$land_cover_corine)[,1])] <- 48
 levels(environmentalDataList$land_cover_corine) <- levels(landCover)
 
-# Now make sure the loaded and used environmental covariates match
+
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 
 print(focalCovariates$parameters)
@@ -106,7 +121,6 @@ print( interestedGroup)
 focalTaxa <- focalTaxa[focalTaxa$taxa %in% interestedGroup,]
 env <- env[apply(focalTaxa[,-1], 2, any)]
 
-# Ensure we have our quadratic terms applied
 if(covariatesSquared){
   if("summer_precipitation" %in% env){
     environmentalDataList$summer_precipitation_squared <- (environmentalDataList$summer_precipitation)^2
@@ -117,13 +131,14 @@ if(covariatesSquared){
     env <- c(env,  "summer_temperature_squared")
   }
 }
-
-# Add covariates to the model
+# 
 for (e in env) {
   cat(sprintf("Adding covariate '%s' to the model.\n", e))
   workflow$addCovariates(Object = environmentalDataList[[e]])
 }
 
+rm("environmentalDataList")
+gc()
 
 # Specify formula for the model
 cat("Specifying priors for the model")
@@ -141,6 +156,9 @@ workflow$specifyPriors(effectNames = c("Intercept"), Mean = 0, Precision = 1,
                                          hyper = list(prec = list(initial = 0, fixed = TRUE))))
 
 cat("Fitting the models")
+cat(dateToUse)
+cat(folderName)
+
 intSDM::sdmWorkflow(workflow, 
                     predictionData = predictionData,
                     inlaOptions = list(control.inla=list(int.strategy = 'eb', cmin = 0.01),
@@ -154,10 +172,10 @@ cat("Finished fitting the models")
 
 # Change model name to ensure no overwrite of richness data
 cat("Changing the names of the returned output.")
-if (modelRun %in% c("richness", "redListRichness")) {
-  file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
-              paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Preds.rds"))
-}
+
+file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
+            paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Preds.rds"))
+
 print(folderName)
 print(focalGroup)
 

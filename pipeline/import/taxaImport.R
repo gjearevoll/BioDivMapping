@@ -87,6 +87,8 @@ redList <- redList[!is.na(redList$taxa),]
 ### 3. GBIF Import ####
 ###-----------------###
 
+# First we need to buffer the regionGeometry to make sure we get everything
+# regionGeometryExpanded <- st_buffer(regionGeometry, 0.01)
 
 # If you want a scheduled download, the script will stop here (unless you've already run the download on GBIF)
 # and you'll have to start again later once the download has completed

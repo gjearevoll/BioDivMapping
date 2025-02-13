@@ -18,7 +18,7 @@
 "aquaticInsects",787,"order","Plecoptera",FALSE,NA,"National insect monitoring in Norway",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,1
 "aquaticInsects",789,"order","Odonata",FALSE,NA,"National insect monitoring in Norway",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,1
 "aquaticInsects",1451,"order","Megaloptera",FALSE,NA,"National insect monitoring in Norway",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,1
-"vascularPlants",7707728,"phylum","Tracheophyta",TRUE,NA,"ANOData",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,0.25
+"vascularPlants",7707728,"phylum","Tracheophyta",TRUE,NA,"ANOData",TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,0.25
 "mosses",35,"phylum","Bryophyta",FALSE,NA,"",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,1
 "mammals",803,"order","Soricomorpha",FALSE,NA,"",FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,1
 "mammals",785,"order","Lagomorpha",FALSE,NA,"",FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,1

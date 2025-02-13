@@ -109,7 +109,8 @@ for (ds in seq_along(speciesData)) {
 names(processedData) <- namesProcessedData
 
 # Save for use in model construction
-processedData <- processedData[lapply(processedData,nrow)>0]
+processedData <- processedData[!(unlist(lapply(processedData,is.null)))]
+processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 
 ###-------------------------###
 ### 3. Mask lake/city data ####

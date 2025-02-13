@@ -13,15 +13,12 @@ if (length(args) > 2) {
   # Set arguments
   dateAccessed <- args[1]
   predRes <- args[2]
-  modelRun <- args[3]
   # Set the working directory
   setwd("~/BioDivMapping")
 }
 
 # You can run this from the command line using for example
 # Rscript filePath/speciesModelRuns.R 2024-02-08 allSPecies
-
-dateAccessed <- "2024-10-24"
 
 ###-----------------###
 ### 1. Import data ####
@@ -37,7 +34,6 @@ library(tidyterra)
 library(stringr)
 library(intSDM)
 
-predRes <- 1000
 # Import local functions
 sapply(list.files("functions", pattern = "\\.R$", full.names = TRUE), source)
 
@@ -55,14 +51,6 @@ modelFolderName <- paste0(folderName, "/modelOutputs")
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
 
-# # Ensure that modelRun is specified
-# if (!exists("modelRun")) stop("You need to specify the variable modelRun")
-
-# # Redefine modelRun after controlPars import using args if necessary
-# if (length(args) != 0) {
-#   modelRun <- args[2]
-# }
-
 # Import model objects datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 # extentCoords <- c(174567.2, 6847988, 202197.8, 6878097) |>
@@ -73,7 +61,7 @@ focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= 
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
 environmentalDataList <- lapply(environmentalDataList, FUN = function(x) {
   crop(x, st_transform(regionGeometry, st_crs(environmentalDataList))) 
-  })|>  
+})|>  
   rast()
 
 levels(environmentalDataList$land_cover_corine)[[1]][,2][is.na(levels(environmentalDataList$land_cover_corine)[[1]][,2])] <- "Water bodies"
@@ -121,16 +109,7 @@ geometries <- xyFromCell(predGrid, seq(ncell(predGrid))) %>%
   st_as_sf(coords = c("x", "y"), crs = crs) 
 
 # Define model outputs based on modelRun
-modelOutputs <- if(modelRun == "richness") {
-  c('Richness', 'Bias')
-} else if (modelRun == "redListRichness") {
-  'Richness' 
-} else {
-  c(#'Predictions', 
-    #'Bias', 
-    'Covs')#,
-  # 'Spatial')
-}
+modelOutputs <- "Richness"
 
 
 mesh <- myMesh
@@ -141,7 +120,7 @@ mesh <- myMesh
 
 timeStart <- Sys.time()
 
-for(i in seq_along(models)[39:46]){
+for(i in seq_along(models)){
   # identify focal taxon
   focalTaxon <- strsplit(models[i], "/")[[1]][[4]]
   
@@ -211,26 +190,27 @@ for(i in seq_along(models)[39:46]){
         return(richnessEst$Probabilities)
       })
     } 
-
+    
     # species
     
     if (type == "Richness") {
-    species <- names(pred[[1]])
-    for(sp in species){
-      print(sp)
-      spPred <- lapply(pred, function(x){
-        res <-   x[[sp]]
-      })%>%
-        do.call("rbind", .)%>%
-        select("mean", "sd", "q0.025", "q0.5", "q0.975", "median")
-      spPred <- rasterize(spPred, predGrid, names(spPred)[!names(spPred) %in% names(predData)])
-      # define species directory & save prediction
-      path <- paste(c(strsplit(models[i][[1]], "/")[[1]][1:4], sp), collapse = "/")  # path
-      # make_path(path)
-      if(!file.exists(path)){
-        dir.create(path)
+      species <- names(pred[[1]])
+      for(sp in species){
+        print(sp)
+        spPred <- lapply(pred, function(x){
+          res <-   x[[sp]]
+        })%>%
+          do.call("rbind", .)%>%
+          select("mean", "sd", "q0.025", "q0.5", "q0.975", "median")
+        spPred <- rasterize(spPred, predGrid, names(spPred)[!names(spPred) %in% names(predData)])
+        # define species directory & save prediction
+        path <- paste(c(strsplit(models[i][[1]], "/")[[1]][1:4], sp), collapse = "/")  # path
+        # make_path(path)
+        if(!file.exists(path)){
+          dir.create(path)
+        }
+        saveRDS(spPred, file.path(path, paste0(type, ".rds")))
       }
-      saveRDS(spPred, file.path(path, paste0(type, ".rds")))
     } else if (type == "Bias") {
       spPred <- lapply(pred, function(x){
         res <-   x[[sp]]
@@ -241,7 +221,7 @@ for(i in seq_along(models)[39:46]){
       path <- paste(c(strsplit(models[i][[1]], "/")[[1]][1:4]), collapse = "/")
       saveRDS(spPred, file.path(path, paste0("Bias", ".rds")))
     }
-    }
+    
   }
 }
 

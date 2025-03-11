@@ -27,15 +27,15 @@ dateAccessed <- "2024-01-26"
 refresh <- FALSE
 
 # spatial level on which regionGeometry will be defined as accepted by defineRegion()
-level <- "county"  
+level <- "country"  
 # specific region to be used as accepted by defineRegion()
-region <- "50" 
+region <- "Norway" 
 # coordinate reference system to use for project. as accepted by sf::st_crs()
 crs <- 25833 
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
 res <- 1000 
 # Parameters to define mesh for random fields
-myMesh <- list(cutoff = 25000, max.edge=c(109000, 120000), offset= 80000)
+myMesh <- list(cutoff = 30000, max.edge=c(4000000, 380000), offset= c(4000, 10000))
 # Defiine whether or not we want to upload this data to Wallace
 uploadToWallace <- FALSE
 # whether to use schedule download for GBIF data
@@ -47,10 +47,15 @@ redListThreshold <- 30
 # which categories are to be used for filtering/analysing red list species
 redListCategories <- c("VU", "EN", "CR")
 # the type of model that will be fitted to the data
-modelRun <- "redListSpecies"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
+modelRun <- "richness"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
+# number of species per group in richness model:
+nSegment <- 10
 # model priors
-prior.range <- c(1000, 0.05)
-prior.sigma <- c(3, 0.05)
+prior.range <- c(10, 0.01)
+prior.sigma <- c(1, 0.01)
+
+# Indicates whether you want to run the model in parallel
+parallelisation <- FALSE
 
 # Indicates whether we want to download the ANOData or use the data from file
 downloadANOData <- TRUE

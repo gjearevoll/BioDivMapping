@@ -62,13 +62,24 @@ gc()
 print(predictionDatasetShort)
 
 
+# myMesh <- list(cutoff = 176, max.edge=c(26385, 175903), offset= c(1760, 18))
+
 # create a mesh
-meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = FALSE)
+myMesh$cutoff <- 3*1000
+myMesh$offset <- c(20, 100) * 1000
+myMesh$max.edge <- c(50, 300) * 1000
+
+
+meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE, bufferDist = 150 * 1000)
 # Add model characteristics (mesh, priors, output)
 workflow$addMesh(Object = meshToUse)
 
+
+# fm_int(domain = meshToUse, samplers = regionGeometry, int.args = list(method = 'direct', nsub1 = 10, nsub2 = 10))
+# 
+
 # Add priors to the model
-workflow$specifySpatial(prior.range = c(15, 0.01),
+workflow$specifySpatial(prior.range = c(15 * 1000, 0.01),
                         prior.sigma = c(0.8, 0.01))
 
 #modelOutputs
@@ -146,6 +157,9 @@ workflow$modelFormula(covariateFormula = NULL,
                       biasFormula = ~ distance_water +  distance_roads 
 ) 
 
+workflow$biasFields(datasetName = "mergedDatasetPO", prior.range = c(15 * 1000, 0.01),
+                    prior.sigma = c(0.8, 0.01))
+
 # Specify priors for the precision of intercept and groups
 cat("Specifying priors for the hyperparameters in the model")
 
@@ -166,7 +180,8 @@ intSDM::sdmWorkflow(workflow,
                                        #num.threads = 5, 
                                        safe = TRUE, 
                                        verbose = TRUE, 
-                                       debug = TRUE)
+                                       debug = TRUE),
+                    ipointsOptions = list(method = 'direct', nsub1 = 10, nsub2 = 10)
 )
 cat("Finished fitting the models")
 

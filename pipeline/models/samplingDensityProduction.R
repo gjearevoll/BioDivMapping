@@ -57,19 +57,21 @@ environmentalDataList <- terra::project(rast(paste0(folderName, "/environmentalD
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"))
 processedData <- readRDS(paste0(folderName, "/processedPresenceData.RDS"))
 
-predRast <- rast(ext(environmentalDataList), res = c(0.5, 0.5), crs = crs(projCRS))
+
+# Import country border
+norwayBorder2 <- sf::read_sf("data/external/norge_border/Noreg_polygon.shp")
+norwayBorderProjected2 <- terra::project(vect(norwayBorder2), crs("EPSG:32633"))
+
+predRast <- rast(ext(norwayBorderProjected2), res = c(500, 500), crs = "EPSG:32633")
 
 # Also need to mask out areas outside of Norway
 regionToMap <- terra::project(vect(regionGeometry), predRast)
 cityOwin <- as.owin(sf::st_as_sf(regionToMap))
 
-# Import country border
-norwayBorder2 <- sf::read_sf("data/external/norge_border/Noreg_polygon.shp")
-norwayBorderProjected2 <- terra::project(vect(norwayBorder2), crs(projCRS))
-
 # Define taxa list (depends on birds)
+birdSubgroups <- c("groundNesters", "waders", "woodpeckers")
 if (focalTaxa$taxa == "birds" & aggregated != TRUE) {
-  taxaToRun <- c("groundNestingBirds", "waders", "woodpeckers")
+  taxaToRun <- birdSubgroups
 } else {
   taxaToRun <- focalTaxa$taxa
 }
@@ -86,7 +88,7 @@ for (t in taxaToRun) {
     woodpeckers <- getGbifBackbone(birdsToImport) %>% filter(family =="Picidae")
     processedData$taxa <- ifelse(processedData$acceptedScientificName %in% woodpeckers$scientificName, 
                                       "woodpeckers", "birds")
-  } else if (t %in% c("groundNestingBirds", "waders")) {
+  } else if (t %in% c("groundNesters", "waders")) {
     birdChart <- read.csv("data/external/birdTypeList.csv", sep = ",") %>%
       filter(group == t)
     processedData$taxa <- ifelse(processedData$simpleScientificName %in% gsub(" ","_",birdChart$simpleName), 
@@ -99,7 +101,9 @@ for (t in taxaToRun) {
     filter(taxa %in% t) %>%
     dplyr::select("dataType", "geometry", "simpleScientificName")
   
-  for (type in c("allspecies", "threatenedspecies", "ansvarsarter")) {
+  managementGroups <- if (t %in% birdSubgroups) "allspecies" else c("allspecies", "threatenedspecies", "ansvarsarter")
+  
+  for (type in managementGroups) {
     
     if (type == "threatenedspecies") {
       dataCombined2 <- dataCombined %>%
@@ -116,13 +120,13 @@ for (t in taxaToRun) {
     
     
     cat("Converting", t, "data to density plot.\n")
-    vectorised <- terra::project(vect(dataCombined2), crs(projCRS))
+    vectorised <- terra::project(vect(dataCombined2), crs("EPSG:32633"))
     points <- terra::crds(vectorised)
     p <- ppp(points[,1], points[,2], window = cityOwin)
     KF <- 0.04
     
     # Need to set dimensions to get 500 by 500m picture
-    dimensions <- c(round((ext(regionToMap)[4] - ext(regionToMap)[3])/.200), round((ext(regionToMap)[2] - ext(regionToMap)[1])/.200))
+    dimensions <- c(round((ext(regionToMap)[4] - ext(regionToMap)[3])/200), round((ext(regionToMap)[2] - ext(regionToMap)[1])/200))
     
     cat("Rasterising", t, "density plot.\n")
     ds <- density(p, adjust = KF, dimyx = dimensions)

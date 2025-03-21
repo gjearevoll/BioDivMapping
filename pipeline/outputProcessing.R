@@ -125,7 +125,7 @@ for (t in 1:length(taxaWithData)) {
 
 # here we need to group all insects as one, so we need to reduce the list somewhat.
 
-taxaToMerge <- c("insects")
+taxaToMerge <- c("insects", "birds", "vascularPlants", "fungi", "lichens")
 # Start looping through the groups
 speciesData2 <- lapply(taxaToMerge, FUN = function(taxa) {
   
@@ -224,7 +224,7 @@ for (taxa in taxaToMerge) {
 
   scaledRasterWithMasks <- lapply(richnessFilesToProcess, FUN = function(x) {
     statsRaster <- rast(x)
-    cat("Reprojecting",x)
+    cat("\nReprojecting",x)
     statsRasterReproj <- terra::project(statsRaster, "EPSG:32633", method = "mode")
 
     # Check mask matches
@@ -240,7 +240,7 @@ for (taxa in taxaToMerge) {
 
     statsRasterCropped <- crop(statsRasterCropped, norwayBorderProjected2, mask = T)
     names(statsRasterCropped)[1:2] <- c("probability", "uncertainty")
-    cat("Creating new metrics for",x)
+    cat("\nCreating new metrics for",x)
     statsRasterCropped$skalertRikhet <- (statsRasterCropped$probability-minmax(statsRasterCropped$probability)[1])/
       (minmax(statsRasterCropped$probability)[2]-minmax(statsRasterCropped$probability)[1])
     statsRasterCropped$skalertUsikkerhet <- (statsRasterCropped$uncertainty-minmax(statsRasterCropped$uncertainty)[1])/
@@ -260,18 +260,18 @@ for (taxa in taxaToMerge) {
 
 # 7. Lastly, we have to produce species richness for the three types of birds they want - waders, ground hatching
 # and woodpeckers.
-birdGroups <- c("woodpeckers", "groundNestingBirds", "waders")
+birdGroups <- c("woodpeckers", "groundNesters", "waders")
 birdProbabilities <- rast(paste0(directoryName, "/processedOutputs/speciesprobability_birds.tiff"))
 birdUncertainties <- rast(paste0(directoryName, "/processedOutputs/speciesuncertainty_birds.tiff"))
 birdsToImport <- names(birdProbabilities)
-birdChart <- read.csv("data/external/birdTypeList.csv", sep = ";")
-groundNesters <- getGbifBackbone(birdChart[birdChart$group == "groundNestingBirds", "simpleName"])
+birdChart <- read.csv("data/external/birdTypeList.csv", sep = ",")
+groundNesters <- getGbifBackbone(birdChart[birdChart$group == "groundNesters", "simpleName"])
 woodpeckers <- getGbifBackbone(birdsToImport) %>% filter(family =="Picidae")
-waders <- getGbifBackbone(birdChart[birdChart$group == "wadingBirds", "simpleName"])
+waders <- getGbifBackbone(birdChart[birdChart$group == "waders", "simpleName"])
 identifiers <- data.frame(simpleName = c(groundNesters$species,
                                          woodpeckers$species,
                                          waders$species),
-                          group = c(rep("groundNestingBirds", nrow(groundNesters)),
+                          group = c(rep("groundNesters", nrow(groundNesters)),
                                     rep("woodpeckers", nrow(woodpeckers)),
                                     rep("waders", nrow(waders))))
 identifiers$simpleScientificName <- gsub(" ", "_", identifiers$simpleName)
@@ -290,10 +290,16 @@ for (b in birdGroups) {
   print("Calculating species stats")
   speciesStats <- c(sum(birdsMeansNative)/100, sqrt(sum((birdSEsNative)^2)))
   names(speciesStats) <- c("probability", "uncertainty")
+  birdFileName <- paste0(directoryName, "/processedOutputs/allspeciesstats_", b, ".tiff")
+  writeRaster(speciesStats, file = birdFileName, overwrite = TRUE)
+  
+  
+  
+  speciesStats <- terra::project(speciesStats, "EPSG:32633", method = "mode")
 
   # Mask the water and urban areas
-  speciesStats$probability <- speciesStats$probability * mask100
-  speciesStatsCropped <- crop(speciesStats, norwayBorderProjected2)
+  speciesStats$probability <- speciesStats$probability * project(mask100, speciesStats)
+  speciesStatsCropped <- crop(speciesStats, norwayBorderProjected2, mask = T)
 
   speciesStatsCropped$skalertRikhet <- (speciesStatsCropped$probability-minmax(speciesStatsCropped$probability)[1])/
     (minmax(speciesStatsCropped$probability)[2]-minmax(speciesStatsCropped$probability)[1])

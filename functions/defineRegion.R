@@ -13,9 +13,20 @@
 #' @return An sf object
 #'
 
-defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, extentCoords = NA) {
-  # Now assign a region geometry based on the Norwegian political maps found in the package csmaps.
-  if (level == "municipality") {
+defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, extentCoords = NA, dataSource = NA) {
+  # If geonorge is the source then we should start by getting the download ready
+  if (dataSource == "external" & level == "country") {
+    # Now assign a region geometry based on the Norwegian political maps found in the package csmaps.
+    fileName <- "data/external/norge_border/Noreg_polygon.shp"
+    if (!file.exists(fileName)) {
+      stop(paste("R is looking for ", fileName, " and not finding anything. If you have chosen an external file,
+                 please make sure it is named correctly."))
+    } else {
+      regionGeometry <- sf::read_sf(fileName)
+    }
+    
+    
+  } else if (level == "municipality") {
     library(csmaps)
     regionCode <- paste0("municip_nor", region)
     regionGeometry <- nor_municip_map_b2020_default_sf$geometry[nor_municip_map_b2020_default_sf$location_code %in% regionCode]
@@ -61,10 +72,16 @@ defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, ext
                   , ncol =2, byrow = T
     )
     ## create polygon objects
-    regionGeometry <- st_polygon(list(res))
+    library(sf)
+    regionGeometry <- data.frame(lon = c(extentCoords['west'], extentCoords['east'])
+                                 , lat = c(extentCoords['south'], extentCoords['north'])) %>% 
+      st_as_sf(coords = c("lon", "lat"), 
+               crs = 25833) %>% 
+      st_bbox() %>% 
+      st_as_sfc()
     rm('res')
   }
-  
+  library(sf)
   # Align project coordinates with the rest of our polygons.
   regionGeometry <- st_transform(regionGeometry, crs =  "+proj=longlat +ellps=WGS84")
   
@@ -72,7 +89,7 @@ defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, ext
   regionGeometry <- st_union(regionGeometry)
   
   if (runBuffer == TRUE) {
-    regionGeometry <- st_buffer(regionGeometry, dist = 1)
+    regionGeometry <- st_buffer(regionGeometry, dist = 500)
   }
   
   # assign attributes

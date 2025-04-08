@@ -64,6 +64,11 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
     return(NULL)
   }
   
+  # make sure we have a year column
+  if (!("year" %in% colnames(occurrence))) {
+    occurrence$year <- substr(occurrence$eventDate,1,4)
+  }
+  
   # Get a dates table to match years to events
   eventDates <- occurrence %>%
     dplyr::select(year, eventID) %>%

@@ -21,36 +21,36 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # in the working folder for reproducibility.
 
 # Date of analysis from which working directory will be create/access
-dateAccessed <- "2024-01-26"  
+dateAccessed <- "2025-02-03"
 
 # There are instances you want to re-initialise repository and delete some files that should be re-run
 refresh <- FALSE
 
 # spatial level on which regionGeometry will be defined as accepted by defineRegion()
-level <- "county"  
+level <- "county"
 # specific region to be used as accepted by defineRegion()
 region <- "50" 
 # coordinate reference system to use for project. as accepted by sf::st_crs()
-crs <- 25833 
+crs <- 32633 
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
-res <- 1000 
+res <- 500        # Resolution that covariates should be modelled at
 # Parameters to define mesh for random fields
-myMesh <- list(cutoff = 25000, max.edge=c(109000, 120000), offset= 80000)
-# Defiine whether or not we want to upload this data to Wallace
-uploadToWallace <- FALSE
+myMesh <- list(cutoff = 176, max.edge=c(26385, 175903), offset= c(1760, 18))
 # whether to use schedule download for GBIF data
 scheduledDownload <- TRUE
 # whether to wait and automatically download GBIF data when it is ready
-waitForGbif <- TRUE
-# minimum number of points for a species to be retained in the analysis
-redListThreshold <- 30
+waitForGbif <- FALSE
 # which categories are to be used for filtering/analysing red list species
 redListCategories <- c("VU", "EN", "CR")
-# the type of model that will be fitted to the data
-modelRun <- "redListSpecies"  # one of: "redListSpecies", "redListRichness", "richness", or "allSpecies"
+# number of species per group in richness model:
+nSegment <- 10
+speciesOccurenceThreshold <- 50
+datasetOccurreneThreshold <- 5000
 # model priors
-prior.range <- c(1000, 0.05)
-prior.sigma <- c(3, 0.05)
+prior.range <- c(100, 0.01)
+prior.sigma <- c(0.8, 0.01)
+# Indicates whether you want to run the model in parallel
+parallelisation <- FALSE
 
 # Indicates whether we want to download the ANOData or use the data from file
 downloadANOData <- TRUE
@@ -60,7 +60,6 @@ downloadANOData <- TRUE
 if(refresh){
   deleteFilesToRestart(dateAccessed)
 }
-
 
 # Let's get started! The first script initialiseRepository.R, which will create 
 # a folder for the specified dateAccessed, filters focalTaxa for taxa to be analyzed 
@@ -83,7 +82,7 @@ source("pipeline/import/defineRegionGeometry.R")
 
 # You also need to define whether or not you want to use a scheduled download. Scheduled downloads produce a DOI,
 # and enable handling of much larger datasets. If you're playing around with a small dataset, you can probably hit 
-# FALSE here.
+# FALSE above, at line 40.
 
 source("pipeline/import/taxaImport.R")
 
@@ -99,21 +98,21 @@ source("pipeline/integration/speciesDataProcessing.R")
 # We then run our models. NOTE: This is the point where defining a Mesh becomes important. You can read
 # more about what a Mesh is, and how it works in the README.md file in the head of the repository, or in the
 # FAQ page of the shiny app. If you want to try out some potential meshes, you can do so using the
-# util file and editing the default list below.
+# util file and editing the default list below. We've pre-defined a mesh here which is suitable for Norway.
+myMesh <- list(cutoff = 176, max.edge=c(26850, 175903), offset= c(1760, 1200)*10)
+meshTest(myMesh, regionGeometry, print = TRUE, crs = crs)
 
-meshTest(myMesh, regionGeometry, crs = crs)
-
-# Once you've figured that out, you can start running the models. Remember that this script is the one that's 
-# likely to take the longest, so grab a coffee or other beverage of choice. There are three choices of modelRun, 
-# 'richness' (estimates species richness), 'redListRichness' (same but only for red-listed species) and 'redListSpecies'
-# (individual species models for red-listed species). We suggest running these individually.
+# Once you've figured that out, you can start running the models. Remember that this stage will be the longest.
+# If you are running this for all of Norway, at this point automation is unfortunately not an option, and you
+# will need to ignore the following two scripts and log onto Sigma2 to use their High Performance Computing 
+# infrastructure - you can find the files necessary to use this service in pipeline/parallelModelRun.
 source("pipeline/models/speciesModelRuns.R")
 
-# Now that all the necessary data has been produced, we can compile and export it for use in the app. Just use the 
-# function below to compile and move the necessary results into the visualisation folder. Here, date accessed is a 
-# required input.
+# Once the models are run, you can run the prediction scripts.
+source("pipeline/models/speciesPredictionRuns.R")
 
-source("pipeline/models/utils/modelResultsCompilation.R")
+# Now that the computing intensive scripts are finished, you can come back to the comfort of working in R.
+# We need to compute sampling densities, which can be done with the following script.
+source("pipeline/models/samplingDensityProduction.R")
 
-# And you're done! Now all that's left to do is to open up the app, which you can do by opening either the
-# server.R or ui.R file in the visualisation/hotspotMaps folder and hitting "Run App".
+

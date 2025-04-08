@@ -10,7 +10,7 @@
 #' @return A SpatRaster of WorldClim layers.
 library(terra)
 
-get_corine <- function(zip_path = NA, output_path = NA) {
+get_corine <- function(zip_path = NA, output_path = NA, reclassify = TRUE) {
   
   if(is.na(zip_path)){
     message("'zip_path' not specified, please select CORINE land cover zip file. Data can be downloaded from https://land.copernicus.eu/en/products/corine-land-cover/clc2018.")
@@ -69,13 +69,13 @@ get_corine <- function(zip_path = NA, output_path = NA) {
   # corineCategory (with existing corine categories) and the second (with your reclassifications) called newCategory.
   if(!file.exists("data/temp/corine/corineReclassification.csv")) {
     warning("No CORINE reclassification system has been provided. Using all 52 potential categories.")
-  } else {
+  } else if (reclassify == TRUE) {
     corineReclassification <- read.csv("data/temp/corine/corineReclassification.csv", header = TRUE)
     reclassTable <- levels(corine)[[1]]
     names(reclassTable) <- c("value", "label")
     reclassTable$newLabel <- corineReclassification$newCategory[match(reclassTable$label, corineReclassification$corineCategory)]
     reclassTable <- reclassTable[,c("value", "newLabel")] %>% rename(label = newLabel)
-    corine <- addCats(corine, reclassTable, merge = TRUE)
+    levels(corine)[[1]][,2] <- reclassTable[,2]
   }
   
   

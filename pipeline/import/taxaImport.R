@@ -70,7 +70,8 @@ if(file.exists(paste0(folderName, "/metadataSummary.csv"))){
 # Match to accepted names
 speciesBackbones <- getGbifBackbone(redList$species)
 redList$taxaKey <- matchBackboneKeys(speciesBackbones, focalTaxon$key)
-redList$taxa <- focalTaxon$taxa[match(redList$taxaKey, focalTaxon$key[!is.na(focalTaxon$key)])]
+focalTaxonCondensed <- focalTaxon[!is.na(focalTaxon$key),]
+redList$taxa <- focalTaxonCondensed$taxa[match(redList$taxaKey, focalTaxonCondensed$key)]
 redList$GBIFName <- speciesBackbones$scientificName
 
 # Add polyphyletic taxa
@@ -86,6 +87,8 @@ redList <- redList[!is.na(redList$taxa),]
 ### 3. GBIF Import ####
 ###-----------------###
 
+# First we need to buffer the regionGeometry to make sure we get everything
+# regionGeometryExpanded <- st_buffer(regionGeometry, 0.01)
 
 # If you want a scheduled download, the script will stop here (unless you've already run the download on GBIF)
 # and you'll have to start again later once the download has completed
@@ -163,7 +166,9 @@ names(GBIFLists) <- unique(GBIFImportCompiled$name)
 
 # Import data from external sources using specialised scripts. For now, the only external data imported
 # is from ANO.
-GBIFLists[["ANOData"]] <- importANOData(tempFolderName, regionGeometry, focalTaxon, download = downloadANOData)
+if ("vascularPlants" %in% focalTaxon$taxa) {
+  GBIFLists[["ANOData"]] <- importANOData(tempFolderName, regionGeometry, focalTaxon, download = downloadANOData)
+}
 
 ###--------------------###
 ### 5. Dataset Upload ####

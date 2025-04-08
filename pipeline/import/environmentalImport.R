@@ -80,17 +80,26 @@ if (length(emptyParameters) > 0) {
 projCRS <- sf::st_crs(crs)$proj4string
 
 # define region to download as bounding box of buffered and projected mesh/regionGeometry
-regionGeometryBuffer <- st_union(if(exists("myMesh")) {
-  meshTest(myMesh, regionGeometry, print = F, crs = crs) |>
-    inlaMeshToSf()
-}
-  else regionGeometry) |>
+# regionGeometryBuffer <- st_union(if(exists("myMesh")) {
+#   meshTest(myMesh, regionGeometry, print = F, crs = crs) |>
+#     inlaMeshToSf()
+# }
+#   else regionGeometry) |>
+#   st_buffer(2000) |>
+#   st_transform(projCRS) |> 
+#   st_bbox() |> 
+#   st_as_sfc() |>
+#   st_segmentize(dfMaxLength = 10000) |> 
+#   vect() 
+
+regionGeometryBuffer <- st_union(regionGeometry) |>
   st_buffer(2000) |>
   st_transform(projCRS) |> 
   st_bbox() |> 
   st_as_sfc() |>
   st_segmentize(dfMaxLength = 10000) |> 
   vect() 
+
 
 # define working project raster 
 baseRaster <- terra::rast(extent = ext(regionGeometryBuffer), res = res, crs = projCRS)
@@ -131,7 +140,10 @@ for(parameter in seq_along(selectedParameters)) {
     rasterisedVersion <- rast(file.path(localCovFolder, paste0(focalParameter, ".tiff")))
   }
   parameterList[[parameter]] <- rasterisedVersion
+  rm("rasterisedVersion")
+  gc()
 }
+
 
 ###------------------------###
 ### 3. Data Consolidation ####
@@ -155,6 +167,25 @@ parametersCropped <- parameterList |>
     }}) |>  
   rast() |>  # combine raster layers
   setNames(selectedParameters)  # assign names
+
+
+###----------------------------###
+### 3. Create quadratic terms ####
+###----------------------------###
+
+# Check which parameters are needed to make sure we don't take the quadratic of an unwanted term
+useParam <- apply(focalTaxa[, colnames(focalTaxa) %in% parameters$parameters], 2, any)
+parametersForUse <- names(useParam)[useParam]
+
+quadratics <- parameters[parameters$quadratic & parameters$parameters %in% parametersForUse,]
+if (nrow(quadratics) > 0) {
+  for(i in seq_along(quadratics$quadratic)) {
+    parameter <- quadratics$parameters[i]
+    parametersCropped[[paste0(parameter, "_squared")]] <- parametersCropped[[parameter]]^2
+  }
+}
+
+
 
 ###--------------------###
 ### 4. Dataset Upload ####

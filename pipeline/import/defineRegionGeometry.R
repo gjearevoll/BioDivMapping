@@ -34,7 +34,11 @@ readRDS(paste0(folderName,"/controlPars.RDS")) %>%
 #names(extentCoords) <- c("north", "south", "east", "west")
 if (!exists("level")) {level <- "country"}  # level can be country, county, municipality, or points (examples of points given below)
 if (!exists("region")) {region <- "Norway"}
-regionGeometry <- defineRegion(level, region)
+if (level == "box") {
+  regionGeometry <- defineRegion("box", extentCoords = extentCoords)
+} else {
+  regionGeometry <- defineRegion(level, region, dataSource = "external", runBuffer = TRUE)
+}
 
 # save into working folder
 saveRDS(regionGeometry, paste0(folderName, "/regionGeometry.RDS"))

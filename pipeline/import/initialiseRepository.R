@@ -63,15 +63,16 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
                       region = region,
                       crs = crs,
                       res = res,
-                      uploadToWallace = uploadToWallace,
                       scheduledDownload = scheduledDownload,
                       waitForGbif = waitForGbif,
                       myMesh = myMesh,
                       redListCategories = redListCategories,
-                      redListThreshold = redListThreshold,
-                      modelRun = modelRun,
                       prior.range = prior.range,
-                      prior.sigma = prior.sigma)
+                      prior.sigma = prior.sigma,
+                      nSegment = nSegment,
+                      downloadANOData = downloadANOData,
+                      speciesOccurenceThreshold = speciesOccurenceThreshold,
+                      datasetOccurreneThreshold = datasetOccurreneThreshold)
   # save
   saveRDS(controlPars, paste0(folderName,"/controlPars.RDS"))
 }

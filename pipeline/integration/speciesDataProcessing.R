@@ -8,7 +8,7 @@
 library(dplyr)
 library(stringr)
 library(sf)
-library(rgdal)
+#library(rgdal)
 library(terra)
 
 # Import local functions
@@ -98,7 +98,9 @@ for (ds in seq_along(speciesData)) {
   
   # convert year to numeric
   newDataset$year <- as.numeric(newDataset$year)
-  
+  # newDatasetMasked <- st_intersection(newDataset, cityLakeMaskNA)
+  # cat("Dataset masked.", (nrow(newDataset) - nrow(newDatasetMasked)), "entries removed.")
+  # 
   # Save and name new dataset
   processedData[[ds]] <- newDataset
   namesProcessedData[ds] <- datasetName
@@ -107,12 +109,28 @@ for (ds in seq_along(speciesData)) {
 names(processedData) <- namesProcessedData
 
 # Save for use in model construction
-processedData <- processedData[lapply(processedData,nrow)>0]
-saveRDS(processedData, paste0(folderName, "/speciesDataProcessed.RDS"))
+processedData <- processedData[!(unlist(lapply(processedData,is.null)))]
+processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 
+###-------------------------###
+### 3. Mask lake/city data ####
+###-------------------------###
+
+# Import mask for removing species data in cities and lakes
+cityLakeMask <- rast("localArchive/mask100.tiff")
+cityLakeMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityLakeMask == 1, 1, NA))), crs(speciesData[[1]]))
+
+maskedData <- lapply(processedData, FUN = function(x) {
+  newDatasetMasked <- st_intersection(x, cityLakeMaskNA)
+  cat("Dataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
+  return(newDatasetMasked)
+})
+
+maskedData <- maskedData[lapply(maskedData,nrow)>0]
+saveRDS(maskedData, paste0(folderName, "/speciesDataProcessed.RDS"))
 
 ###--------------------------------###
-### 3. Compile into one data.frame ####
+### 4. Compile into one data.frame ####
 ###--------------------------------###
 
 # Edit data frames to have the same number of columns
@@ -134,20 +152,13 @@ processedPresenceData <- processedDataCompiled[processedDataCompiled$individualC
 processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
 saveRDS(processedPresenceData, paste0(folderName, "/processedPresenceData.RDS"))
 
-###-----------------------###
-### 4. Upload to Wallace ####
-###-----------------------###
 
-if (uploadToWallace) {
-  source("pipeline/integration/uploadToWallace.R")
-}
-
-###----------------------------###
-### 5. Produce red list check ####
-###----------------------------###
-
+# ###----------------------------###
+# ### 5. Produce red list check ####
+# ###----------------------------###
+# 
 # Here we see which species have sufficient presence/count data to actually run an individual species model
-redListSpecies <- filterByRedList(redList$GBIFName, processedPresenceData, redListThreshold)
+redListSpecies <- filterByRedList(redList$GBIFName, processedPresenceData, 50)
 redList$valid <- redList$GBIFName %in% redListSpecies$validSpecies
 saveRDS(redList, paste0(folderName, "/redList.RDS"))
 
@@ -175,47 +186,4 @@ if(nrow(processedRedListPresenceData) > 0){
 # To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
 rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
 
-
-###---------------------###
-### 8. Download photos ####
-###---------------------###
-
-# We need to download photos from iNaturalist, including their URL and the user name of the individual
-# who took the photo to give appropriate credit
-
-# Check if there is already an image credit file
-if (file.exists("visualisation/hotspotMaps/data/imageCredit.RDS")) {
-  imageCredit <- readRDS("visualisation/hotspotMaps/data/imageCredit.RDS")
-} else {
-  imageCredit <- data.frame(species = redList$species[redList$valid],
-                            credit = NA,
-                            url = NA,
-                            stringsAsFactors = FALSE)
-}
-
-for (taxa in unique(focalTaxon$taxa)) {
-  focalRedListSpecies <- redList$species[redList$taxa == taxa & redList$valid]
-  taxaFolder <- paste0("visualisation/hotspotMaps/data/photos/",taxa)
-  if (!file.exists(taxaFolder)) {
-    dir.create(taxaFolder)
-  }
-  for (species in focalRedListSpecies) {
-    # Create species folder
-    speciesFolder <- paste0(taxaFolder,"/",species)
-    if (!file.exists(speciesFolder)) {
-      dir.create(speciesFolder)
-    }
-    # Create species file (if it doesn't already exist)
-    if (file.exists(paste0(speciesFolder, "/speciesImage.jpg"))) {next}
-    tryCatch({inatAttempt <- rinat::get_inat_obs(taxon_name = species, maxresults = 10)
-    imageRow <- inatAttempt[!is.na(inatAttempt$image_url) & inatAttempt$image_url != "",]
-    imageCredit$url[imageCredit$species == species] <- imageRow$url[1]
-    imageCredit$credit[imageCredit$species == species] <- imageRow$user_login[1]
-    download.file(imageRow$image_url[1], destfile = paste0(speciesFolder,"/speciesImage.jpg" ), mode = 'wb')
-    }
-    , error = function(x){print(paste0("Error for species ",species, ". ", x))})
-  }}
-
-imageCredit$credit[imageCredit$credit == "" | is.na(imageCredit$credit)] <- "User name not provided"
-saveRDS(imageCredit, "visualisation/hotspotMaps/data/imageCredit.RDS")
 

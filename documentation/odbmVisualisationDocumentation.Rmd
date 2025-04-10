@@ -17,7 +17,7 @@ blockquote {
 
 # Introduction
 
-The Open Data Biodiversity Mapper (ODBM) is a tool intended to provide information on biodiveristy hotspots within Norway. It highlights
+The Open Data Biodiversity Mapper (ODBM) is a tool intended to provide information on biodiversity hotspots within Norway. It highlights
 regions where red-listed species are likely to be found, for the purposes of enabling policy decisions regarding the
 protection or restoration of said regions. The tool uses openly available data, fed through integrated species distribution
 models, to analyse where these regions can be found in Norway.

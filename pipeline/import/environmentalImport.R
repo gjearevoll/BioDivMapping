@@ -143,13 +143,40 @@ for(parameter in seq_along(selectedParameters)) {
   rm("rasterisedVersion")
   gc()
 }
+names(parameterList) <- selectedParameters
+
+###--------------------------------------###
+### 3. Expansion of categorical rasters ####
+###--------------------------------------###
+
+contList <- list()
+catParams <- parameters$parameters[parameters$categorical]
+for (par in catParams) {
+  focalCatParameter <- parameterList[[par]]
+  allCats <- unique(levels(focalCatParameter)[[1]][,2])
+  catList <- lapply(allCats, FUN = function(cat1) {
+    if (par == "kalkinnhold" & cat1 == "no data") {return(NA)}
+    catRaster <- ifel(focalCatParameter == cat1, 1, 0)
+    contRaster <- terra::project(catRaster, baseRaster, method="average")
+    cat("\nAggregating",cat1)
+    contRaster
+  }) |> setNames(allCats)
+  contList[[par]] <- catList
+}
+
+fullCatList <- unlist(contList)[!is.na(unlist(contList))]
+names(fullCatList) <- gsub(" ","_",stringr::str_replace_all(names(fullCatList), "[[:punct:]]", "_")) 
+
+parameterListCont <- parameterList[!(names(parameterList) %in% catParams)]
+parameterListCont <- c(parameterListCont, fullCatList)
+parameterNames <- names(parameterListCont)
 
 
 ###------------------------###
 ### 3. Data Consolidation ####
 ###------------------------###
 # Crop, match projections and compile raster layers into one object
-parametersCropped <- parameterList |> 
+parametersCropped <- parameterListCont |> 
   lapply(function(x) {
     # Crop each covariate to extent of regionGeometryBuffer
     out <- x
@@ -166,7 +193,7 @@ parametersCropped <- parameterList |>
         scale()  
     }}) |>  
   rast() |>  # combine raster layers
-  setNames(selectedParameters)  # assign names
+  setNames(parameterNames)  # assign names
 
 
 ###----------------------------###

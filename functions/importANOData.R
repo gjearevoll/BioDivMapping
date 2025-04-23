@@ -45,16 +45,16 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon, downloa
   
   # Import geometry data to later match to species occurrnece
   ANOPoints <- st_read(ANOUnzippedFolder, layer="ANO_SurveyPoint")
-  ANOPoints <- ANOPoints[,c("GlobalID", "registeringsdato")]
+  ANOPoints <- ANOPoints[,c("globalid", "registeringsdato")]
   ANOPoints <- cbind(ANOPoints, st_coordinates(ANOPoints))
   
   # Change to our project coordinates
-  ANOPoints <- st_transform(ANOPoints, "+proj=longlat +ellps=WGS84")
+  ANOPoints <- st_transform(ANOPoints, paste0("EPSG:",crs))
   ANOPoints <- st_intersection(ANOPoints, regionGeometry)
   
   # Import list of species
   ANOSpeciesFull <- st_read(ANOUnzippedFolder, layer="ANO_Art") %>%
-    dplyr::filter(ParentGlobalID %in% ANOPoints$GlobalID)
+    dplyr::filter(parentglobalid %in% ANOPoints$globalid)
   
   #Let's remove NAs from the names
   ANOSpeciesFull <- ANOSpeciesFull[complete.cases(ANOSpeciesFull[, c("art_navn")]), ]
@@ -69,9 +69,9 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon, downloa
   GBIFNameTable$GBIFName <- sapply(GBIFNameTable$speciesName, FUN = findGBIFName)
   
   # Add in extra values
-  ANOSpeciesFull$year <- format(ANOSpeciesFull$EditDate, format="%Y")
+  ANOSpeciesFull$year <- format(ANOSpeciesFull$editdate, format="%Y")
   ANOSpeciesFull$taxaKey <- taxaLegend$taxonKey[match(ANOSpeciesFull$art_navn, taxaLegend$speciesName)]
-  ANOSpeciesFull <- ANOSpeciesFull[,c("GlobalID", "ParentGlobalID", "art_navn", "year", "taxaKey", "Creator", "Editor", "EditDate")]
+  ANOSpeciesFull <- ANOSpeciesFull[,c("globalid", "parentglobalid", "art_navn", "year", "taxaKey", "creator", "editor", "editdate")]
   
   
   if(any(!is.na(ANOSpeciesFull$taxaKey))){
@@ -87,16 +87,16 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon, downloa
       ANOSpecies <- ANOSpeciesToUse %>%
         filter(taxaKey %in% uniqueKeys[i])
       
-      ANOSpeciesTable <- as.data.frame(table(ANOSpecies$ParentGlobalID, ANOSpecies$art_navn), 
+      ANOSpeciesTable <- as.data.frame(table(ANOSpecies$parentglobalid, ANOSpecies$art_navn), 
                                        stringsAsFactors = FALSE)
       
       # Get the year to match the parent global ID
-      ANOYearID <- ANOSpecies[!duplicated(ANOSpecies$ParentGlobalID),c("ParentGlobalID", "year")]
+      ANOYearID <- ANOSpecies[!duplicated(ANOSpecies$parentglobalid),c("parentglobalid", "year")]
       
       # Convert anything more than 2 to a presence
       ANOSpeciesTable$Freq[ANOSpeciesTable$Freq > 0] <- 1
-      colnames(ANOSpeciesTable) <- c("GlobalID", "speciesName", "individualCount")
-      ANOSpeciesTable$year <- ANOYearID$year[match(ANOSpeciesTable$GlobalID, ANOYearID$ParentGlobalID)]
+      colnames(ANOSpeciesTable) <- c("globalid", "speciesName", "individualCount")
+      ANOSpeciesTable$year <- ANOYearID$year[match(ANOSpeciesTable$globalid, ANOYearID$parentglobalid)]
       
       # Add taxa and accepted scientific name
       ANOSpeciesTable$acceptedScientificName <- GBIFNameTable$GBIFName[match(ANOSpeciesTable$speciesName, GBIFNameTable$speciesName)]
@@ -112,9 +112,9 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon, downloa
     ANOSpeciesFullTable <- do.call("rbind", ANOSpeciesList)
     
     # Add geometry data
-    ANOData <- merge(ANOSpeciesFullTable, ANOPoints[,c("GlobalID")], 
-                     by="GlobalID", all.x=TRUE) %>%
-      rename(geometry = SHAPE)
+    ANOData <- merge(ANOSpeciesFullTable, ANOPoints[,c("globalid")], 
+                     by="globalid", all.x=TRUE) %>%
+      rename(geometry = shape)
     return(ANOData)
   } else {
     return(NULL)

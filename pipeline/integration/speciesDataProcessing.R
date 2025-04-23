@@ -108,7 +108,7 @@ for (ds in seq_along(speciesData)) {
 
 names(processedData) <- namesProcessedData
 
-# Save for use in model construction
+# Remove empty datasets
 processedData <- processedData[!(unlist(lapply(processedData,is.null)))]
 processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 
@@ -118,12 +118,14 @@ processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 
 # Import mask for removing species data in cities and lakes
 cityLakeMask <- rast("localArchive/mask100.tiff")
-cityLakeMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityLakeMask == 1, 1, NA))), crs(speciesData[[1]]))
+cityLakeMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityLakeMask == 1, 1, NA))), crs= "+proj=longlat +ellps=WGS84")
 
 maskedData <- lapply(processedData, FUN = function(x) {
-  newDatasetMasked <- st_intersection(x, cityLakeMaskNA)
-  cat("Dataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
-  return(newDatasetMasked)
+  newDatasetLongLat <- st_transform(x, crs = "+proj=longlat +ellps=WGS84")
+  newDatasetMasked <- st_intersection(newDatasetLongLat, cityLakeMaskNA)
+  cat("\nDataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
+  newDatasetMasked2 <- st_transform(newDatasetMasked, crs = crs)
+  return(newDatasetMasked2)
 })
 
 maskedData <- maskedData[lapply(maskedData,nrow)>0]
@@ -134,9 +136,9 @@ saveRDS(maskedData, paste0(folderName, "/speciesDataProcessed.RDS"))
 ###--------------------------------###
 
 # Edit data frames to have the same number of columns
-processedDataCompiled <- do.call(rbind, lapply(1:length(processedData), FUN = function(x) {
-  dataset <- processedData[[x]]
-  datasetName <- names(processedData)[x]
+processedDataCompiled <- do.call(rbind, lapply(1:length(maskedData), FUN = function(x) {
+  dataset <- maskedData[[x]]
+  datasetName <- names(maskedData)[x]
   datasetType <- unique(dataset$dataType)
   if (datasetType == "PO") {
     dataset$individualCount <- 1
@@ -167,8 +169,7 @@ saveRDS(redList, paste0(folderName, "/redList.RDS"))
 ###-----------------------------------###
 
 # Provide empty raster
-blankRaster <- terra::project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]],
-                              "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs")
+blankRaster <- terra::project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]], paste0("EPSG:",crs))
 allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, blankRaster)
 writeRaster(allSpeciesRichness$rasters, paste0(folderName, "/speciesRichnessData.tiff"), overwrite=TRUE)
 saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))

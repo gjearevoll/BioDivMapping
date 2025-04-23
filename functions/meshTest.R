@@ -28,12 +28,21 @@ meshTest <- function(meshList, regionGeometry, print = TRUE, crs = NULL) {
     crs <- st_crs(crs)$wkt  # Standardize CRS into well-known text format
   }
   
+  # make a two extension hulls and mesh for spatial model
+  hull <- fm_extensions(
+    regionGeometry,
+    convex = meshList$max.edge*2,
+    concave = meshList$max.edge*2
+  )
+  
   # Create mesh using INLA and inlabru
-  mesh <- inla.mesh.2d(boundary = fm_as_inla_mesh_segment(st_transform(regionGeometry, crs)),
-                             crs = fm_crs(crs),
-                             cutoff = meshList$cutoff, 
-                             max.edge = meshList$max.edge, 
-                             offset = meshList$offset)
+  mesh <-  fm_mesh_2d_inla(
+    boundary = hull, 
+    max.edge = meshList$max.edge, # km inside and outside
+    cutoff = meshList$cutoff,  # cutoff is min edge
+    offset = meshList$offset,
+    crs = fm_crs(crs)
+  )
   
   # Plotting mesh
   meshPlot <- ggplot() +

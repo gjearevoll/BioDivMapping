@@ -37,7 +37,7 @@ if (!exists("region")) {region <- "Norway"}
 if (level == "box") {
   regionGeometry <- defineRegion("box", extentCoords = extentCoords)
 } else {
-  regionGeometry <- defineRegion(level, region, dataSource = "external", runBuffer = TRUE)
+  regionGeometry <- defineRegion(level, region, dataSource = "internal", runBuffer = TRUE, concavity = 3.5, crs = crs)
 }
 
 # save into working folder

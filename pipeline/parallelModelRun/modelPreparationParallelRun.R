@@ -67,8 +67,8 @@ print(paste("Changing name of this dataset:", speciesDatanameToChange))
 speciesDatanameChanged <- gsub('[^\x01-\x7F]+', ' ', speciesDatanameToChange)
 names(speciesData)[names(speciesData) %in% speciesDatanameToChange] <- speciesDatanameChanged
 
-# Proj CRS needs to match SSB's Rutenett
-projCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=km +no_defs"
+# # Proj CRS needs to match SSB's Rutenett
+projCRS <- paste0("EPSG:", crs)
 
 cat("\nAll data loaded.", length(speciesData), "species datasets successfully loaded.")
 
@@ -88,13 +88,13 @@ if ("birds" %in% focalTaxa$taxa) {
 
 
 # Define speciesData based on run type and create predictionData
-modelSpeciesData <- refineSpeciesData(speciesData, redList, "richness")
-predictionData <- createPredictionData(c(res, res), regionGeometry)
+modelSpeciesData <- refineSpeciesData(speciesData, redList, "allSpecies")
+predictionData <- createPredictionData(c(res, res), regionGeometry, proj = crs)
 
-# Split up data for vascular plants
+# # Split up data for vascular plants
 # if (focalTaxa$taxa == "vascularPlants") {
 #   if (nrow(focalTaxa) > 1) {stop("cannot divide taxa data for more than one taxa simultaneously")}
-#   speciesDivisions <- 3
+#   speciesDivisions <- 6
 #   # Get taxa species list
 #   modelSpeciesDataBasic <- do.call(rbind, lapply(modelSpeciesData, FUN = function(ds1) {
 #     st_drop_geometry(ds1[,c("simpleScientificName")])
@@ -103,18 +103,18 @@ predictionData <- createPredictionData(c(res, res), regionGeometry)
 #   cleanedData <- talliedData[talliedData$n > 1 & !is.na(talliedData$simpleScientificName),]
 #   newTaxaNames <- paste0("vascularPlants", LETTERS[1:speciesDivisions])
 #   cleanedData$names <- rep(newTaxaNames, nrow(cleanedData)/speciesDivisions)[1:nrow(cleanedData)]
-
+# 
 #   modelSpeciesData <- lapply(modelSpeciesData, FUN = function(ds2) {
 #     ds2$taxa <- cleanedData$names[match(ds2$simpleScientificName, cleanedData$simpleScientificName)]
 #     ds2
 #   })
-#   focalTaxa <- do.call("rbind", replicate( 
-#     speciesDivisions, focalTaxa, simplify = FALSE)) 
+#   focalTaxa <- do.call("rbind", replicate(
+#     speciesDivisions, focalTaxa, simplify = FALSE))
 #   focalTaxa$taxa <- newTaxaNames
 #   cat("Plant data is being split up into ", speciesDivisions, " sections. New taxa names are ", focalTaxa$taxa)
 # }
 
-cat("\nPrediction data and model species data successfully created. Starting to create segments of ", newSegmentNumber, " species each.")
+cat("\nPrediction data and model species data successfully created. Starting to create segments of", newSegmentNumber, "species each.")
 
 # Create list of taxa run
 listSegments <- list()

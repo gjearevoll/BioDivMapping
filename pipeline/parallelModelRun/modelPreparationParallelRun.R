@@ -88,7 +88,7 @@ if ("birds" %in% focalTaxa$taxa) {
 
 
 # Define speciesData based on run type and create predictionData
-modelSpeciesData <- refineSpeciesData(speciesData, redList, "richness")
+modelSpeciesData <- refineSpeciesData(speciesData, redList, "allSpecies")
 predictionData <- createPredictionData(c(res, res), regionGeometry)
 
 # Split up data for vascular plants

@@ -52,8 +52,8 @@ readRDS(paste0(folderName,"/controlPars.RDS")) %>%
 
 # Get list of all relevant taxa
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
-projCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=km +no_defs"
-environmentalDataList <- terra::project(rast(paste0(folderName, "/environmentalDataImported.tiff")), crs(projCRS))
+projCRS <- 32633
+environmentalDataList <- rast(paste0(folderName, "/environmentalDataImported.tiff"))
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"))
 processedData <- readRDS(paste0(folderName, "/processedPresenceData.RDS"))
 
@@ -70,7 +70,7 @@ cityOwin <- as.owin(sf::st_as_sf(regionToMap))
 
 # Define taxa list (depends on birds)
 birdSubgroups <- c("groundNesters", "waders", "woodpeckers")
-if (focalTaxa$taxa == "birds" & aggregated != TRUE) {
+if ("birds" %in% focalTaxa$taxa & aggregated != TRUE) {
   taxaToRun <- birdSubgroups
 } else {
   taxaToRun <- focalTaxa$taxa
@@ -155,7 +155,7 @@ for (t in taxaToRun) {
 
 if (aggregated == TRUE) {
   
-  aggName <- "insects"
+  aggName <- unique(focalTaxa$taxa)
   
   if (nrow(focalTaxa) > 1) {
     cat("Finished producing individual taxa density plots. Creating aggregated density plot.\n")
@@ -177,13 +177,13 @@ if (aggregated == TRUE) {
       
       
       cat("Converting aggregated", aggName,"data to density plot.\n")
-      vectorised <- terra::project(vect(dataCombined2), crs(projCRS))
+      vectorised <- terra::project(vect(dataCombined2), "EPSG:32633")
       points <- terra::crds(vectorised)
       p <- ppp(points[,1], points[,2], window = cityOwin)
       KF <- 0.04
       
       # Need to set dimensions to get 500 by 500m picture
-      dimensions <- c(round((ext(regionToMap)[4] - ext(regionToMap)[3])/.2), round((ext(regionToMap)[2] - ext(regionToMap)[1])/.2))
+      dimensions <- c(round((ext(regionToMap)[4] - ext(regionToMap)[3])/200), round((ext(regionToMap)[2] - ext(regionToMap)[1])/200))
       
       cat("Rasterising", aggName,"density plot.\n")
       ds <- density(p, adjust = KF, dimyx = dimensions)

@@ -13,7 +13,8 @@
 #' @return An sf object
 #'
 
-defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, extentCoords = NA, dataSource = NA) {
+defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, extentCoords = NA, dataSource = NA, 
+                         crs = NULL, concavity = NULL) {
   # If geonorge is the source then we should start by getting the download ready
   if (dataSource == "external" & level == "country") {
     # Now assign a region geometry based on the Norwegian political maps found in the package csmaps.
@@ -90,6 +91,25 @@ defineRegion <- function(level = "county", region = "50", runBuffer = FALSE, ext
   
   if (runBuffer == TRUE) {
     regionGeometry <- st_buffer(regionGeometry, dist = 500)
+  }
+  
+  # reproject
+  if(!is.null(crs)){
+    regionGeometry <- st_transform(regionGeometry, crs) 
+  }
+  
+  # simplify shape using concaveman convex hull 
+  if(!is.null(concavity)){
+    regionGeometry <- concaveman::concaveman(st_cast(st_as_sf(regionGeometry), "MULTIPOINT"), concavity = concavity) 
+    cat("Concave")
+  }
+  
+  # drop the Z dimension & 
+  # ensure geometry is properly oriented (i.e., outer limit is counter-clockwise)
+  if (!is.null(concavity)) {
+    regionGeometry <- regionGeometry[[1]] %>% 
+      st_zm(drop = TRUE, what = "ZM") %>% 
+      cartogramR::check_ring_dir(FALSE)
   }
   
   # assign attributes

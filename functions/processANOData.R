@@ -23,7 +23,6 @@ processANOData <- function(ANODataset) {
   
   ANODataset <- ANODataset[,c("acceptedScientificName", "individualCount", "geometry", "dataType", "taxa", "year", "taxonKeyProject")]
   ANODataset <- ANODataset[!is.na(ANODataset$acceptedScientificName),]
-  ANODataset <- st_as_sf(ANODataset)
-  ANODataset <- st_transform(ANODataset, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
+  ANODataset <- st_as_sf(ANODataset, crs = crs)
   return(ANODataset)
 }

@@ -18,6 +18,7 @@ segmentList <- readRDS(paste0("data/run_", dateToUse, "/segmentList.RDS"))
 
 interestedGroup <- gsub('[[:digit:]]+', '', segmentList[i])
 load(paste0("data/run_", dateToUse, "/workspaces/", interestedGroup,"workflowWorkspace.RData"))
+sapply(list.files("functions", full.names = TRUE), source)
 
 print(segmentList[i])
 
@@ -31,7 +32,6 @@ workflow <- workflowList[[focalGroup]]
 print(focalGroup)
 
 rm("workflowList")
-
 
 # load the control parameters
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
@@ -70,7 +70,7 @@ myMesh$offset <- c(20, 100) * 1000
 myMesh$max.edge <- c(50, 300) * 1000
 
 
-meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE, bufferDist = 150 * 1000)
+meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 # Add model characteristics (mesh, priors, output)
 workflow$addMesh(Object = meshToUse)
 
@@ -115,46 +115,34 @@ focalTaxa$snow_cover <- FALSE
 focalTaxa$forest_line <- FALSE
 
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
-levels(environmentalDataList$land_cover_corine)[[1]][,2][is.na(levels(environmentalDataList$land_cover_corine)[[1]][,2])] <- "Water bodies"
-levels(environmentalDataList$land_cover_corine)[[1]][,2][28] <- "Moors and heathland"
-landCover <- environmentalDataList$land_cover_corine 
-sort(unique(values(environmentalDataList$land_cover_corine)[,1])) 
-values(environmentalDataList$land_cover_corine)[,1][is.nan(values(environmentalDataList$land_cover_corine)[,1])] <- 48
-levels(environmentalDataList$land_cover_corine) <- levels(landCover)
-
 
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 
 print(focalCovariates$parameters)
-env <- colnames(focalTaxa)[colnames(focalTaxa) %in% focalCovariates$parameters]
+env <- colnames(focalTaxa)[colnames(focalTaxa) %in% focalCovariates$parameters[!focalCovariates$categorical]]
 focalTaxa <- focalTaxa[,c("taxa", env)]
-print( interestedGroup)
 focalTaxa <- focalTaxa[focalTaxa$taxa %in% interestedGroup,]
 env <- env[apply(focalTaxa[,-1], 2, any)]
-
-if(covariatesSquared){
-  if("summer_precipitation" %in% env){
-    environmentalDataList$summer_precipitation_squared <- (environmentalDataList$summer_precipitation)^2
-    env <- c(env, "summer_precipitation_squared")
-  }
-  if("summer_temperature" %in% env){ 
-    environmentalDataList$summer_temperature_squared <- (environmentalDataList$summer_temperature)^2
-    env <- c(env,  "summer_temperature_squared")
-  }
-}
-# 
-for (e in env) {
+quadratics <- paste0(focalCovariates$parameters[focalCovariates$quadratic & focalCovariates$parameters %in% env], "_squared")
+env <- c(env, quadratics)
+categoricals <- focalCovariates$parameters[focalCovariates$categorical]
+categoricals2 <- names(environmentalDataList)[apply(sapply(categoricals, FUN = function(x) {grepl(x, names(environmentalDataList))}), 1, any)]
+env <- c(env, categoricals2)
+envRenamed <- gsub(" ","_",stringr::str_replace_all(env, "[[:punct:]]", "_"))
+names(environmentalDataList) <- gsub(" ","_",stringr::str_replace_all(names(environmentalDataList), "[[:punct:]]", "_"))
+#
+for (e in envRenamed) {
   cat(sprintf("Adding covariate '%s' to the model.\n", e))
   workflow$addCovariates(Object = environmentalDataList[[e]])
 }
 
 rm("environmentalDataList")
-gc()
+
 
 # Specify formula for the model
 cat("Specifying priors for the model")
 workflow$modelFormula(covariateFormula = NULL,
-                      biasFormula = ~ distance_water +  distance_roads 
+                      biasFormula = ~ distance_water + distance_roads 
 ) 
 
 workflow$biasFields(datasetName = "mergedDatasetPO", prior.range = c(15 * 1000, 0.01),
@@ -163,6 +151,7 @@ workflow$biasFields(datasetName = "mergedDatasetPO", prior.range = c(15 * 1000, 
 # Specify priors for the precision of intercept and groups
 cat("Specifying priors for the hyperparameters in the model")
 
+predictionData <- createPredictionData(c(10000, 10000), regionGeometry, proj = crs)
 # Run model (this directly saves output to folder specified above)
 workflow$specifyPriors(effectNames = c("Intercept"), Mean = 0, Precision = 1,
                        priorIntercept = list(initial = -10, fixed = TRUE),

@@ -14,7 +14,7 @@
 #' @import sf
 #' 
 #' 
-processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon) {
+processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs) {
   
   # Get the relevant endpoint
   
@@ -46,8 +46,9 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   eventLocationsSF <- st_as_sf(eventLocations,                         
                                coords = c("decimalLongitude", "decimalLatitude"),
                                crs = "+proj=longlat +ellps=WGS84")
+  eventLocationsSF <- st_transform(eventLocationsSF, crs = crs)
   eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry) %>%
-    filter(coordinateUncertaintyInMeters <= 100)
+    filter(coordinateUncertaintyInMeters <= 250)
   
   # At this point we may find that there are no relevant points from this dataset available - 
   # in this case we want to finish the function early
@@ -56,11 +57,14 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   }
   
   # Make sure we have a 'year' column
-  if (!("year" %in% colnames(events))) {
+  if (!("year" %in% colnames(events)) | all(is.na(unique(events$year)))) {
     if ("eventDate" %in% colnames(occurrence)) {
     eventTable <- distinct(occurrence[,c("eventID", "eventDate")])
     eventTable$year <- format(as.Date(eventTable$eventDate), "%Y") 
     events$year <- eventTable$year[match(events$eventID, eventTable$eventID)]
+    } else if ("eventDate" %in% colnames(events)) {
+      eventTable <- distinct(events[,c("eventID", "eventDate")])
+      events$year <- format(as.Date(eventTable$eventDate), "%Y") 
     } else {
     events$year <- NA
   } }
@@ -70,6 +74,14 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
     filter(eventID %in% eventLocationsSF$eventID) %>%
     dplyr::select(year, eventID) %>%
     distinct()
+  
+  # # Find species found each year FOR LATER
+  # speciesDates <- occurrence %>%
+  #   dplyr::select(eventID, scientificName) %>%
+  #   distinct()
+  # speciesDates$year <- eventDates$year[match(speciesDates$eventID, eventDates$eventID)]
+  # speciesDates <- speciesDates[,c("scientificName", "year")] %>%
+  #   distinct()
   
   # Build a species table
   speciesLegend <- data.frame(surveyedSpecies = surveyedSpecies, 
@@ -81,6 +93,14 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   # Create table with all data combinations that we can match to
   eventTable <- expand.grid(species = speciesLegend$surveyedSpecies, eventID = unique(eventLocationsSF$eventID))
   eventTable <- merge(eventTable, eventDates, all.x = TRUE, by = "eventID")
+  
+  # # Create table with all data combinations that we can match to FOR LATER
+  ## Note that later (line 109) you'll need to add to merge by year too
+  # eventTable <- do.call(rbind, lapply(unique(speciesDates$year), FUN = function(y) {
+  #   yearSpecies <- speciesDates$scientificName[speciesDates$year == y]
+  #   yearEvents <- eventDates$eventID[eventDates$year == y]
+  #   expand.grid(species = yearSpecies, eventID = yearEvents, year = y)
+  # }))
   
   # Create an individual count 
   occurrence$individualCount <- 1
@@ -100,7 +120,7 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   
   # New dataset is ready!
   newDataset <- st_as_sf(eventTableWithOccurrences,          
-                         crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+                         crs = crs)
   newDataset <- newDataset %>%
     dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject) %>%
     filter(!is.na(acceptedScientificName))

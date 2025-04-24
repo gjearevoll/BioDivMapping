@@ -15,7 +15,7 @@
 #' 
 #' 
 #' 
-processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon) {
+processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs) {
   
   
   # Get the relevant endpoint
@@ -49,13 +49,19 @@ processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, re
   eventLocationsSF <- st_as_sf(eventLocations,                         
                                coords = c("decimalLongitude", "decimalLatitude"),
                                crs = "+proj=longlat +ellps=WGS84")
+  eventLocationsSF <- st_transform(eventLocationsSF, crs = crs)
   eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry) %>%
-    filter(coordinateUncertaintyInMeters <= 100)
+    filter(coordinateUncertaintyInMeters <= 250)
   
   # At this point we may find that there are no relevant points from this dataset available - 
   # in this case we want to finish the function early
   if (nrow(eventLocationsSF) == 0) {
     return(NULL)
+  }
+  
+  # Create year table if it doesn't exist
+  if (is.null(occurrence$year)) {
+    occurrence$year <- str_sub(occurrence$eventDate, 1, 4)
   }
   
   # Get a dates table to match years to events
@@ -85,7 +91,7 @@ processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, re
   
   # New dataset is ready!
   newDataset <- st_as_sf(eventTableWithOccurrences,          
-                         crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+                         crs = crs)
   newDataset <- newDataset %>%
     dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject) %>%
     filter(!is.na(acceptedScientificName))

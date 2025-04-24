@@ -341,12 +341,15 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, redList
     # Add environmental characteristics. If there is a corresponding column for the focalTaxon in the environmental covariate matrix use that,
     # if not, use all calculated env covariates
     # Reduce focalTaxa to focalCovariates
-    env <- colnames(focalTaxa)[colnames(focalTaxa) %in% focalCovariates$parameters]
+    env <- colnames(focalTaxa)[colnames(focalTaxa) %in% focalCovariates$parameters[!focalCovariates$categorical]]
     focalTaxa <- focalTaxa[,c("taxa", env)]
     focalTaxa <- focalTaxa[focalTaxa$taxa %in% focalGroup,]
     env <- env[apply(focalTaxa[,-1], 2, any)]
     quadratics <- paste0(focalCovariates$parameters[focalCovariates$quadratic & focalCovariates$parameters %in% env], "_squared")
     env <- c(env, quadratics)
+    categoricals <- focalCovariates$parameters[focalCovariates$categorical]
+    categoricals2 <- names(environmentalDataList)[apply(sapply(categoricals, FUN = function(x) {grepl(x, names(environmentalDataList))}), 1, any)]
+    env <- c(env, categoricals2)
     
     for (e in env) {
       cat(sprintf("Adding covariate '%s' to the model.\n", e))

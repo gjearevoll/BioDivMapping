@@ -91,6 +91,7 @@ if ("birds" %in% focalTaxa$taxa) {
 modelSpeciesData <- refineSpeciesData(speciesData, redList, "allSpecies")
 predictionData <- createPredictionData(c(res, res), regionGeometry, proj = crs)
 
+
 # # Split up data for vascular plants
 # if (focalTaxa$taxa == "vascularPlants") {
 #   if (nrow(focalTaxa) > 1) {stop("cannot divide taxa data for more than one taxa simultaneously")}

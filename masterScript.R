@@ -35,7 +35,7 @@ crs <- 32633
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
 res <- 500        # Resolution that covariates should be modelled at
 # Parameters to define mesh for random fields
-myMesh <- list(cutoff = 176, max.edge=c(26385, 175903), offset= c(1760, 18))
+myMesh <- list(cutoff = 3*1000, max.edge=c(50, 300) * 1000, offset= c(20, 100) * 1000)
 # whether to use schedule download for GBIF data
 scheduledDownload <- TRUE
 # whether to wait and automatically download GBIF data when it is ready
@@ -47,7 +47,7 @@ nSegment <- 10
 speciesOccurenceThreshold <- 50
 datasetOccurreneThreshold <- 5000
 # model priors
-prior.range <- c(100, 0.01)
+prior.range <- c(15 * 1000, 0.01)
 prior.sigma <- c(0.8, 0.01)
 # Indicates whether you want to run the model in parallel
 parallelisation <- FALSE

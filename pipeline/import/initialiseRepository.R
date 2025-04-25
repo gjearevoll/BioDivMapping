@@ -63,6 +63,8 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
                       region = region,
                       crs = crs,
                       res = res,
+                      coordUncertainty = coordUncertainty,
+                      yearToStart = yearToStart,
                       scheduledDownload = scheduledDownload,
                       waitForGbif = waitForGbif,
                       myMesh = myMesh,

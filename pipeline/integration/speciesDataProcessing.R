@@ -42,6 +42,9 @@ speciesDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))
 speciesData <- speciesDataList[["species"]]
 redList <- speciesDataList[["redList"]]
 metadata <- speciesDataList$metadata$metadata
+region <- attr(speciesDataList, "region")
+level <- attr(speciesDataList, "level")
+rm("speciesDataList")
 
 # Import taxa list and polyphyletic species
 focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)

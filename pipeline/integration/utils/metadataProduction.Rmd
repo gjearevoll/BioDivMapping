@@ -11,7 +11,10 @@ library(ggplot2)
 library(sf)
 library(inlabru)
 library(gridExtra)
+library(rgbif)
 library(tidyterra)
+library(knitr)
+library(kableExtra)
 
 # Combine into one data frame and add date accessed
 processedDataCompiled$dateAccessed <- Sys.Date()
@@ -26,36 +29,73 @@ processedDataDF[,c("decimalLongitude", "decimalLatitude")] <- st_coordinates(pro
 # Biodiversity mapping
 
 The following pdf gives a description of the data used in the pipeline run that corresponds to the folder this document resides in.
-It should be used as a guide for anyone who wants to know more about the data used in the corresponding outputs (maps and datasets)
-and/or would like to replicate the data.
+
+It should be used as a guide for anyone who wants to know more about the data used in the corresponding outputs (maps and datasets) and/or would like to replicate the data.
 
 We begin with basic information about the pipeline run.
 
 
 ``` {r, basicInfo, echo = FALSE}
 
-region <- attr(speciesDataList, "region")
-level <- attr(speciesDataList, "level")
 focalTaxa <- unique(focalTaxon$taxa)
 totalSpecies <- length(unique(processedDataCompiled$acceptedScientificName))
 downloadKey <- readRDS(paste0("../../../", folderName, "/downloadKey.RDS"))
-infoNames <- c("Date",
+infoNames <- c("Date pipeline initiated",
+               "Date species data processed",
                "Taxa",
+               "Taxon key(s)",
+               "Cutoff year",
                "Region type",
                "Region code",
                "Total species",
-               "Total datasets used", 
-               "DOI")
-info <- c(dateAccessed, paste(focalTaxa, collapse = ", "), level,  paste(region, collapse = ", "), totalSpecies,
-          length(unique(processedDataDF$dsName)), downloadKey$doi)
-basicInfo <- data.frame(Characteristic = infoNames, Value = info)
-knitr::kable(basicInfo)
+               "Total datasets used",
+               "Resolution (metres)",
+               "Citation")
+infoDescription <- c("The date when the GBIF download was initiated.",
+                     "The date when source data from datasets requiring further processing was downloaded.",
+                     "Taxa used in the pipeline run.",
+                     "GBIF's code for the taxa used in the pipeline run.",
+                     "The year from which all data is taken.",
+                     "The spatial level used (country, county, municipality or boxed area).",
+                     "The region within which data was collected.",
+                     "Total species present in the processed data.",
+                     "Total datasets used in the processed data.",
+                     "Resolution to which environmental covariates were aggregated.",
+                     "Relevant citation for the initial data download.")
+info <- c(dateAccessed, as.character(Sys.Date()), paste(focalTaxa, collapse = ", "), paste(focalTaxon$key, collapse = ", "), yearToStart, level,  paste(region, collapse = ", "), totalSpecies,
+          length(unique(processedDataDF$dsName)), res, gbif_citation(downloadKey$key)$download)
+basicInfo <- data.frame(Characteristic = infoNames, Value = info, Description = infoDescription)
+kbl(basicInfo) %>%
+  kable_styling(bootstrap_options = "striped") %>%
+  column_spec(2, width = "10em")
 ```
 
-In addition to the above, data was downloaded with a maximum uncertainty regarding coordinates of 100 metres.
+The following shows the environmental covariates that we used, as well as extra information regarding:
+
+- **Categorical**: Whether or not the covariate what a categorical covariate (one map showing many different categories at different locations) or a continuous covariate (one covariate ranged on a numerical scale).
+
+- **Quadratic**: The relationship between some species presences and the covariate may not be linear. For example as temperature rises some plants may benefit, but once the temperature goes beyond a certain point they may start to suffer. We accoutn for this by adding a quadratic term to our equation for certain covariates.
+
+``` {r, envInfo, echo = FALSE}
+
+covariates <- read.csv(paste0("../../../", folderName, "/focalCovariates.csv"))
+covariateNames <- focalTaxon[covariates$parameters[covariates$parameters %in% colnames(focalTaxon)]]
+covariatesUsed <- colnames(covariateNames)[unlist(c(covariateNames[1,]))]
+categorical <- covariates$categorical[match(covariatesUsed, covariates$parameters)]
+squared <- covariates$quadratic[match(covariatesUsed, covariates$parameters)]
+covariatesUsed <- gsub("_", " ", paste0(toupper(substr(covariatesUsed, 1, 1)), substr(covariatesUsed, 2, nchar(covariatesUsed))))
+categorical <- ifelse(categorical, "Categorical", "Continuous")
+squared <- ifelse(squared, "Yes", "No")
+covTable <- data.frame(Covariates = covariatesUsed, Categorical = categorical, Quadratic = squared)
+kbl(covTable) %>%
+  kable_styling(bootstrap_options = "striped") 
+```
+
 
 The following shows total number of species per taxa and per dataset from the initial download from GBIF and ANO.
 Note that only the top 10 datasets are shown. A full list of observations per dataset per taxa as well as observations per species can be found in the appendices.
+
+Please note that these represent the data used before final filtering for a) species with insufficient data and b) datasets with insufficient data.
 
 ``` {r, dataTables, echo = FALSE, message = FALSE}
 # Get number of species per taxa
@@ -88,7 +128,7 @@ knitr::kable(
 
 ```
 
-The following gives species richness for observations across the surveyed region by taxa.
+The following gives observed species richness across the surveyed region by taxa. 
 
 ``` {r, maps, echo = FALSE, message = FALSE, fig.fullwidth=TRUE}
 plotList <- list()
@@ -100,7 +140,8 @@ for (i in 1:length(focalTaxa)) {
     geom_sf(fill = "NA") +
     scale_fill_gradient(low = 'white', high = 'red', na.value=NA) +
     theme_bw() +
-    ggtitle(focalTaxa[i])
+    ggtitle(focalTaxa[i]) + labs(fill = "Total species\nobserved", 
+                                 caption = paste0("Data aggregated to pixels of ",(res/1000 * 4)^2, "square km"))
   print(speciesRichnessPlot)
 }
 
@@ -113,47 +154,6 @@ for (i in 1:length(focalTaxa)) {
 ```{r, sourceFunctionalGroups, echo = FALSE}
 source("../../../functions/joinFunctionalGroups.R")
 focalSpecies <- read.csv(paste0("../../../", folderName, "/focalTaxa.csv"))
-```
-
-The following gives spatial density for observations across the surveyed region by taxa.
-```{r, joinFuncgroups_plot_observations, echo = FALSE}
-focalTaxa <- unique(na.omit(processedDataCompiled$taxa)) 
-
-for (i in seq_along(focalTaxa)) {
-  focalTaxaGroup <- focalTaxa[i]
-  processedDataShortened <- processedDataCompiled[processedDataCompiled$taxa == focalTaxaGroup,]
-  # Combine species by functionalGroup if requested
-  # functional groups in species with data for focal taxonomic group
-  focalSpeciesWithData <- focalSpecies[focalSpecies$key %in% processedDataShortened$taxonKeyProject &  # species with data
-                                        focalSpecies$taxa %in% focalTaxaGroup,]  # and of focal taxa (in case same species in different taxa)
-  # if any species are to be modelled as functional groups
-  if(any(!is.na(focalSpeciesWithData$functionalGroup) & 
-           focalSpeciesWithData$functionalGroup != "")){
-    # update data
-    processedDataShortenedFunc <- joinFunctionalGroups(speciesData = processedDataShortened,
-        focalTaxon = focalSpeciesWithData) %>%
-        # replace ungrouped species with "ungrouped"
-        mutate(simpleScientificName = ifelse(scientificName == simpleScientificName, "Ungrouped", simpleScientificName))
-
-    rows <- sample(seq(nrow(processedDataShortenedFunc)), 
-                   min(nrow(processedDataShortenedFunc), 1000)) # max 1,000 data points
-    # plot
-    p <- ggplot(regionGeometry) +
-          geom_sf() +
-          geom_sf(data = processedDataShortenedFunc[rows,], colour = 'blue', size = 0.1) +
-          facet_wrap(~simpleScientificName) +
-          ggtitle(focalTaxaGroup)
-  } else {
-    rows <- sample(seq(nrow(processedDataShortened)), 
-                   min(nrow(processedDataShortened), 1000)) # max 1,000 data points
-    # plot
-    p <- ggplot(regionGeometry) +
-          geom_sf() +
-          geom_sf(data = processedDataShortened[rows,], colour = 'blue', size = 0.1) +
-      ggtitle(focalTaxaGroup)
-  }
-  print(p)
-}
 ```
 
 

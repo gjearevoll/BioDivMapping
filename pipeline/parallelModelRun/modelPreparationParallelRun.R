@@ -153,6 +153,7 @@ for(iter in 1:1){
   
   listSegments[[iter]] <- focalTaxaRun
   if (grepl("vascularPlants", focalTaxa$taxa[iter])) {saveRDS(focalTaxaRun, paste0(folderName, "/segmentList", focalTaxa$taxa[iter] ,".RDS"))}
+  rm("modelSpeciesData")
   save.image(file = paste0(folderName,"/workspaces/",  focalTaxa[iter, 1], "workflowWorkspace.RData"))
 }
 

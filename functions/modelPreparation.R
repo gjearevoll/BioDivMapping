@@ -93,6 +93,11 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, redList
         dat <- speciesData[[x]] %>%
           dplyr::filter(taxa %in% focalTaxon)
         
+        if ("individualCount" %in% colnames(dat)) {
+          dat <- dat %>%
+            filter(individualCount == 1)
+        }
+        
         # Extract the species Info
         if(nrow(dat) > 0){
           data.frame(datasetName = speciesDataNames[[x]],

@@ -4,8 +4,14 @@
 # This script assigns different functions to the datasets that they were created for. The functions herein
 # reside in functions and begin with "process".
 
+# 0. Check whether a pre-processed version of this dataset exists
+dataFileName <- paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS")
+if (file.exists(dataFileName)) {
+  cat("\tPre-processed version used\n")
+  newDataset <- readRDS(dataFileName)
+  
 # 1. The national insect Monitoring in Norway dataset
-if (dataType == "insectMonitoring") {
+} else if (dataType == "insectMonitoring") {
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
   newDataset <- processNationalInsectMonitoring(focalData, focalEndpoint, tempFolderName)
   

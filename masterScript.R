@@ -21,19 +21,23 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # in the working folder for reproducibility.
 
 # Date of analysis from which working directory will be create/access
-dateAccessed <- "2025-02-03"
+dateAccessed <- "2025-04-13"
 
 # There are instances you want to re-initialise repository and delete some files that should be re-run
 refresh <- FALSE
 
 # spatial level on which regionGeometry will be defined as accepted by defineRegion()
-level <- "county"
+level <- "country"
 # specific region to be used as accepted by defineRegion()
-region <- "50" 
+region <- "Norway" 
 # coordinate reference system to use for project. as accepted by sf::st_crs()
 crs <- 32633 
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
 res <- 500        # Resolution that covariates should be modelled at
+# Coordinate uncertainty to filter to in GBIF
+coordUncertainty <- 250
+# Give first year data can be taken from
+yearToStart <- 1991
 # Parameters to define mesh for random fields
 myMesh <- list(cutoff = 3*1000, max.edge=c(50, 300) * 1000, offset= c(20, 100) * 1000)
 # whether to use schedule download for GBIF data
@@ -43,7 +47,7 @@ waitForGbif <- FALSE
 # which categories are to be used for filtering/analysing red list species
 redListCategories <- c("VU", "EN", "CR")
 # number of species per group in richness model:
-nSegment <- 10
+nSegment <- 12
 speciesOccurenceThreshold <- 50
 datasetOccurreneThreshold <- 5000
 # model priors
@@ -113,6 +117,12 @@ source("pipeline/models/speciesPredictionRuns.R")
 
 # Now that the computing intensive scripts are finished, you can come back to the comfort of working in R.
 # We need to compute sampling densities, which can be done with the following script.
+dateStored <- Sys.date()
+aggregated <- TRUE
 source("pipeline/models/samplingDensityProduction.R")
 
+# Lastly, data needs to be collated and turned into a series of products that include individual species occurrence 
+# probabilities, species richness per taxa, and sampling density per taxa.
+source("pipeline/outputProcessing.R")
 
+# Done!

@@ -47,8 +47,8 @@ getDownloadKey <- function(taxa, regionGeometry) {
   download_key <- occ_download(
     pred_in("taxonKey", keys[!is.na(keys)]),
     pred("geometry", st_as_text(st_transform(regionGeometry, crs = 4326)[[1]])),
-    pred_lte("coordinateUncertaintyInMeters", 250),
-    pred_gte("year", 1991),
+    pred_lte("coordinateUncertaintyInMeters", coordUncertainty),
+    pred_gte("year", yearToStart),
     type = "and"
   ) 
   return(download_key)

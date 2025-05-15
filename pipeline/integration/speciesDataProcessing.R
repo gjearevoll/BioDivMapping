@@ -81,20 +81,27 @@ for (ds in seq_along(speciesData)) {
   if (is.null(newDataset)) {break}
   
   # add simpleScientificName column
-  newDataset <- newDataset %>%
-    mutate(
-      simpleScientificName = coalesce(
-        redList$species[match(acceptedScientificName, redList$GBIFName)],  # Match redList species
-        str_extract(acceptedScientificName, "^[A-Za-z]+\\s+[a-z]+")        # Extract binomial name
-      ),
-      # Replace space with underscore in simpleScientificName
-      simpleScientificName = gsub("-", "", gsub("×","", gsub(" ", "_", simpleScientificName)))
-    )
+  if ("acceptedScientificName" %in% colnames(newDataset)) {
+    newDataset <- newDataset %>%
+      mutate(
+        simpleScientificName = coalesce(
+          redList$species[match(acceptedScientificName, redList$GBIFName)],  # Match redList species
+          str_extract(acceptedScientificName, "^[A-Za-z]+\\s+[a-z]+")        # Extract binomial name
+        ),
+        # Replace space with underscore in simpleScientificName
+        simpleScientificName = gsub("-", "", gsub("×","", gsub(" ", "_", simpleScientificName)))
+      )} else {
+        newDataset <- newDataset %>%
+          mutate(simpleScientificName = gsub("-", "", gsub("×","", gsub(" ", "_", scientificName))))
+      }
   
   # Add in polyphyletic taxa
-  newDataset$taxa <- ifelse(newDataset$acceptedScientificName %in% polyphyleticSpecies$acceptedScientificName, 
-                            polyphyleticSpecies$taxa[match(newDataset$acceptedScientificName, polyphyleticSpecies$acceptedScientificName)], 
-                            newDataset$taxa)
+  if(file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
+    newDataset$taxa <- ifelse(newDataset$acceptedScientificName %in% polyphyleticSpecies$acceptedScientificName, 
+                              polyphyleticSpecies$taxa[match(newDataset$acceptedScientificName, polyphyleticSpecies$acceptedScientificName)], 
+                              newDataset$taxa)
+  } 
+  
   
   # convert year to numeric
   newDataset$year <- as.numeric(newDataset$year)

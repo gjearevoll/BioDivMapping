@@ -30,7 +30,26 @@ if (dataType == "insectMonitoring") {
   newDataset <- processFieldNotesEvent(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs)
   
 # No need to do anything to presence only data (yet) except add individualCount column
-} else if (dataType == "presenceOnly") {
+} else if (dataType == "mareano") {
+  focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
+  newDataset <- processMareano(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs)
+  
+  # No need to do anything to presence only data (yet) except add individualCount column
+} else if (dataType == "marine1") {
+  focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
+  newDataset <- processMarine1(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs)
+  
+  # No need to do anything to presence only data (yet) except add individualCount column
+} else if (dataType == "marine2") {
+  focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
+  newDataset <- processMarine2(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs)
+  
+  # No need to do anything to presence only data (yet) except add individualCount column
+}else if (dataType == "presenceOnly") {
+  focalData$dataType <- "PO"
+  newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year", "taxonKeyProject")]
+  newDataset <- st_transform(newDataset, crs)
+} else {
   focalData$dataType <- "PO"
   newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year", "taxonKeyProject")]
   newDataset <- st_transform(newDataset, crs)

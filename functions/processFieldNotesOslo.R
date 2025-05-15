@@ -95,5 +95,6 @@ processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, re
   newDataset <- newDataset %>%
     dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject) %>%
     filter(!is.na(acceptedScientificName))
+  saveRDS(newDataset, paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS"))
   return(newDataset)
 }

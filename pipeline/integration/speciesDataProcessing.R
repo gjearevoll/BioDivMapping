@@ -14,6 +14,20 @@ library(terra)
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
 
+###----------------------###
+### 0. Bash preparation ####
+###----------------------###
+
+args <- commandArgs(TRUE)
+
+# THis should only run if the script is being run from the command line
+if (length(args) != 0) {
+  # Set arguments
+  dateAccessed <- args[1]
+  # Set the working directory
+  setwd("~/BioDivMapping")
+}
+
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###
@@ -22,6 +36,7 @@ sapply(list.files("functions", full.names = TRUE), source)
 if (!exists("dateAccessed")) {
   stop("Please define a run date for the model first.")
 }
+
 # define repo folder names
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
@@ -81,7 +96,11 @@ for (ds in seq_along(speciesData)) {
   cat("Currently processing dataset '", datasetName,"' \n", sep = "")
   
   source("pipeline/integration/utils/defineProcessing.R")
-  if (is.null(newDataset)) {break}
+  if (is.null(newDataset)) {
+    processedData[[ds]] <- NA
+    namesProcessedData[ds] <- datasetName
+    next
+    }
   
   # add simpleScientificName column
   if ("acceptedScientificName" %in% colnames(newDataset)) {

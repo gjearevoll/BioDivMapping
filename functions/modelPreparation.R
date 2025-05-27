@@ -5,7 +5,6 @@
 #'
 #' @param focalTaxa A vector of the taxonomic groups we are modelling.
 #' @param speciesData A list of processed datasets to be used in the intSDM models.
-#' @param redListModelled A vector of red listed species found in the datasets with enough occurrences for a decent model. If NULL, all species will be modelled.
 #' @param regionGeometry An sf object encompassing our region of study, as produced by defineRegion.
 #' @param modelFolderName The directory where model outputs should be saved.
 #' @param environmentalDataList A list of raster giving relevant environmental variables.
@@ -19,9 +18,9 @@
 #' @importFrom sf st_sf
 #' @importFrom intSDM startWorkflow
 #' 
-modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, redListModelled = NULL, regionGeometry, 
+modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionGeometry, 
                              modelFolderName, environmentalDataList = NULL, crs = NULL, segmentation = FALSE,
-                             nSegment = NULL, speciesOccurenceThreshold = 50, datasetOccurreneThreshold = 10000,
+                             nSegment = NULL, speciesOccurrenceThreshold = 50, datasetOccurrenceThreshold = 10000,
                              mergeDatasets = TRUE,
                              mergeAllDatasets = FALSE,
                              richness = TRUE) {
@@ -131,8 +130,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, redList
         dplyr::select(-c(speciesInfo))%>%
         t()%>%
         rowSums()%>%
-        sort()%>%
-        cumsum(.)
+        sort()
       
       # We select datasets that do not meet a certain criterion
       dataToMerge <- TRUE
@@ -142,7 +140,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, redList
         
         if(!mergeAllDatasets){
           
-          datasetsToMerge <- names(occurrencesInEachDataset[occurrencesInEachDataset < datasetOccurreneThreshold])
+          datasetsToMerge <- names(occurrencesInEachDataset[occurrencesInEachDataset < datasetOccurrenceThreshold])
           datasetsToMerge <- datasetsToMerge[!datasetsToMerge %in% predictionDataset]
           print(paste0("Datasets merged into one:", datasetsToMerge ))
           
@@ -212,40 +210,44 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, redList
       fullSpeciesList <- names(speciesCounts)[names(speciesCounts) %in% speciesToKeep]
       
       #Out of these, we check those in the prediction dataset
-      speciesCountsInPredDataset <- unique(speciesData[[predictionDataset]]$simpleScientificName)[unique(speciesData[[predictionDataset]]$simpleScientificName) %in% fullSpeciesList]
+      speciesInPredDataset <- unique(speciesData[[predictionDataset]]$simpleScientificName)[unique(speciesData[[predictionDataset]]$simpleScientificName) %in% fullSpeciesList]
+      
+      # And check the most numerous in that dataset
+      speciesCountsPredData <- sort(speciesCounts[speciesInPredDataset], decreasing = TRUE)
+      predictorSpecies <- names(speciesCountsPredData[1])
       
       # These are the list of species in the prediction dataset
       # So that we can have the prediction dataset and the rest of the species that 
       # are not in the prediction dataset
-      speciesInPredictionDataset <- speciesCountsInPredDataset
-      restOfSpecies <- fullSpeciesList[!(fullSpeciesList %in% speciesInPredictionDataset)]
+      speciesInPredictionDataset <- names(speciesCountsPredData[-1])
+      restOfSpecies <- fullSpeciesList[!(fullSpeciesList %in% speciesInPredDataset)]
       
       # Put the two datasets together
       fullSpeciesList <- c(speciesInPredictionDataset, restOfSpecies)
       
-      # Segment rest of species into lists of 8 species
-      cat(paste("Splitting ", length(fullSpeciesList), "species into", ceiling(length(fullSpeciesList)/nSegment), "groups")) 
+      # Segment rest of species into lists of x - 1 species, where x is the nSegment
+      segmentMinusOne <- nSegment - 1
+      cat(paste("Splitting ", length(fullSpeciesList), "species into", ceiling(length(fullSpeciesList)/segmentMinusOne), "groups")) 
       if (length(fullSpeciesList) > 1) {
-      groupings <- factor(rep(seq(1, floor(length(fullSpeciesList)/nSegment)), nSegment))
-      segmentedList <- split(fullSpeciesList, groupings)
+      groupings <- factor(rep(seq(1, floor(length(fullSpeciesList)/segmentMinusOne)), segmentMinusOne))
+      segmentedList1 <- split(fullSpeciesList, groupings)
       } else {
-        segmentedList <- list(fullSpeciesList)
+        segmentedList1 <- list(fullSpeciesList)
       }
-      # segmentedList <- split(fullSpeciesList, ceiling(seq_along(fullSpeciesList)/nSegment))
-      #segments <- rep(1:ceiling(length(restOfSpecies)/nSegment), nSegment)[1:length(restOfSpecies)]
-      #segmentedList <- split(restOfSpecies, segments)
-      speciesNames <- lapply(segmentedList, FUN = function(x) {
-        c(x)#, commonSpecies)
+      
+      # Now add predictor species to each segment
+      segmentedList <- lapply(segmentedList1, FUN = function(seg) {
+        c(seg, predictorSpecies)
       })
+      names(segmentedList) <- paste0(focalTaxon, 1:length(segmentedList))
       
       nOccurences <- lapply(as.list(seq_along(segmentedList)), function(x){
         # y <- 
         speciesCounts[segmentedList[[x]]]
       })
-      
-      names(speciesNames) <- paste0(focalTaxon, seq(length(speciesNames)))
-      names(nOccurences) <- names(speciesNames)
-      speciesLists[[focalTaxon]] <- speciesNames
+
+      names(nOccurences) <- names(segmentedList)
+      speciesLists[[focalTaxon]] <- segmentedList
       speciesDataList[[focalTaxon]] <- speciesData
       saveRDS(nOccurences, paste0(tempFolderName, "/",focalTaxon,"numberOfOccurrences.RDS"))
     }
@@ -287,7 +289,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, redList
     
     # Combine species by functionalGroup if requested (else leave as separate)
     # identify species with data
-    uniqueTaxaSpecies <- unique(bind_rows(focalSpeciesDataRefined)$taxonKeyProject)
+    uniqueTaxaSpecies <- unique(unlist(lapply(focalSpeciesDataRefined, FUN = function(x) {x$taxonKeyProject})))
     # identify functional groups in species with data for focal taxonomic group
     focalSpeciesWithData <- focalTaxa[focalTaxa$key %in% uniqueTaxaSpecies &  # species with data
                                         focalTaxa$taxa %in% focalGroup,]  # and of focal taxa (in case same species in different taxa)

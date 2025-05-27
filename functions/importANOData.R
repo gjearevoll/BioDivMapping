@@ -45,11 +45,16 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon, downloa
   
   # Import geometry data to later match to species occurrnece
   ANOPoints <- st_read(ANOUnzippedFolder, layer="ANO_SurveyPoint")
-  ANOPoints <- ANOPoints[,c("globalid", "registeringsdato")]
-  ANOPoints <- cbind(ANOPoints, st_coordinates(ANOPoints))
+  ANOFlateMidpoints <- ANOPoints %>%
+    group_by(ano_flate_id) %>% 
+    summarize(geometry = st_union(shape)) %>% 
+    st_centroid %>%
+    st_transform(paste0("EPSG:",crs))
+  ANOPoints <- ANOPoints[,c("globalid", "ano_flate_id", "registeringsdato")]
+  ANOPoints <- merge(st_drop_geometry(ANOPoints), ANOFlateMidpoints, all.x = T, by = "ano_flate_id")
   
   # Change to our project coordinates
-  ANOPoints <- st_transform(ANOPoints, paste0("EPSG:",crs))
+  ANOPoints <- st_transform(st_as_sf(ANOPoints), paste0("EPSG:",crs))
   ANOPoints <- st_intersection(ANOPoints, regionGeometry)
   
   # Import list of species
@@ -71,7 +76,8 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon, downloa
   # Add in extra values
   ANOSpeciesFull$year <- format(ANOSpeciesFull$editdate, format="%Y")
   ANOSpeciesFull$taxaKey <- taxaLegend$taxonKey[match(ANOSpeciesFull$art_navn, taxaLegend$speciesName)]
-  ANOSpeciesFull <- ANOSpeciesFull[,c("globalid", "parentglobalid", "art_navn", "year", "taxaKey", "creator", "editor", "editdate")]
+  ANOSpeciesFull$ano_flate_id <- ANOPoints$ano_flate_id[match(ANOSpeciesFull$parentglobalid, ANOPoints$globalid)]
+  ANOSpeciesFull <- ANOSpeciesFull[,c("globalid", "parentglobalid", "art_navn", "ano_flate_id", "year", "taxaKey", "creator", "editor", "editdate")]
   
   
   if(any(!is.na(ANOSpeciesFull$taxaKey))){
@@ -97,24 +103,38 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon, downloa
       ANOSpeciesTable$Freq[ANOSpeciesTable$Freq > 0] <- 1
       colnames(ANOSpeciesTable) <- c("globalid", "speciesName", "individualCount")
       ANOSpeciesTable$year <- ANOYearID$year[match(ANOSpeciesTable$globalid, ANOYearID$parentglobalid)]
+      ANOSpeciesTable$ano_flate_id <- ANOPoints$ano_flate_id[match(ANOSpeciesTable$globalid, ANOPoints$globalid)]
+      
+      # Get species count per flate/year combo
+      ANOFinal <- ANOSpeciesTable %>%
+        group_by(speciesName, year, ano_flate_id) %>%
+        summarise(totalCount = sum(individualCount, na.rm = TRUE))
+      
+      # Turn anything over 1 to 1
+      ANOFinal$individualCount <- ifelse(ANOFinal$totalCount >= 1, 1, 0)
+      
+      # Now get rid of anything except the most recent presence, and if there is no presence the most recent absence
+      ANOFinal <- ANOFinal %>%
+        arrange(desc(individualCount), desc(year))
+      ANOFinal2 <- ANOFinal[!duplicated(ANOFinal[,c("ano_flate_id", "speciesName")]),]
       
       # Add taxa and accepted scientific name
-      ANOSpeciesTable$acceptedScientificName <- GBIFNameTable$GBIFName[match(ANOSpeciesTable$speciesName, GBIFNameTable$speciesName)]
-      ANOSpeciesTable$taxa <- taxaLegend$taxa[match(ANOSpeciesTable$speciesName, taxaLegend$speciesName)]
-      ANOSpeciesTable$processing <- "ANO"
-      ANOSpeciesTable$taxonKeyProject <- uniqueKeys[i]
+      ANOFinal2$acceptedScientificName <- GBIFNameTable$GBIFName[match(ANOFinal2$speciesName, GBIFNameTable$speciesName)]
+      ANOFinal2$taxa <- taxaLegend$taxa[match(ANOFinal2$speciesName, taxaLegend$speciesName)]
+      ANOFinal2$processing <- "ANO"
+      ANOFinal2$taxonKeyProject <- uniqueKeys[i]
       
       # Save table as list item
-      ANOSpeciesList[[i]] <- ANOSpeciesTable
+      ANOSpeciesList[[i]] <- ANOFinal2[,c("year", "ano_flate_id", "individualCount", "acceptedScientificName", "taxa", "processing", "taxonKeyProject")]
     }
     
     # Put all taxa back together
     ANOSpeciesFullTable <- do.call("rbind", ANOSpeciesList)
     
     # Add geometry data
-    ANOData <- merge(ANOSpeciesFullTable, ANOPoints[,c("globalid")], 
-                     by="globalid", all.x=TRUE) %>%
-      rename(geometry = shape)
+    ANOData <- merge(ANOSpeciesFullTable, ANOFlateMidpoints, 
+                     by="ano_flate_id", all.x=TRUE)
+    ANOData <- st_as_sf(ANOData)
     return(ANOData)
   } else {
     return(NULL)

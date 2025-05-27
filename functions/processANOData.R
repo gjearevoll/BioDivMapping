@@ -11,7 +11,7 @@
 #' 
 
 
-processANOData <- function(ANODataset) {
+processANOData <- function(ANODataset, crs) {
   
   
   # continue only if at least one species is present in ANO
@@ -24,5 +24,11 @@ processANOData <- function(ANODataset) {
   ANODataset <- ANODataset[,c("acceptedScientificName", "individualCount", "geometry", "dataType", "taxa", "year", "taxonKeyProject")]
   ANODataset <- ANODataset[!is.na(ANODataset$acceptedScientificName),]
   ANODataset <- st_as_sf(ANODataset, crs = crs)
+  
+  
+  # Remove any duplicated observations from the same year at the same place
+  arrangedData <- ANODataset[order(ANODataset$individualCount, decreasing = TRUE),]
+  newDataset2 <- arrangedData[!duplicated(arrangedData[,c("geometry", "year", "acceptedScientificName")]),]
+  
   return(ANODataset)
 }

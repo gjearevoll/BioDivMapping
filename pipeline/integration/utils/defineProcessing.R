@@ -17,23 +17,23 @@ if (file.exists(dataFileName)) {
   
 # 2. ANO Data
 } else if (dataType == "ANO") {
-  newDataset <- processANOData(focalData)
+  newDataset <- processANOData(focalData, crs)
   
 # 3. Field note data  
 } else if (dataType == "fieldNotes"){
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
-  newDataset <- processFieldNotes(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs)
+  newDataset <- processFieldNotes(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, coordUncertainty, yearToStart)
   
 # 4. Field note data  - Oslo and Agder
 } else if (dataType == "fieldNotesOslo"){
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
-  newDataset <- processFieldNotesOslo(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs)
+  newDataset <- processFieldNotesOslo(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, coordUncertainty, yearToStart)
   
   
 # 5. Field note data (with events table)
 } else if (dataType == "fieldNotesEvent") {
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
-  newDataset <- processFieldNotesEvent(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs)
+  newDataset <- processFieldNotesEvent(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, coordUncertainty, yearToStart)
   
 # No need to do anything to presence only data (yet) except add individualCount column
 } else if (dataType == "mareano") {

@@ -15,7 +15,8 @@
 #' 
 #' 
 #' 
-processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs) {
+processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, 
+                              focalTaxon, crs, coordUncertainty, yearToStart) {
   
   
   # Get the relevant endpoint
@@ -28,8 +29,18 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
   # Load in occurrence data
   occurrence <- read.delim(paste0(tempFolderName,"/", datasetName ,"/occurrence.txt"))
   
-  # Create surveyed species
-  surveyedSpecies <- unique(occurrence$scientificName)
+  # make sure we have a year column
+  if (!("year" %in% colnames(occurrence))) {
+    occurrence$year <- substr(occurrence$eventDate,1,4)
+  }
+  occurrence <- occurrence %>%
+    filter(year >= yearToStart & !is.na(year))
+  
+  # Remove data with bad coord uncertainty
+  if( !is.na(coordUncertainty)) {
+    occurrence <- occurrence %>%
+      filter(coordinateUncertaintyInMeters <= coordUncertainty)
+  }
   
   # Create eventID
   # 1. Check for eventID 
@@ -41,6 +52,8 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
     occurrence$eventID <- paste(occurrence$locality, occurrence$eventDate, sep = "-")
   }
   
+  # Create surveyed species
+  surveyedSpecies <- unique(occurrence$scientificName)
   
   # Buold a species table
   speciesLegend <- data.frame(surveyedSpecies = surveyedSpecies, 
@@ -50,7 +63,7 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
   
   # Find only eventIDs within our regionGeometry
   eventLocations <- occurrence %>%
-    filter(!is.na(decimalLatitude) & !is.na(decimalLongitude) & coordinateUncertaintyInMeters <= 100) %>%
+    filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) %>%
     dplyr::select(decimalLatitude, decimalLongitude, eventID) %>%
     distinct()
   eventLocationsSF <- st_as_sf(eventLocations,                         
@@ -64,12 +77,7 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
   if (nrow(eventLocationsSF) == 0) {
     return(NULL)
   }
-  
-  # make sure we have a year column
-  if (!("year" %in% colnames(occurrence))) {
-    occurrence$year <- substr(occurrence$eventDate,1,4)
-  }
-  
+
   # Get a dates table to match years to events
   eventDates <- occurrence %>%
     dplyr::select(year, eventID) %>%
@@ -101,6 +109,11 @@ processFieldNotes <- function(focalEndpoint, tempFolderName, datasetName, region
   newDataset <- newDataset %>%
     dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject) %>%
     filter(!is.na(acceptedScientificName))
+  
+  # Remove any duplicated observations from the same year at the same place
+  arrangedData <- newDataset[order(newDataset$individualCount, decreasing = TRUE),]
+  newDataset2 <- arrangedData[!duplicated(arrangedData[,c("geometry", "year", "acceptedScientificName")]),]
+  
   saveRDS(newDataset, paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS"))
   return(newDataset)
 }

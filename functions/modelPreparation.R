@@ -10,8 +10,8 @@
 #' @param environmentalDataList A list of raster giving relevant environmental variables.
 #' @param crs The coordinate reference system used in the workflow.
 #' @param nSegment The number of species in each group to run.
-#' @param speciesOccurenceThreshold The threshold used to select the number of species occurence required to fit the model
-#' @param datasetOccurreneThreshold Datasets with occurrences not up to the threshold are combined together.
+#' @param speciesOccurrenceThreshold The threshold used to select the number of species occurence required to fit the model
+#' @param datasetOccurrenceThreshold Datasets with occurrences not up to the threshold are combined together.
 #' 
 #' @return An R6 environment object with enough information to run an intSDM model.
 #' @importFrom terra nlyr
@@ -111,11 +111,11 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
       speciesInfo <- speciesOccTable%>%
         rowSums() %>%
         sort()
-      speciesToRemove <- names(speciesInfo[speciesInfo < speciesOccurenceThreshold])
-      cat(paste("Removing", length(speciesToRemove), "species because they have less than", speciesOccurenceThreshold, "occurrences"))
+      speciesToRemove <- names(speciesInfo[speciesInfo < speciesOccurrenceThreshold])
+      cat(paste("Removing", length(speciesToRemove), "species because they have less than", speciesOccurrenceThreshold, "occurrences"))
       
-      speciesToKeep <- names(speciesInfo[speciesInfo >= speciesOccurenceThreshold])
-      cat(paste("Keeping", length(speciesToKeep), "species because they have greater than or equal to", speciesOccurenceThreshold, "occurrences"))
+      speciesToKeep <- names(speciesInfo[speciesInfo >= speciesOccurrenceThreshold])
+      cat(paste("Keeping", length(speciesToKeep), "species because they have greater than or equal to", speciesOccurrenceThreshold, "occurrences"))
       
       # Remove NAs from the species to Keep
       speciesToKeep <- speciesToKeep[!is.na(speciesToKeep)]

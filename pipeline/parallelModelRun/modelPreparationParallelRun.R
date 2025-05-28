@@ -112,7 +112,7 @@ if ("vascularPlants" %in% focalTaxa$taxa) {
   cat("Plant data is being split up into ", speciesDivisions, " sections. New taxa names are ", focalTaxa$taxa)
 }
 
-cat("\nPrediction data and model species data successfully created. Starting to create segments of", newSegmentNumber, "species each.")
+cat("\nPrediction data and model species data successfully created. Starting to create segments of", nSegment, "species each.")
 
 # Create list of taxa run
 listSegments <- list()

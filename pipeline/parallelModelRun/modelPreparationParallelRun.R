@@ -3,7 +3,7 @@
 ###----------------------###
 ### 0. Bash preparation ####
 ###----------------------###
-.libPaths(c("/cluster/projects/nn11017k/R"))
+#.libPaths(c("/cluster/projects/nn11017k/R"))
 library(intSDM)
 library(rgbif)
 library(terra)
@@ -15,7 +15,6 @@ start <- Sys.time()
 # Specify script parameters
 args <- commandArgs(trailingOnly = TRUE)
 dateAccessed <- as.character(args[1])
-newSegmentNumber <- as.numeric(args[2])
 cat(dateAccessed)
 
 # Ensure that dateAccessed is specified
@@ -50,8 +49,6 @@ res <- 10000
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
-redList <- readRDS(paste0(folderName, "/redList.RDS"))
-
 
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
@@ -90,7 +87,7 @@ predictionData <- createPredictionData(c(res, res), regionGeometry, proj = crs)
 
 
 # Split up data for vascular plants
-if (focalTaxa$taxa == "vascularPlants") {
+if ("vascularPlants" %in% focalTaxa$taxa) {
   if (nrow(focalTaxa) > 1) {stop("cannot divide taxa data for more than one taxa simultaneously")}
   speciesDivisions <- 2
   # Get taxa species list
@@ -115,23 +112,22 @@ if (focalTaxa$taxa == "vascularPlants") {
   cat("Plant data is being split up into ", speciesDivisions, " sections. New taxa names are ", focalTaxa$taxa)
 }
 
-cat("\nPrediction data and model species data successfully created. Starting to create segments of", newSegmentNumber, "species each.")
+cat("\nPrediction data and model species data successfully created. Starting to create segments of", nSegment, "species each.")
 
 # Create list of taxa run
 listSegments <- list()
 
 # Prepare models
-for(iter in 1:1){
+for(iter in 1:nrow(focalTaxa)){
   workflowList <- modelPreparation(focalTaxa[iter, ], focalCovariates, speciesData, 
-                                   redListModelled = redList$GBIFName[redList$valid], 
                                    regionGeometry = regionGeometry,
                                    modelFolderName = modelFolderName, 
                                    environmentalDataList = environmentalDataList, 
                                    crs = projCRS, 
                                    segmentation = TRUE,
-                                   nSegment = newSegmentNumber,
-                                   speciesOccurenceThreshold = speciesOccurenceThreshold,
-                                   datasetOccurreneThreshold = datasetOccurreneThreshold, 
+                                   nSegment = nSegment,
+                                   speciesOccurrenceThreshold = speciesOccurrenceThreshold,
+                                   datasetOccurrenceThreshold = datasetOccurrenceThreshold, 
                                    mergeAllDatasets = TRUE,
                                    richness = TRUE)
   focalTaxaRun <- names(workflowList)
@@ -145,7 +141,7 @@ for(iter in 1:1){
     dataTypes <- read.csv(paste0(folderName, "/metadataSummary.csv"))
     biasFieldList <- defineBiasFields(focalTaxaRun, dataTypes[!is.na(dataTypes$processing),], speciesData, NULL)
   } else {
-    biasFieldList <- rep(list(NULL), length(focalTaxonRun))
+    biasFieldList <- rep(list(NULL), length(focalTaxaRun))
   }
   
   
@@ -153,7 +149,7 @@ for(iter in 1:1){
   
   listSegments[[iter]] <- focalTaxaRun
   if (grepl("vascularPlants", focalTaxa$taxa[iter])) {saveRDS(focalTaxaRun, paste0(folderName, "/segmentList", focalTaxa$taxa[iter] ,".RDS"))}
-  save.image(file = paste0(folderName,"/workspaces/",  focalTaxa[iter, 1], "workflowWorkspace.RData"))
+  save.image(file = paste0(folderName,"/workspaces/",  focalTaxa[iter, "taxa"], "workflowWorkspace.RData"))
 }
 
 saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))

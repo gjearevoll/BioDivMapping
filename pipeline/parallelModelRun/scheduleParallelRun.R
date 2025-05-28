@@ -6,7 +6,7 @@ start <- Sys.time()
 
 i <- as.numeric(args[1])
 dateToUse <- args[2]
-covariatesSquared <- TRUE
+nThreads <- 20
 .libPaths(c("/cluster/projects/nn11017k/R"))
 library(parallel)
 library(foreach)
@@ -61,61 +61,32 @@ gc()
 
 print(predictionDatasetShort)
 
+# # In case the mesh needs a late redefinition
+# myMesh$cutoff <- 3*1000
+# myMesh$offset <- c(20, 100) * 1000
+# myMesh$max.edge <- c(200, 500) * 1000
+# meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
+# fm_int(domain = meshToUse, samplers = regionGeometry, int.args = list(method = 'direct', nsub1 = 15, nsub2 = 15))
 
-# myMesh <- list(cutoff = 176, max.edge=c(26385, 175903), offset= c(1760, 18))
-
-# create a mesh
-myMesh$cutoff <- 3*1000
-myMesh$offset <- c(20, 100) * 1000
-myMesh$max.edge <- c(50, 300) * 1000
-
-
-meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 # Add model characteristics (mesh, priors, output)
 workflow$addMesh(Object = meshToUse)
 
+# Sort out model options
+workflow$specifySpatial(prior.range = c(prior.range[1], prior.range[2]),
+                        prior.sigma = c(prior.sigma[1], prior.sigma[2]))
+workflow$workflowOutput(c('Predictions', 'Model'))
+workflow$modelOptions(ISDM = list(pointCovariates = NULL,
+                                  Offset = NULL, 
+                                  pointsIntercept = TRUE, 
+                                  pointsSpatial = NULL)
+)
+workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetShort, 
+                                      speciesSpatial = "replicate"
+                                      #samplingSize = 0.25
+))
 
-# fm_int(domain = meshToUse, samplers = regionGeometry, int.args = list(method = 'direct', nsub1 = 10, nsub2 = 10))
-# 
-
-# Add priors to the model
-workflow$specifySpatial(prior.range = c(15 * 1000, 0.01),
-                        prior.sigma = c(0.8, 0.01))
-
-#modelOutputs
-
-modelOutputs <- if(modelRun == "richness") 
-  c('Predictions', 'Model') else if (modelRun == "redListRichness") 
-    'Richness' else
-      c('Predictions', 'Model')
-
-workflow$workflowOutput(modelOutputs)
-
-if(modelRun == "richness" ){
-  workflow$modelOptions(ISDM = list(pointCovariates = NULL,
-                                    Offset = NULL, 
-                                    pointsIntercept = TRUE, 
-                                    pointsSpatial = NULL)
-  )
-  
-  
-  workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetShort, 
-                                        speciesSpatial = "replicate"
-                                        #samplingSize = 0.25
-  ))
-}else{
-  workflow$modelOptions(ISDM = list(pointCovariates = NULL,
-                                    Offset = NULL, pointsIntercept = TRUE, 
-                                    pointsSpatial = NULL), 
-                        Ipoints = list(method = 'direct')) 
-}
-
-
-focalTaxa$snow_cover <- FALSE
-focalTaxa$forest_line <- FALSE
-
+# Now add environmental covariates to the model
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
-
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 
 print(focalCovariates$parameters)
@@ -123,8 +94,12 @@ env <- colnames(focalTaxa)[colnames(focalTaxa) %in% focalCovariates$parameters[!
 focalTaxa <- focalTaxa[,c("taxa", env)]
 focalTaxa <- focalTaxa[focalTaxa$taxa %in% interestedGroup,]
 env <- env[apply(focalTaxa[,-1], 2, any)]
+
+# Add quadratic variables
 quadratics <- paste0(focalCovariates$parameters[focalCovariates$quadratic & focalCovariates$parameters %in% env], "_squared")
 env <- c(env, quadratics)
+
+# Add categorical variables
 categoricals <- focalCovariates$parameters[focalCovariates$categorical]
 categoricals2 <- names(environmentalDataList)[apply(sapply(categoricals, FUN = function(x) {grepl(x, names(environmentalDataList))}), 1, any)]
 env <- c(env, categoricals2)
@@ -142,16 +117,16 @@ rm("environmentalDataList")
 # Specify formula for the model
 cat("Specifying priors for the model")
 workflow$modelFormula(covariateFormula = NULL,
-                      biasFormula = ~ distance_water + distance_roads 
+                      biasFormula = NULL 
 ) 
 
-workflow$biasFields(datasetName = "mergedDatasetPO", prior.range = c(15 * 1000, 0.01),
+workflow$biasFields(datasetName = "mergedDatasetPO", prior.range = c(10 * 1000, 0.01),
                     prior.sigma = c(0.8, 0.01))
 
 # Specify priors for the precision of intercept and groups
 cat("Specifying priors for the hyperparameters in the model")
 
-predictionData <- createPredictionData(c(10000, 10000), regionGeometry, proj = crs)
+predictionData <- createPredictionData(c(5000, 5000), regionGeometry, proj = crs)
 # Run model (this directly saves output to folder specified above)
 workflow$specifyPriors(effectNames = c("Intercept"), Mean = 0, Precision = 1,
                        priorIntercept = list(initial = -10, fixed = TRUE),
@@ -165,7 +140,7 @@ cat(folderName)
 intSDM::sdmWorkflow(workflow, 
                     predictionData = predictionData,
                     inlaOptions = list(control.inla=list(int.strategy = 'eb', cmin = 0.01),
-                                       num.threads = 20,
+                                       num.threads = nThreads,
                                        #num.threads = 5, 
                                        safe = TRUE, 
                                        verbose = TRUE, 
@@ -180,9 +155,18 @@ cat("Changing the names of the returned output.")
 file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
             paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Preds.rds"))
 
+cat("Resizing model object")
+
+source("functions/resetEnvironments.R")
+richnessModel <- readRDS(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.rds"))
+#obj_size(richnessModel)
+reducedModel <- reset_environments(richnessModel)
+saveRDS(reducedModel, paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.rds"))
+
 print(folderName)
 print(focalGroup)
 
 end <- Sys.time()
-
-print(timeTaken <- end - start)
+timeTaken <- end - start
+print(timeTaken)
+saveRDS(nThreads * timeTaken, paste0(folderName, "/modelOutputs/", focalGroup, "/timeTaken.RDS"))

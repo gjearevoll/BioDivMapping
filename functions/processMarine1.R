@@ -23,23 +23,32 @@
 # source("functions/findGBIFName.R")
 # source("functions/taxaCheck.R")
 
-processMarine1 <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs) {
+processMarine1 <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, coordUncertainty, yearToStart) {
   
   # Download the data from the relevant endpoint and unzip it in a temporary folder, then bring it into your environment
   download.file(focalEndpoint, paste0(tempFolderName,"/", datasetName ,".zip"), mode = "wb")
   unzip(paste0(tempFolderName,"/", datasetName ,".zip"), exdir = paste0(tempFolderName,"/",  datasetName))
   occurrence <- read.delim(paste0(tempFolderName,"/", datasetName ,"/occurrence.txt")) %>%
-    mutate(individualCount = 1)
+    dplyr::mutate(individualCount = 1)
   event <- read.delim(paste0(tempFolderName,"/", datasetName ,"/event.txt"))
+  
+  # Get only events that have locations, years and relevant coordinate uncertainty
   event$decimalLatitude <- as.numeric(event$decimalLatitude)
   event$decimalLongitude <- as.numeric(event$decimalLongitude)
   event <- event[!is.na(event$decimalLatitude) & !is.na(event$decimalLongitude),]
+  
+  if (!is.na(coordUncertainty)) {
+    event <- event %>% filter(coordinateUncertaintyInMeters  <= coordUncertainty)
+  }
+ 
   eventSF <- st_as_sf(event,                         
                            coords = c("decimalLongitude", "decimalLatitude"),
                            crs = "+proj=longlat +ellps=WGS84")
   sf_use_s2(FALSE)
   eventSF <- st_intersection(st_transform(eventSF, crs), regionGeometry)
   sf_use_s2(TRUE)
+  
+  if (nrow(eventSF) == 0) {return(NULL)}
   
   # Get a year  (if it doesn't exist)
   if (!("year" %in% colnames(eventSF))) {
@@ -49,7 +58,7 @@ processMarine1 <- function(focalEndpoint, tempFolderName, datasetName, regionGeo
   
   # Get a list of all the years
   uniqueYears <- unique(eventSF$year)
-  uniqueYears <- uniqueYears[uniqueYears > 1994]
+  uniqueYears <- uniqueYears[uniqueYears > yearToStart & !is.na(uniqueYears)]
   
   # Join occurrences to events
   if ("year" %in% colnames(occurrence)) {occurrence <- dplyr::select(occurrence, -year)}

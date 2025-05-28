@@ -73,8 +73,8 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
                       prior.sigma = prior.sigma,
                       nSegment = nSegment,
                       downloadANOData = downloadANOData,
-                      speciesOccurenceThreshold = speciesOccurenceThreshold,
-                      datasetOccurreneThreshold = datasetOccurreneThreshold)
+                      speciesOccurrenceThreshold = speciesOccurrenceThreshold,
+                      datasetOccurrenceThreshold = datasetOccurrenceThreshold)
   # save
   saveRDS(controlPars, paste0(folderName,"/controlPars.RDS"))
 }

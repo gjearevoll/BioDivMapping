@@ -65,8 +65,9 @@ print(predictionDatasetShort)
 # myMesh$cutoff <- 3*1000
 # myMesh$offset <- c(20, 100) * 1000
 # myMesh$max.edge <- c(200, 500) * 1000
-# meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 # fm_int(domain = meshToUse, samplers = regionGeometry, int.args = list(method = 'direct', nsub1 = 15, nsub2 = 15))
+meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
+
 
 # Add model characteristics (mesh, priors, output)
 workflow$addMesh(Object = meshToUse)

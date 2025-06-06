@@ -23,7 +23,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
                              nSegment = NULL, speciesOccurrenceThreshold = 50, datasetOccurrenceThreshold = 10000,
                              mergeDatasets = TRUE,
                              mergeAllDatasets = FALSE,
-                             richness = TRUE) {
+                             richness = TRUE, predictorSpecies = NULL) {
   
   if(is.null(crs)){
     if(!is.null(environmentalDataList)){
@@ -53,9 +53,15 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
       # select the speciesData belonging to a particular taxonomic group
       speciesDataNames <- names(speciesData)
       speciesData <- lapply(as.list(seq_along(speciesData)), function(x){
-        # In each dataset, select the species that belong to the focalTaxon
-        dat <- speciesData[[x]] %>%
-          dplyr::filter(taxa %in% focalTaxon)
+        # In each dataset, select the species that belong to the focalTaxon (plus predictor species if we have one)
+        
+        if (is.null(predictorSpecies)) {
+          dat <- speciesData[[x]] %>%
+            dplyr::filter(taxa %in% focalTaxon)
+        } else {
+          dat <- speciesData[[x]] %>%
+            dplyr::filter(taxa %in% focalTaxon | simpleScientificName %in% predictorSpecies)
+        }
         
         if(nrow(dat) > 0){
           ret <- dat
@@ -214,12 +220,15 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
       
       # And check the most numerous in that dataset
       speciesCountsPredData <- sort(speciesCounts[speciesInPredDataset], decreasing = TRUE)
-      predictorSpecies <- names(speciesCountsPredData[1])
+      if (is.null(predictorSpecies)) {
+        predictorSpecies <- names(speciesCountsPredData[1])
+      }
+
       
       # These are the list of species in the prediction dataset
       # So that we can have the prediction dataset and the rest of the species that 
       # are not in the prediction dataset
-      speciesInPredictionDataset <- names(speciesCountsPredData[-1])
+      speciesInPredictionDataset <- names(speciesCountsPredData)[names(speciesCountsPredData) != predictorSpecies]
       restOfSpecies <- fullSpeciesList[!(fullSpeciesList %in% speciesInPredDataset)]
       
       # Put the two datasets together

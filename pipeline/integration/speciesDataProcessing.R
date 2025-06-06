@@ -169,7 +169,7 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(maskedData), FUN = funct
   dataset <- maskedData[[x]]
   datasetName <- names(maskedData)[x]
   datasetType <- unique(dataset$dataType)
-  if (datasetType == "PO") {
+  if (!("individualCount" %in% colnames(dataset))) {
     dataset$individualCount <- 1
   }
   datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType", 

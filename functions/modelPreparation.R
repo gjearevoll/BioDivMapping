@@ -209,6 +209,13 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
       
       # Get the list of all the species      
       speciesCounts <- sort(table(unlist(lapply(speciesData, FUN = function(x) {
+        if ("individualCount" %in% colnames(x)) {
+          presenceData <- x[x$individualCount == 1,]
+        } else {presenceData <- x}
+        presenceData$simpleScientificName
+      }))), TRUE)
+      
+      speciesCountsAll <- sort(table(unlist(lapply(speciesData, FUN = function(x) {
         x$simpleScientificName
       }))), TRUE)
       
@@ -254,8 +261,13 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
         # y <- 
         speciesCounts[segmentedList[[x]]]
       })
+      nRecords <- lapply(as.list(seq_along(segmentedList)), function(x){
+        # y <- 
+        speciesCountsAll[segmentedList[[x]]]
+      })
 
       names(nOccurences) <- names(segmentedList)
+      names(nRecords) <- names(segmentedList)
       speciesLists[[focalTaxon]] <- segmentedList
       speciesDataList[[focalTaxon]] <- speciesData
       saveRDS(nOccurences, paste0(tempFolderName, "/",focalTaxon,"numberOfOccurrences.RDS"))
@@ -326,6 +338,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
     speciesList <- unique(do.call(c, speciesList))
     
     print(paste("Number of occurence records for", focalTaxon, "is", sum(nOccurences[[focalTaxon]])))
+    print(paste("Number of totalrecords for", focalTaxon, "is", sum(nRecords[[focalTaxon]])))
     # Initialise workflow, creating folder for model result storage
     workflow <- startWorkflow(
       Projection = st_crs(crs)$proj4string,

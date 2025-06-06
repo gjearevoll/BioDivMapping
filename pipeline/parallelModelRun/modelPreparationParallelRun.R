@@ -119,6 +119,7 @@ listSegments <- list()
 
 # Prepare models
 for(iter in 1:nrow(focalTaxa)){
+  predictorSpecies <- focalTaxa$predictorSpecies[iter]
   workflowList <- modelPreparation(focalTaxa[iter, ], focalCovariates, speciesData, 
                                    regionGeometry = regionGeometry,
                                    modelFolderName = modelFolderName, 
@@ -129,7 +130,7 @@ for(iter in 1:nrow(focalTaxa)){
                                    speciesOccurrenceThreshold = speciesOccurrenceThreshold,
                                    datasetOccurrenceThreshold = datasetOccurrenceThreshold, 
                                    mergeAllDatasets = TRUE,
-                                   richness = TRUE)
+                                   richness = TRUE, predictorSpecies = predictorSpecies)
   focalTaxaRun <- names(workflowList)
   
   

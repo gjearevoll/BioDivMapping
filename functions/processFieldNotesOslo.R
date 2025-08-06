@@ -15,7 +15,8 @@
 #' 
 #' 
 #' 
-processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon) {
+processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, 
+                                  focalTaxon, crs, coordUncertainty, yearToStart) {
   
   
   # Get the relevant endpoint
@@ -27,6 +28,19 @@ processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, re
   
   # Load in occurrence data
   occurrence <- read.delim(paste0(tempFolderName,"/", datasetName ,"/occurrence.txt"))
+  
+  # Create year table if it doesn't exist, then remove bad years
+  if (is.null(occurrence$year)) {
+    occurrence$year <- str_sub(occurrence$eventDate, 1, 4)
+  }
+  occurrence <- occurrence %>%
+    filter(year >= yearToStart & !is.na(year))
+  
+  # Remove data with bad coord uncertainty
+  if( !is.na(coordUncertainty)) {
+    occurrence <- occurrence %>%
+      filter(coordinateUncertaintyInMeters <= coordUncertainty)
+  }
   
   # Create surveyed species and eventID
   surveyedSpecies <- unique(occurrence$scientificName)
@@ -49,14 +63,15 @@ processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, re
   eventLocationsSF <- st_as_sf(eventLocations,                         
                                coords = c("decimalLongitude", "decimalLatitude"),
                                crs = "+proj=longlat +ellps=WGS84")
-  eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry) %>%
-    filter(coordinateUncertaintyInMeters <= 100)
+  eventLocationsSF <- st_transform(eventLocationsSF, crs = crs)
+  eventLocationsSF <- st_intersection(eventLocationsSF, regionGeometry)
   
   # At this point we may find that there are no relevant points from this dataset available - 
   # in this case we want to finish the function early
   if (nrow(eventLocationsSF) == 0) {
     return(NULL)
   }
+
   
   # Get a dates table to match years to events
   eventDates <- occurrence %>%
@@ -85,9 +100,15 @@ processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, re
   
   # New dataset is ready!
   newDataset <- st_as_sf(eventTableWithOccurrences,          
-                         crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+                         crs = crs)
   newDataset <- newDataset %>%
     dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject) %>%
     filter(!is.na(acceptedScientificName))
-  return(newDataset)
+  
+  # Remove any duplicated observations from the same year at the same place
+  arrangedData <- newDataset[order(newDataset$individualCount, decreasing = TRUE),]
+  newDataset2 <- arrangedData[!duplicated(arrangedData[,c("geometry", "year", "acceptedScientificName")]),]
+  
+  saveRDS(newDataset2, paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS"))
+  return(newDataset2)
 }

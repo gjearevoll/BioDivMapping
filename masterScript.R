@@ -21,21 +21,25 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # in the working folder for reproducibility.
 
 # Date of analysis from which working directory will be create/access
-dateAccessed <- "2025-02-03"
+dateAccessed <- "2025-04-13"
 
 # There are instances you want to re-initialise repository and delete some files that should be re-run
 refresh <- FALSE
 
 # spatial level on which regionGeometry will be defined as accepted by defineRegion()
-level <- "county"
+level <- "country"
 # specific region to be used as accepted by defineRegion()
-region <- "50" 
+region <- "Norway" 
 # coordinate reference system to use for project. as accepted by sf::st_crs()
 crs <- 32633 
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
 res <- 500        # Resolution that covariates should be modelled at
+# Coordinate uncertainty to filter to in GBIF
+coordUncertainty <- 250
+# Give first year data can be taken from
+yearToStart <- 1991
 # Parameters to define mesh for random fields
-myMesh <- list(cutoff = 176, max.edge=c(26385, 175903), offset= c(1760, 18))
+myMesh <- list(cutoff = 3*1000, max.edge=c(200, 500) * 1000, offset= c(20, 100) * 1000)
 # whether to use schedule download for GBIF data
 scheduledDownload <- TRUE
 # whether to wait and automatically download GBIF data when it is ready
@@ -47,7 +51,7 @@ nSegment <- 10
 speciesOccurenceThreshold <- 50
 datasetOccurreneThreshold <- 5000
 # model priors
-prior.range <- c(100, 0.01)
+prior.range <- c(22.5 * 1000, 0.01)
 prior.sigma <- c(0.8, 0.01)
 # Indicates whether you want to run the model in parallel
 parallelisation <- FALSE
@@ -98,9 +102,12 @@ source("pipeline/integration/speciesDataProcessing.R")
 # We then run our models. NOTE: This is the point where defining a Mesh becomes important. You can read
 # more about what a Mesh is, and how it works in the README.md file in the head of the repository, or in the
 # FAQ page of the shiny app. If you want to try out some potential meshes, you can do so using the
-# util file and editing the default list below. We've pre-defined a mesh here which is suitable for Norway.
-myMesh <- list(cutoff = 176, max.edge=c(26850, 175903), offset= c(1760, 1200)*10)
+# util file and editing the default list below. We've pre-defined a mesh here which is suitable for terrestrial Norway.
+myMesh <- list(cutoff = 3*1000, max.edge=c(50, 300) * 1000, offset= c(20, 100) * 1000)
 meshTest(myMesh, regionGeometry, print = TRUE, crs = crs)
+
+# If you find a mesh that is more suitable, you can update the mesh in your controlPars using the following function:
+updateModel(dateAccessed, object = "myMesh", newValue = myMesh)
 
 # Once you've figured that out, you can start running the models. Remember that this stage will be the longest.
 # If you are running this for all of Norway, at this point automation is unfortunately not an option, and you
@@ -113,6 +120,12 @@ source("pipeline/models/speciesPredictionRuns.R")
 
 # Now that the computing intensive scripts are finished, you can come back to the comfort of working in R.
 # We need to compute sampling densities, which can be done with the following script.
+dateStored <- Sys.date()
+aggregated <- TRUE
 source("pipeline/models/samplingDensityProduction.R")
 
+# Lastly, data needs to be collated and turned into a series of products that include individual species occurrence 
+# probabilities, species richness per taxa, and sampling density per taxa.
+source("pipeline/outputProcessing.R")
 
+# Done!

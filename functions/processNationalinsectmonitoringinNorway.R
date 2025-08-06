@@ -13,7 +13,7 @@
 #' @import stringr
 
 
-processNationalInsectMonitoring <- function(focalData, endpoint, tempFolderName) {
+processNationalInsectMonitoring <- function(focalData, endpoint, tempFolderName, crs) {
   
   # Download and unzip file in temp folder
   options(timeout=100)
@@ -90,6 +90,7 @@ processNationalInsectMonitoring <- function(focalData, endpoint, tempFolderName)
   
   # Crop to relevant region
   st_crs(newDataset) <- "+proj=longlat +ellps=WGS84"
+  newDataset <- st_transform(newDataset, crs = crs)
   newDataset <- st_intersection(newDataset, regionGeometry)
   newDataset <- st_transform(newDataset, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
   newDataset$dataType <- "Counts"

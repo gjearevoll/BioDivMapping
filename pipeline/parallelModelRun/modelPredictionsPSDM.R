@@ -114,34 +114,24 @@ if (!exists("modelRun")) stop("You need to specify the variable modelRun")
 
 # Prediction resolution in stated in the units used in preparing the data
 # That is metres
-predRes <- 500
+predRes <- 20000
 
 # Import model objects datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
-myMesh <- list(cutoff = 176, max.edge=c(26385, 175903), offset= c(1760, 18))
-mesh <- meshTest(myMesh, regionGeometry, crs = crs)
+
+
+mesh <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 #load("data/meshForProject.RData")
 #mesh <- meshToUse
 cat("Loaded mesh")
-if(covariatesSquared){
-  #environmentalDataList$summer_precipitation_squared <- (environmentalDataList$summer_precipitation)^2
-  environmentalDataList$summer_temperature_squared <- (environmentalDataList$summer_temperature)^2
-}
-
-levels(environmentalDataList$land_cover_corine)[[1]][,2][is.na(levels(environmentalDataList$land_cover_corine)[[1]][,2])] <- "Water bodies"
-levels(environmentalDataList$land_cover_corine)[[1]][,2][28] <- "Moors and heathland"
-landCover <- environmentalDataList$land_cover_corine 
-sort(unique(values(environmentalDataList$land_cover_corine)[,1])) 
-values(environmentalDataList$land_cover_corine)[,1][is.nan(values(environmentalDataList$land_cover_corine)[,1])] <- 48
-levels(environmentalDataList$land_cover_corine) <- levels(landCover)
 
 # Get the crs used in preparing the data for the models
 projCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
 # Get the crs used in fitting the models
-modelCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=km +no_defs"
+modelCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 #mesh <- mesh%>%
 #st_transform(., modelCRS)
 #environmentalDataList <- project(environmentalDataList, projCRS )
@@ -240,19 +230,23 @@ for(mod in seq_along(models)){
   #     unique
   covs <- model$spatCovs$name
   # identify categorical covariate factors 
-  catCovCats <- model$summary.random[model$summary.random %>% names %>% 
-                                       stringr::str_subset(paste0("^(", paste(speciesIn, collapse = "|"), ")"))]  %>% 
-    sapply(function(cov){
-      cov[,1]
-    }) %>% unlist %>% #names %>% 
-    stringr::str_remove(paste0("^(", paste(speciesIn, collapse = "|"), ")_")) %>% unique %>% 
-    str_subset(paste0("^(", str_c(names(environmentalDataList[[types == "factor"]]), collapse = "|"), ")"))
-  catCovs <- origCovs[sapply(origCovs, function(name) {
-    any(str_detect(catCovCats, paste0("^", name)))
-  })]
+  if (any(types == "factor")) {
+    catCovCats <- model$summary.random[model$summary.random %>% names %>% 
+                                         stringr::str_subset(paste0("^(", paste(speciesIn, collapse = "|"), ")"))]  %>% 
+      sapply(function(cov){
+        cov[,1]
+      }) %>% unlist %>% #names %>% 
+      stringr::str_remove(paste0("^(", paste(speciesIn, collapse = "|"), ")_")) %>% unique %>% 
+      str_subset(paste0("^(", str_c(names(environmentalDataList[[types == "factor"]]), collapse = "|"), ")"))
+    catCovs <- origCovs[sapply(origCovs, function(name) {
+      any(str_detect(catCovCats, paste0("^", name)))
+    })]
+    covs <- unique(c(covs, catCovs))
+  }
+
   
   # get complete list of covariate columns from which to predict
-  covs <- unique(c(covs, catCovs))
+
   cat("\nCompleted list of covs")
   
   # Obtain prediction data

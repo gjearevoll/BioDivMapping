@@ -14,6 +14,20 @@ library(terra)
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
 
+###----------------------###
+### 0. Bash preparation ####
+###----------------------###
+
+args <- commandArgs(TRUE)
+
+# THis should only run if the script is being run from the command line
+if (length(args) != 0) {
+  # Set arguments
+  dateAccessed <- args[1]
+  # Set the working directory
+  setwd("~/BioDivMapping")
+}
+
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###
@@ -22,6 +36,7 @@ sapply(list.files("functions", full.names = TRUE), source)
 if (!exists("dateAccessed")) {
   stop("Please define a run date for the model first.")
 }
+
 # define repo folder names
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
@@ -42,6 +57,9 @@ speciesDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))
 speciesData <- speciesDataList[["species"]]
 redList <- speciesDataList[["redList"]]
 metadata <- speciesDataList$metadata$metadata
+region <- attr(speciesDataList, "region")
+level <- attr(speciesDataList, "level")
+rm("speciesDataList")
 
 # Import taxa list and polyphyletic species
 focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -78,23 +96,34 @@ for (ds in seq_along(speciesData)) {
   cat("Currently processing dataset '", datasetName,"' \n", sep = "")
   
   source("pipeline/integration/utils/defineProcessing.R")
-  if (is.null(newDataset)) {break}
+  if (is.null(newDataset)) {
+    processedData[[ds]] <- NA
+    namesProcessedData[ds] <- datasetName
+    next
+    }
   
   # add simpleScientificName column
-  newDataset <- newDataset %>%
-    mutate(
-      simpleScientificName = coalesce(
-        redList$species[match(acceptedScientificName, redList$GBIFName)],  # Match redList species
-        str_extract(acceptedScientificName, "^[A-Za-z]+\\s+[a-z]+")        # Extract binomial name
-      ),
-      # Replace space with underscore in simpleScientificName
-      simpleScientificName = gsub("-", "", gsub("×","", gsub(" ", "_", simpleScientificName)))
-    )
+  if ("acceptedScientificName" %in% colnames(newDataset)) {
+    newDataset <- newDataset %>%
+      mutate(
+        simpleScientificName = coalesce(
+          redList$species[match(acceptedScientificName, redList$GBIFName)],  # Match redList species
+          str_extract(acceptedScientificName, "^[A-Za-z]+\\s+[a-z]+")        # Extract binomial name
+        ),
+        # Replace space with underscore in simpleScientificName
+        simpleScientificName = gsub("-", "", gsub("×","", gsub(" ", "_", simpleScientificName)))
+      )} else {
+        newDataset <- newDataset %>%
+          mutate(simpleScientificName = gsub("-", "", gsub("×","", gsub(" ", "_", scientificName))))
+      }
   
   # Add in polyphyletic taxa
-  newDataset$taxa <- ifelse(newDataset$acceptedScientificName %in% polyphyleticSpecies$acceptedScientificName, 
-                            polyphyleticSpecies$taxa[match(newDataset$acceptedScientificName, polyphyleticSpecies$acceptedScientificName)], 
-                            newDataset$taxa)
+  if(file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
+    newDataset$taxa <- ifelse(newDataset$acceptedScientificName %in% polyphyleticSpecies$acceptedScientificName, 
+                              polyphyleticSpecies$taxa[match(newDataset$acceptedScientificName, polyphyleticSpecies$acceptedScientificName)], 
+                              newDataset$taxa)
+  } 
+  
   
   # convert year to numeric
   newDataset$year <- as.numeric(newDataset$year)
@@ -108,7 +137,7 @@ for (ds in seq_along(speciesData)) {
 
 names(processedData) <- namesProcessedData
 
-# Save for use in model construction
+# Remove empty datasets
 processedData <- processedData[!(unlist(lapply(processedData,is.null)))]
 processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 
@@ -118,12 +147,14 @@ processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 
 # Import mask for removing species data in cities and lakes
 cityLakeMask <- rast("localArchive/mask100.tiff")
-cityLakeMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityLakeMask == 1, 1, NA))), crs(speciesData[[1]]))
+cityLakeMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityLakeMask == 1, 1, NA))), crs= "+proj=longlat +ellps=WGS84")
 
 maskedData <- lapply(processedData, FUN = function(x) {
-  newDatasetMasked <- st_intersection(x, cityLakeMaskNA)
-  cat("Dataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
-  return(newDatasetMasked)
+  newDatasetLongLat <- st_transform(x, crs = "+proj=longlat +ellps=WGS84")
+  newDatasetMasked <- st_intersection(newDatasetLongLat, cityLakeMaskNA)
+  cat("\nDataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
+  newDatasetMasked2 <- st_transform(newDatasetMasked, crs = crs)
+  return(newDatasetMasked2)
 })
 
 maskedData <- maskedData[lapply(maskedData,nrow)>0]
@@ -134,11 +165,11 @@ saveRDS(maskedData, paste0(folderName, "/speciesDataProcessed.RDS"))
 ###--------------------------------###
 
 # Edit data frames to have the same number of columns
-processedDataCompiled <- do.call(rbind, lapply(1:length(processedData), FUN = function(x) {
-  dataset <- processedData[[x]]
-  datasetName <- names(processedData)[x]
+processedDataCompiled <- do.call(rbind, lapply(1:length(maskedData), FUN = function(x) {
+  dataset <- maskedData[[x]]
+  datasetName <- names(maskedData)[x]
   datasetType <- unique(dataset$dataType)
-  if (datasetType == "PO") {
+  if (!("individualCount" %in% colnames(dataset))) {
     dataset$individualCount <- 1
   }
   datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType", 
@@ -167,8 +198,7 @@ saveRDS(redList, paste0(folderName, "/redList.RDS"))
 ###-----------------------------------###
 
 # Provide empty raster
-blankRaster <- terra::project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]],
-                              "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs")
+blankRaster <- terra::project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]], paste0("EPSG:",crs))
 allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, blankRaster)
 writeRaster(allSpeciesRichness$rasters, paste0(folderName, "/speciesRichnessData.tiff"), overwrite=TRUE)
 saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))

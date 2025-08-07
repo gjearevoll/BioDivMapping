@@ -29,7 +29,7 @@ metadata <- metadata[!is.na(metadata$processing),]
 
 # Introduction
 
-The Open Data Biodiversity Mapper (ODBM) is a tool intended to provide information on biodiveristy hotspots within Norway. It highlights
+The Open Data Biodiversity Mapper (ODBM) is a tool intended to provide information on biodiversity hotspots within Norway. It highlights
 regions where red-listed species are likely to be found, for the purposes of enabling policy decisions regarding the
 protection or restoration of said regions. The tool uses openly available data, fed through integrated species distribution
 models, to analyse where these regions can be found in Norway.
@@ -58,11 +58,11 @@ Before we start running the pipeline, there are several pieces of external data 
 The main ones are:
 
 - Which species are included
-- Whch environmental covariates are used
+- Which environmental covariates are used
 - Which species datasets are included in the analysis
 - What spatial region is analysed
 
-The first three of these questions corresponds to csv files that sit in the folder `data/external`. The last
+The first three of these questions correspond to csv files that sit in the folder `data/external`. The last
 one is a simple matter of inputting a couple of parameters. Below we cover these points in detail.
 
 ## Choice of species
@@ -82,7 +82,7 @@ in the taxa column) manually group individual species into different taxa. By us
 display it in resulting visualisations and metadata in these larger groups. However the pipeline operates without
 this column, and if you do not want to use it you can simply leave it blank.
 
-The end product of looks like this (note that columns scientificName and level are not currently used in the pipeline and as such are
+The end product looks like this (note that columns scientificName and level are not currently used in the pipeline and as such are
 not relevant yet):
 
 ``` {r, speciesTable, echo = FALSE}
@@ -99,8 +99,8 @@ knitr::kable(
 
 > **A Note on Polyphyletic Groups**
 >
->Some species groups are polyphyletic, ie. can be found in multiple taxonomic groups. Since these aren't comprised of a single
-taxnomic group of any level, there are a slightly different process for dealing with them. There are two main cases we deal with here. 
+>Some species groups are polyphyletic, i.e. can be found in multiple taxonomic groups. Since these aren't comprised of a single
+taxonomic group of any level, there is a slightly different process for dealing with them. There are two main cases we deal with here. 
 > 
 > 1. A taxa that is made up of the entirety of multiple taxonomic groups. We see an example of this in the dataset above - amphibians and
 reptiles. This group is comprised of every species in two classes - Amphibia and Squamata. For this case, we simply list both, with
@@ -126,7 +126,7 @@ with sources given in the `source` column have an external source available. An 
 knitr::kable(
   focalCovariates[1:5,], 
   valign = 't',
-  caption = 'An example of the environmental covariates currently processed by the ODBM pipeline. THe full dataset can be found in Appendix 1B.'
+  caption = 'An example of the environmental covariates currently processed by the ODBM pipeline. The full dataset can be found in Appendix 1B.'
 )
 
 ```
@@ -138,7 +138,7 @@ The section on the `environmentalImport.R` script will give more information abo
 While the pipeline can run using nothing more than GBIF occurrence data, the analysis is more informative if we're able to identify presence/absence
 and abundance datasets. To do this, we determined which datasets contributed a meaningful amount of data for each taxa of interest. This was done
 by reviewing the metadata uploaded to GBIF; and when detail there was insufficient, we contacted the data authors. GBIF's filtering dashboard (
-shown below) allows us to see which datasets contribute the most data for a specific taxa. We ensure that we assessed enough datastes to use
+shown below) allows us to see which datasets contribute the most data for a specific taxa. We ensure that we assessed enough datasets to use
 more than 99% of all data for each taxa.
 
 ```{r, metadataImage, echo = FALSE}
@@ -155,7 +155,7 @@ in calculating the sampling bias fields (more on that when we talk about the mod
 knitr::kable(
   metadata[1:5,], 
   valign = 't',
-  caption = 'An example of the datasets currently used by the ODBM pipeline. THe full list can be found in Appendix 1C.'
+  caption = 'An example of the datasets currently used by the ODBM pipeline. The full list can be found in Appendix 1C.'
 )
 
 
@@ -165,7 +165,7 @@ knitr::kable(
 ## Region for Analysis
 
 For this project, we have naturally chosen the whole of Norway, but it is possible to analyse subsets of Norway using county/municipality divisions or
-taking a geographic extent. To use a county or a municipality, we simply need to define the object `level` in `masterScript.R` as county or municpality, 
+taking a geographic extent. To use a county or a municipality, we simply need to define the object `level` in `masterScript.R` as county or municipality, 
 and then enter the corresponding 2 or 4 digit code which defines the region - [full list here](https://www.kartverket.no/til-lands/kommunereform/tekniske-endringer-ved-sammenslaing-og-grensejustering/komendr2020).
 
 # Importing Taxa
@@ -224,12 +224,12 @@ and at which sampling events they were not found. The custom scripts built so fa
  sampled in specific events.
  - fieldNotes - This is almost identical to above, except that an event dataset is not attached. We therefore either find an eventID in the occurrence
  table, or create an eventID using unique time and place combinations.
- - specific dataset scripts - Some data has been recorded in unique ways, and need their own scripts. The two current examples are ´processANOData' and
- ´processNationaInsectmonitoringinNorway´. The names of these datasets trigger an if clause which then uses these specific functions.
+ - specific dataset scripts - Some data has been recorded in unique ways, and need their own scripts. The two current examples are `processANOData` and
+ `processNationaInsectmonitoringinNorway`. The names of these datasets trigger an if clause which then uses these specific functions.
  
 All custom scripts can be found in the `functions` folders with the prefix "process".
 
-There are now a number of other aspects of the data that need to be produced, both for later visualisation and for reproducibiity later on.
+There are now a number of other aspects of the data that need to be produced, both for later visualisation and for reproducibility later on.
 
 ## Data compilation
 
@@ -273,7 +273,7 @@ statistical framework with shared parameters across each.
 
 Evidence suggests that these models outperform single-use datasets in almost all case scenarios. Combining high quality structured data with the abundant 
 citizen science data available allows us to reduce the effect of observer biases that are typically found in the latter, improves the spatial and temporal
-scale of the study, and increases the precision of model estimates. More so, the tools to help ecologists construct these models (for example: INLA, inlabru,
+scale of the study, and increases the precision of model estimates. Moreover, the tools to help ecologists construct these models (for example: INLA, inlabru,
 PointedSDMs) have become more prevalent and user-friendly, allowing us to build these models more conveniently than what could be done previously.
 
 > **What is an INLA Mesh**
@@ -289,7 +289,7 @@ the R-INLA package with the inla.mesh.2d() function.
 
 The modelling script also involves a short function which decides which datasets to use to determine sampling bias for each taxa. You have three options
 here:
-- You can dictate which datastes within the function itself
+- You can dictate which datasets within the function itself
 - You can take the datasets dictated in the `biased` column of the metadataSummary file
 - You can use every dataset for which there is sufficient data for a taxa
 
@@ -309,7 +309,7 @@ visualisation tool - in this case a Shiny app.
 knitr::kable(
   focalTaxa, 
   valign = 't',
-  caption = 'Appendix 1A: The full list of taxonomic groups prepared for analysisd by the ODBM pipeline.'
+  caption = 'Appendix 1A: The full list of taxonomic groups prepared for analysis by the ODBM pipeline.'
 )
   
 knitr::kable(

@@ -17,6 +17,20 @@ library(digest)  # create hash of raster CRS and projection for saving
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
 
+###----------------------###
+### 0. Bash preparation ####
+###----------------------###
+
+args <- commandArgs(TRUE)
+
+# THis should only run if the script is being run from the command line
+if (length(args) != 0) {
+  # Set arguments
+  dateAccessed <- args[1]
+  # Set the working directory
+  setwd("~/BioDivMapping")
+}
+
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###

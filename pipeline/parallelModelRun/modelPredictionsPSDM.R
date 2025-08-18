@@ -103,15 +103,6 @@ readRDS(paste0(folderName,"/controlPars.RDS")) %>%
   list2env(envir = .GlobalEnv)
 cat("Loaded contral pars")
 
-
-# Ensure that modelRun is specified
-if (!exists("modelRun")) stop("You need to specify the variable modelRun")
-
-# Redefine modelRun after controlPars import using args if necessary
-#if (length(args) != 0) {
-# modelRun <- args[2]
-#}
-
 # Prediction resolution in stated in the units used in preparing the data
 # That is metres
 predRes <- 20000

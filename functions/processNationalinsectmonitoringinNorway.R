@@ -13,18 +13,25 @@
 #' @import stringr
 
 
-processNationalInsectMonitoring <- function(focalData, endpoint, tempFolderName, crs) {
+processNationalInsectMonitoring <- function(focalData, endpoint, tempFolderName, crs, coordUncertainty) {
+  
+  dataFileName <- paste0(tempFolderName,"/NationalInsectMonitoring/processedDataset.RDS")
+  if (file.exists(dataFileName)) {
+    cat("\tPre-processed version used\n")
+    newDataset <- readRDS(dataFileName)
+    return(newDataset)
+  }
   
   # Download and unzip file in temp folder
   options(timeout=100)
-  zippedDownload <- paste0(tempFolderName,"/NationaInsectMonitoring.zip")
+  zippedDownload <- paste0(tempFolderName,"/NationalInsectMonitoring.zip")
   download.file(endpoint, zippedDownload, mode = "wb")
-  unzip(paste0(tempFolderName,"/NationaInsectMonitoring.zip"), exdir = paste0(tempFolderName,"/NationaInsectMonitoring"))
+  unzip(paste0(tempFolderName,"/NationalInsectMonitoring.zip"), exdir = paste0(tempFolderName,"/NationalInsectMonitoring"))
   
   # Read in occurrence and event data
-  events <- read.delim(paste0(tempFolderName, "/NationaInsectMonitoring/event.txt"))
-  events <- events[events$coordinateUncertaintyInMeters <= 100,]
-  occurrence <- read.delim(paste0(tempFolderName,"/NationaInsectMonitoring/occurrence.txt"))
+  events <- read.delim(paste0(tempFolderName, "/NationalInsectMonitoring/event.txt"))
+  events <- events[events$coordinateUncertaintyInMeters <= coordUncertainty,]
+  occurrence <- read.delim(paste0(tempFolderName,"/NationalInsectMonitoring/occurrence.txt"))
   
   # There are four levels to this thing. Level 1 events are linked to level 2 by their parent ID and so forth.
   # Level 1 - Identification of an insect in a trap
@@ -89,16 +96,16 @@ processNationalInsectMonitoring <- function(focalData, endpoint, tempFolderName,
     rename(individualCount = organismQuantity)
   
   # Crop to relevant region
-  st_crs(newDataset) <- "+proj=longlat +ellps=WGS84"
   newDataset <- st_transform(newDataset, crs = crs)
   newDataset <- st_intersection(newDataset, regionGeometry)
-  newDataset <- st_transform(newDataset, crs = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 ")
   newDataset$dataType <- "Counts"
   
   taxaLegend <- distinct(st_drop_geometry(focalData[,c("taxa", "acceptedScientificName", "taxonKeyProject")]))
   
   newDataset$taxa <- taxaLegend$taxa[match(newDataset$acceptedScientificName, taxaLegend$acceptedScientificName)]
   newDataset$taxonKeyProject <- taxaLegend$taxonKeyProject[match(newDataset$acceptedScientificName, taxaLegend$acceptedScientificName)]
+  saveRDS(newDataset, paste0(tempFolderName,"/NationalInsectMonitoring/processedDataset.RDS"))
+  
   return(newDataset)
   
   

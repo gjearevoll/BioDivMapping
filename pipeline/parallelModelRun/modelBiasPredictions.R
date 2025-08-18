@@ -8,6 +8,7 @@ args <- commandArgs(trailingOnly = TRUE)
 start <- Sys.time()
 
 i <- as.numeric(args[1])
+dateToUse <- args[2]
 covariatesSquared <- TRUE
 .libPaths(c("/cluster/projects/nn11017k/R"))
 
@@ -24,29 +25,22 @@ library(purrr)
 library(terra)
 library(tidyterra)
 library(stringr)
+library(rgbif)
 #library(ppmData)
 
-interestedGroup <- "amphibiansReptiles"
-load(paste0(interestedGroup,"workflowWorkspace.RData"))
-sampSize <- 0.25
+# Load in segment number and interested group name
+segmentList <- readRDS(paste0("data/run_", dateToUse, "/segmentList.RDS"))
+
+interestedGroup <- gsub('[[:digit:]]+', '', segmentList[i])
+load(paste0("data/run_", dateToUse, "/workspaces/", interestedGroup,"workflowWorkspace.RData"))
 
 print(i)
 
-
-library(intSDM)
-library(rgbif)
-library(terra)
-library(dplyr)
-
-# Load the workspace witht the workflowList object
-#load("workflowWorkspace.RData")
-
-focalGroup <- names(workflowList)[i]
+focalGroup <- segmentList[i]
 workflow <- workflowList[[focalGroup]]
 print(focalGroup)
 
 rm("workflowList")
-
 
 # load the control parameters
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
@@ -69,7 +63,7 @@ if(!predictionDatasetShort %in% datasetNames){
 }
 
 
-dateAccessed <- "2024-12-04" 
+dateAccessed <- dateToUse
 modelRun <- "richness"
 covariatesSquared <- TRUE
 # Import local functions
@@ -90,42 +84,28 @@ modelFolderName <- paste0(folderName, "/modelOutputs")
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
 
-# Ensure that modelRun is specified
-if (!exists("modelRun")) stop("You need to specify the variable modelRun")
-
-
 # Prediction resolution in stated in the units used in preparing the data
 # That is metres
-predRes <- 500
+predRes <- 5000
 
 # Import model objects datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
-myMesh <- list(cutoff = 176, max.edge=c(26385, 175903), offset= c(1760, 18))
-mesh <- meshTest(myMesh, regionGeometry, crs = crs)
+
+mesh <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 #load("data/meshForProject.RData")
 #mesh <- meshToUse
-if(covariatesSquared){
-  environmentalDataList$summer_precipitation_squared <- (environmentalDataList$summer_precipitation)^2
-  environmentalDataList$summer_temperature_squared <- (environmentalDataList$summer_temperature)^2
-}
-
-levels(environmentalDataList$land_cover_corine)[[1]][,2][is.na(levels(environmentalDataList$land_cover_corine)[[1]][,2])] <- "Water bodies"
-levels(environmentalDataList$land_cover_corine)[[1]][,2][28] <- "Moors and heathland"
-landCover <- environmentalDataList$land_cover_corine 
-sort(unique(values(environmentalDataList$land_cover_corine)[,1])) 
-values(environmentalDataList$land_cover_corine)[,1][is.nan(values(environmentalDataList$land_cover_corine)[,1])] <- 48
-levels(environmentalDataList$land_cover_corine) <- levels(landCover)
+cat("Loaded mesh")
 
 # Get the crs used in preparing the data for the models
 projCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
 # Get the crs used in fitting the models
-modelCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=km +no_defs"
+modelCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
 # Import fitted models
-models <- lapply(paste0(modelFolderName, "/", interestedGroup, i), function(x){
+models <- lapply(paste0(modelFolderName, "/", focalGroup), function(x){
   try(list.files(x, pattern = paste0("richnessModel.rds"), recursive = TRUE, full.names = TRUE))
 })
 
@@ -137,7 +117,7 @@ models <- lapply(paste0(modelFolderName, "/", interestedGroup, i), function(x){
 types <- sapply(seq(nlyr(environmentalDataList)), function(x){
   environmentalDataList[[x]][,1] %>% unlist %>% class
 })
-
+cat("Loaded types")
 origCovs <- names(environmentalDataList)
 
 # define template prediction raster 
@@ -180,21 +160,15 @@ geometries <- xyFromCell(predGrid, seq(ncell(predGrid))) %>%
 
 origCovs <- names(environmentalDataList)
 # Define model outputs based on modelRun
-modelOutputs <- if(modelRun == "richness") {
-  c('Bias')
-} else if (modelRun == "redListRichness") {
-  'Richness' 
-} else {
-  c('Predictions', 'Bias', 'Covs', 'Spatial')
-}
+modelOutputs <- 'Bias'
 
 ###-------------------------###
 ### 3. Generate predictions ###
 ###-------------------------###
 
-for(i in seq_along(models)){
+for(mod in seq_along(models)){
   # identify focal taxon
-  focalTaxon <- strsplit(models[i][[1]], split = "/")[[1]][[4]]
+  focalTaxon <- strsplit(models[mod][[1]], split = "/")[[1]][[4]]
   # import model
   model <- readRDS(models[i][[1]])
   # identify species in model
@@ -204,19 +178,20 @@ for(i in seq_along(models)){
   # identify covariates used in model 
   covs <- model$spatCovs$name
   # identify categorical covariate factors 
-  catCovCats <- model$summary.random[model$summary.random %>% names %>% 
-                                       stringr::str_subset(paste0("^(", paste(speciesIn, collapse = "|"), ")"))]  %>% 
-    sapply(function(cov){
-      cov[,1]
-    }) %>% unlist %>% #names %>% 
-    stringr::str_remove(paste0("^(", paste(speciesIn, collapse = "|"), ")_")) %>% unique %>% 
-    str_subset(paste0("^(", str_c(names(environmentalDataList[[types == "factor"]]), collapse = "|"), ")"))
-  catCovs <- origCovs[sapply(origCovs, function(name) {
-    any(str_detect(catCovCats, paste0("^", name)))
-  })]
-  
-  # get complete list of covariate columns from which to predict
-  covs <- unique(c(covs, catCovs))
+  if (any(types == "factor")) {
+    catCovCats <- model$summary.random[model$summary.random %>% names %>% 
+                                         stringr::str_subset(paste0("^(", paste(speciesIn, collapse = "|"), ")"))]  %>% 
+      sapply(function(cov){
+        cov[,1]
+      }) %>% unlist %>% #names %>% 
+      stringr::str_remove(paste0("^(", paste(speciesIn, collapse = "|"), ")_")) %>% unique %>% 
+      str_subset(paste0("^(", str_c(names(environmentalDataList[[types == "factor"]]), collapse = "|"), ")"))
+    catCovs <- origCovs[sapply(origCovs, function(name) {
+      any(str_detect(catCovCats, paste0("^", name)))
+    })]
+    covs <- unique(c(covs, catCovs))
+  }
+
   # identify bias covs
   if(!is.null(model$spatCovs$biasFormula)){
     biasCovs <- covs[covs %in% attributes(terms(model$spatCovs$biasFormula))$term.labels]

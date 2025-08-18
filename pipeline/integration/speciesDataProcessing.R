@@ -86,6 +86,11 @@ namesProcessedData <- c()
 for (ds in seq_along(speciesData)) {
   focalData <- speciesData[[ds]]
   
+  # Remove invalid months if we have bird data
+  if ("birds" %in% focalData$taxa) {
+    focalData <- focalData[!(focalData$taxa == "birds" & focalData$month %in% c(1,2,3,4,5,9,10,11,12,NA,"")),]
+  }
+  
   # If the dataset is empty, skip it
   if (nrow(focalData) == 0) next
   
@@ -100,7 +105,7 @@ for (ds in seq_along(speciesData)) {
     processedData[[ds]] <- NA
     namesProcessedData[ds] <- datasetName
     next
-    }
+  }
   
   # add simpleScientificName column
   if ("acceptedScientificName" %in% colnames(newDataset)) {
@@ -127,9 +132,7 @@ for (ds in seq_along(speciesData)) {
   
   # convert year to numeric
   newDataset$year <- as.numeric(newDataset$year)
-  # newDatasetMasked <- st_intersection(newDataset, cityLakeMaskNA)
-  # cat("Dataset masked.", (nrow(newDataset) - nrow(newDatasetMasked)), "entries removed.")
-  # 
+  
   # Save and name new dataset
   processedData[[ds]] <- newDataset
   namesProcessedData[ds] <- datasetName

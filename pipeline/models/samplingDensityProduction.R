@@ -51,8 +51,8 @@ readRDS(paste0(folderName,"/controlPars.RDS")) %>%
   list2env(envir = .GlobalEnv)
 
 # Get list of all relevant taxa
-regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
-projCRS <- 32633
+#regionGeometry <- rast(paste0(folderName, "/regionGeometry.RDS"))
+projCRS <- crs
 environmentalDataList <- rast(paste0(folderName, "/environmentalDataImported.tiff"))
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"))
 processedData <- readRDS(paste0(folderName, "/processedPresenceData.RDS"))
@@ -60,12 +60,13 @@ processedData <- readRDS(paste0(folderName, "/processedPresenceData.RDS"))
 
 # Import country border
 norwayBorder2 <- sf::read_sf("data/external/norge_border/Noreg_polygon.shp")
-norwayBorderProjected2 <- terra::project(vect(norwayBorder2), crs("EPSG:32633"))
+norwayBorderProjected2 <- terra::project(vect(norwayBorder2), crs(paste0("EPSG:",crs)))
 
-predRast <- rast(ext(norwayBorderProjected2), res = c(500, 500), crs = "EPSG:32633")
+predRast <- rast(ext(norwayBorderProjected2), res = c(res, res), crs = paste0("EPSG:",crs))
+#predRast <- rast(ext(vect(regionGeometry)), res = c(res, res), crs = paste0("EPSG:",crs))
 
 # Also need to mask out areas outside of Norway
-regionToMap <- terra::project(vect(regionGeometry), predRast)
+regionToMap <- terra::project(vect(norwayBorder2), predRast)
 cityOwin <- as.owin(sf::st_as_sf(regionToMap))
 
 # Define taxa list (depends on birds)
@@ -139,6 +140,7 @@ for (t in taxaToRun) {
     cat("Reprojecting and saving ", t, " density plot.\n")
     finalDensity <- terra::project(rastDensity, predRast)
     biasRasterMasked <- crop(finalDensity, norwayBorderProjected2, mask = T)
+    #biasRasterMasked <- finalDensity
     biasRasterMasked$skalertInnsamlingsIntensitet <- (biasRasterMasked$lyr.1 - minmax(biasRasterMasked$lyr.1)[1])/
       (minmax(biasRasterMasked$lyr.1)[2] - minmax(biasRasterMasked$lyr.1)[1])
     

@@ -227,7 +227,9 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
       
       # And check the most numerous in that dataset
       speciesCountsPredData <- sort(speciesCounts[speciesInPredDataset], decreasing = TRUE)
-      if (is.null(predictorSpecies)) {
+      speciesCountsInPredData <- table(speciesData[[predictionDataset]]$simpleScientificName[speciesData[[predictionDataset]]$individualCount == 1])
+      speciesCountsInPredData <-  sort(speciesCountsInPredData, decreasing = TRUE)
+      if (predictorSpecies == "NULL") {
         predictorSpecies <- names(speciesCountsPredData[1])
       }
 

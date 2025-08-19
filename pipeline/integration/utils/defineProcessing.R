@@ -13,7 +13,12 @@ if (file.exists(dataFileName)) {
 # 1. The national insect Monitoring in Norway dataset
 } else if (dataType == "insectMonitoring") {
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
-  newDataset <- processNationalInsectMonitoring(focalData, focalEndpoint, tempFolderName)
+  newDataset <- processNationalInsectMonitoring(focalData, focalEndpoint, tempFolderName, crs, coordUncertainty)
+  
+# 1b. The national insect Monitoring in Norway dataset sturcture, but for other similar datasets
+} else if (dataType == "insectMonitoringStandard") {
+  focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
+  newDataset <- processInsectMonitoring(focalData, focalEndpoint, tempFolderName, crs, coordUncertainty)
   
 # 2. ANO Data
 } else if (dataType == "ANO") {

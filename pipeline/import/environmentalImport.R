@@ -167,10 +167,12 @@ contList <- list()
 catParams <- parameters$parameters[parameters$categorical]
 for (par in catParams) {
   focalCatParameter <- parameterList[[par]]
-  allCats <- unique(levels(focalCatParameter)[[1]][,2])
+  levelTable <- levels(focalCatParameter)[[1]]
+  allCats <- unique(levelTable[,2])
   catList <- lapply(allCats, FUN = function(cat1) {
     if (par == "kalkinnhold" & cat1 == "no data") {return(NA)}
-    catRaster <- ifel(focalCatParameter == cat1, 1, 0)
+    catLevels <- levelTable$value[levelTable[,2] %in% cat1]
+    catRaster <- ifel(focalCatParameter %in% catLevels, 1, 0)
     contRaster <- terra::project(catRaster, baseRaster, method="average")
     cat("\nAggregating",cat1)
     contRaster

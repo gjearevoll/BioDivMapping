@@ -41,7 +41,12 @@ if (file.exists(dataFileName)) {
   newDataset <- processFieldNotesEvent(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, coordUncertainty, yearToStart)
   
 # No need to do anything to presence only data (yet) except add individualCount column
-} else if (dataType == "mareano") {
+} else if (dataType == "freshwaterFishInventory") {
+  focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
+  newDataset <- processFreshwaterFishInventory(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, coordUncertainty, yearToStart)
+  
+  # No need to do anything to presence only data (yet) except add individualCount column
+}else if (dataType == "mareano") {
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
   newDataset <- processMareano(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs)
   

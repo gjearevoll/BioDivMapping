@@ -22,15 +22,16 @@ taxaCheck <- function(scientificName, taxaKeys) {
     taxonKey <- NA
   } else {
   # Assign a taxon key based on what level of taxonomy the key is valid for
-  taxonKey <- ifelse(speciesNameTable$kingdomKey %in% taxaKeys, speciesNameTable$kingdomKey,
-                                        ifelse(speciesNameTable$phylumKey %in% taxaKeys, speciesNameTable$phylumKey,
-                                               ifelse(speciesNameTable$classKey %in% taxaKeys, speciesNameTable$classKey,
-                                                      ifelse(speciesNameTable$orderKey %in% taxaKeys, speciesNameTable$orderKey,
-                                                             ifelse(speciesNameTable$familyKey %in% taxaKeys, speciesNameTable$familyKey,
-                                                                    ifelse(speciesNameTable$genusKey %in% taxaKeys, speciesNameTable$genusKey,
-                                                                           ifelse(speciesNameTable$speciesKey %in% taxaKeys, speciesNameTable$speciesKey, NA)))))))
+    taxonKey <- taxaKeys[taxaKeys %in% speciesNameTable[,grep("Key" ,colnames(speciesNameTable))]]
+  # taxonKey <- ifelse(speciesNameTable$kingdomKey %in% taxaKeys, speciesNameTable$kingdomKey,
+  #                                       ifelse(speciesNameTable$phylumKey %in% taxaKeys, speciesNameTable$phylumKey,
+  #                                              ifelse(speciesNameTable$classKey %in% taxaKeys, speciesNameTable$classKey,
+  #                                                     ifelse(speciesNameTable$orderKey %in% taxaKeys, speciesNameTable$orderKey,
+  #                                                            ifelse(speciesNameTable$familyKey %in% taxaKeys, speciesNameTable$familyKey,
+  #                                                                   ifelse(speciesNameTable$genusKey %in% taxaKeys, speciesNameTable$genusKey,
+  #                                                                          ifelse(speciesNameTable$speciesKey %in% taxaKeys, speciesNameTable$speciesKey, NA)))))))
   
   }
-  
+  if(!length(taxonKey)) {taxonKey <- NA}
   return(taxonKey)
 }

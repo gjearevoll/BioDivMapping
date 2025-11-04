@@ -14,8 +14,8 @@
 #' @import sf
 #' 
 #' 
-processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, 
-                                   focalTaxon, crs, coordUncertainty, yearToStart) {
+processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon,
+                                   crs, coordUncertainty, yearToStart) {
   
   # Get the relevant endpoint
   
@@ -129,18 +129,14 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   # Get rid of data before 1991
   eventTableWithOccurrences <- eventTableWithOccurrences[eventTableWithOccurrences$year >= yearToStart,]
   
+  
   # New dataset is ready!
   newDataset <- st_as_sf(eventTableWithOccurrences,          
                          crs = crs)
   newDataset <- newDataset %>%
     dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject, eventID) %>%
     filter(!is.na(acceptedScientificName))
-  
-  # Remove any duplicated observations from the same year at the same place
-  arrangedData <- newDataset[order(newDataset$individualCount, decreasing = TRUE),]
-  newDataset2 <- arrangedData[!duplicated(arrangedData[,c("geometry", "year", "acceptedScientificName")]),]
-  
-  
-  saveRDS(newDataset2, paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS"))
-  return(newDataset2)
+ 
+  saveRDS(newDataset, paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS"))
+  return(newDataset)
 }

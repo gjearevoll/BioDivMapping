@@ -91,12 +91,13 @@ if (dataSource == "geonorge") {
 ### 5. CORINE ###  
 } else if (dataSource == "corine") {
   # check if encompassing corine alreadydownloaded
-  rasterisedVersion <- checkAndImportRast("land_cover_corine", regionGeometryBuffer, dataPath, quiet = TRUE)
+  rasterisedVersion <- checkAndImportRast("land_cover_corine", regionGeometryBuffer, dataPath, quiet = TRUE, temporal, yearInterval)
   # rasterisedVersion <- terra::crop(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion))
   # download and save if missing
   if(is.null(rasterisedVersion)){
     # download
-    rasterisedVersion <- get_corine()  
+    yearInterval <- if (!temporal) NA else yearInterval
+    rasterisedVersion <- get_corine(temporal = temporal, yearInterval = yearInterval)  
     # save
     file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
     writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)

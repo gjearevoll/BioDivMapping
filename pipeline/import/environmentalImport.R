@@ -131,6 +131,8 @@ parameterList <- list()
 for(parameter in seq_along(selectedParameters)) {
   rasterisedVersion <- NULL
   focalParameter <- selectedParameters[parameter]
+  temporalFactor <- if (temporal) parameters$temporal[parameters$parameters == focalParameter] else FALSE
+ 
   
   ### 1. Check if the data needs to be downloaded externally.
   external <- parameters$external[parameters$parameters == focalParameter]
@@ -141,7 +143,8 @@ for(parameter in seq_along(selectedParameters)) {
     ### 2. Check whether we have previously downloaded a version of the external data that encompasses the area we need.
     dataPath <- file.path(downloadCovFolder, dataSource)
     if(dir.exists(dataPath)){
-      rasterisedVersion <- checkAndImportRast(focalParameter, regionGeometryBuffer, dataPath)
+      rasterisedVersion <- checkAndImportRast(focalParameter, regionGeometryBuffer, dataPath, 
+                                              temporalFactor, yearInterval)
       # 3. Create new temp folder to download necessary external data.
     } else {
       dir.create(dataPath)
@@ -238,7 +241,13 @@ if (nrow(quadratics) > 0) {
 saveRDS(projCRS, paste0(tempFolderName,"/projCRS.RDS"))
 
 # Save both to temp file for model processing and visualisation folder for mapping
-writeRaster(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
+if (temporal) {
+  parametersCropped <- lapply(parametersCropped, terra::wrap)
+  saveRDS(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.RDS"))
+} else {
+  writeRaster(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
+}
+
 
 # Create aggregated version for all non-land cover visualisation and reference data
 agg <- function(x, fact){
@@ -247,8 +256,19 @@ agg <- function(x, fact){
     terra::aggregate(x, fact, fun = "modal") else 
       terra::aggregate(x, fact)
 }
-parametersAggregated <- sapp(x = parametersCropped, fun = agg, fact = 2) |>
-  crop(baseRaster)
 
-writeRaster(parametersAggregated, paste0(folderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
-
+# Aggregate and save raster
+if (!temporal) {
+  parametersAggregated <- sapp(x = parametersCropped, fun = agg, fact = 2) |>
+    crop(baseRaster)
+  writeRaster(parametersAggregated, paste0(folderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
+} else {
+  parametersAggregated <- lapply(parametersCropped, FUN = function(x){
+    if(unique(is.factor(unwrap(x))))
+      # If the variable is a factor, use the most common result as the average
+      terra::aggregate(unwrap(x), 2, fun = "modal") |> crop(baseRaster) else 
+        terra::aggregate(unwrap(x), 2) |> crop(baseRaster)
+  }) 
+  parametersAggregated <- lapply(parametersAggregated, terra::wrap)
+  saveRDS(parametersAggregated, paste0(folderName,"/environmentalDataImported.RDS"))
+}

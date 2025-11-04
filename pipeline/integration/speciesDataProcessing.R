@@ -88,7 +88,7 @@ for (ds in seq_along(speciesData)) {
   
   # Remove invalid months if we have bird data
   if ("birds" %in% focalData$taxa) {
-    focalData <- focalData[!(focalData$taxa == "birds" & focalData$month %in% c(1,2,3,4,5,9,10,11,12,NA,"")),]
+    focalData <- focalData[!(focalData$taxa == "birds" & focalData$month %in% c(1,2,3,4,9,10,11,12,NA,"")),]
   }
   
   # If the dataset is empty, skip it

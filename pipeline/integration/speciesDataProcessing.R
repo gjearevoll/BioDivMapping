@@ -149,12 +149,19 @@ processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 ###-------------------------###
 
 # Import mask for removing species data in cities and lakes
-cityLakeMask <- rast("localArchive/mask100.tiff")
-cityLakeMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityLakeMask == 1, 1, NA))), crs= "+proj=longlat +ellps=WGS84")
+
+if (!file.exists("localArchive/mask100.tiff")) {
+  maskedCats <-  c("Airports", "Continuous urban fabric", "Discontinuous urban fabric", "Industrial or commercial units",
+                   "Green urban areas", "Sport and leisure facilities")
+  cityMask <- produceLandscapeMask("data/temp/CORINE/EEA.zip", maskedCats, regionGeometry, crs, res)
+} else {
+  cityMask <- rast("localArchive/mask100.tiff")
+}
+cityMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityMask == 1, 1, NA))), crs= "+proj=longlat +ellps=WGS84")
 
 maskedData <- lapply(processedData, FUN = function(x) {
   newDatasetLongLat <- st_transform(x, crs = "+proj=longlat +ellps=WGS84")
-  newDatasetMasked <- st_intersection(newDatasetLongLat, cityLakeMaskNA)
+  newDatasetMasked <- st_intersection(newDatasetLongLat, cityMaskNA)
   cat("\nDataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
   newDatasetMasked2 <- st_transform(newDatasetMasked, crs = crs)
   return(newDatasetMasked2)

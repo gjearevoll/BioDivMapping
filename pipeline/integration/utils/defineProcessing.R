@@ -32,7 +32,8 @@ if (file.exists(dataFileName)) {
 # 4. Field note data  - Oslo and Agder
 } else if (dataType == "fieldNotesOslo"){
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
-  newDataset <- processFieldNotesOslo(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, coordUncertainty, yearToStart)
+  newDataset <- processFieldNotesOslo(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, 
+                                      coordUncertainty, yearToStart, temporal, yearInterval)
   
   
 # 5. Field note data (with events table)

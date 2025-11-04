@@ -30,7 +30,7 @@ isSubset <- function(x, y, dfMaxLength){
   # calculate area of x and check overlap
   area_x <- sum(st_area(x))
   # due to rounding, allow for difference of 0.01 %
-  suppressMessages(subset <- as.numeric(abs((sum(st_area(x)) - sum(st_area(st_intersection(x, y))))/sum(st_area(x)))) < 1e-4)
+  suppressMessages(subset <- as.numeric(abs((sum(st_area(x)) - sum(st_area(st_intersection(x, y))))/sum(st_area(x)))) < 1e-3)
   suppressMessages(sf_use_s2(TRUE))
   return(subset)
 }

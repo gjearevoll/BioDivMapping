@@ -200,19 +200,31 @@ parametersCropped <- parameterListCont |>
     # Crop each covariate to extent of regionGeometryBuffer
     out <- x
     # Project all rasters to baseRaster and combine
-    if(is.factor(x)) {
+    if(unique(is.factor(x))) {
       # project categorical rasters
       out <- terra::project(out, baseRaster, method = "mode")
       levels(out) <- levels(x)  # reassign levels 
       out
-    } else {
+    } else if (nlyr(x) == 1) {
       # project & scale continuous rasters
       ifel(is.na(regionGeometryRast), NA,
            terra::project(out, baseRaster)) |>
         scale()  
-    }}) |>  
-  rast() |>  # combine raster layers
-  setNames(parameterNames)  # assign names
+    } else {
+      projVersion <- ifel(is.na(regionGeometryRast), NA,
+                          terra::project(out, baseRaster))
+      totalMean <- global( mean(projVersion), "mean", na.rm = TRUE)
+      rr <- projVersion - totalMean[,1]
+      rms <- global(mean(rr), "rms", na.rm = TRUE)
+      rr / rms[,1]
+    }
+    })
+
+if (!temporal) {
+  parametersCropped <- parametersCropped |>  
+    rast() |>  # combine raster layers
+    setNames(parameterNames)  # assign names
+}
 
 
 ###----------------------------###

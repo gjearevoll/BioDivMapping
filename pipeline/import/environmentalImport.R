@@ -49,7 +49,7 @@ readRDS(paste0(folderName,"/controlPars.RDS")) %>%
 
 # Import focal covariates
 if(file.exists(paste0(folderName, "/focalCovariates.csv"))){
-  parameters <- read.csv( paste0(folderName, "/focalCovariates.csv"), header = T)
+  parameters <- read.csv(paste0(folderName, "/focalCovariates.csv"), header = T)
 } else {
   stop("Please source initialiseRepository.R first.")
 }
@@ -172,12 +172,16 @@ for (par in catParams) {
   focalCatParameter <- parameterList[[par]]
   levelTable <- levels(focalCatParameter)[[1]]
   allCats <- unique(levelTable[,2])
+  # if (par == "land_cover_corine") {allCats <- c("Coniferous forest"
+  #                                              , "Transitional woodland-shrub",
+  #                                               "Moors and heathland", "Built up area"
+  #                                               )}
   catList <- lapply(allCats, FUN = function(cat1) {
     if (par == "kalkinnhold" & cat1 == "no data") {return(NA)}
     catLevels <- levelTable$value[levelTable[,2] %in% cat1]
+    cat("\nAggregating",cat1)
     catRaster <- ifel(focalCatParameter %in% catLevels, 1, 0)
     contRaster <- terra::project(catRaster, baseRaster, method="average")
-    cat("\nAggregating",cat1)
     contRaster
   }) |> setNames(allCats)
   contList[[par]] <- catList

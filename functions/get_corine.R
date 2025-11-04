@@ -10,58 +10,76 @@
 #' @return A SpatRaster of WorldClim layers.
 library(terra)
 
-get_corine <- function(zip_path = NA, output_path = NA, reclassify = TRUE) {
+get_corine <- function(zip_path = NA, output_path = NA, reclassify = TRUE, temporal = FALSE, yearInterval = NA) {
   
-  if(is.na(zip_path)){
-    message("'zip_path' not specified, please select CORINE land cover zip file. Data can be downloaded from https://land.copernicus.eu/en/products/corine-land-cover/clc2018.")
-    zip_path <- file.choose()
-  }
-  
-  if(!file.exists(zip_path)) {
-    stop("CORINE land cover data cannot be found. Data can be downloaded from https://land.copernicus.eu/en/products/corine-land-cover/clc2018.")
-  }
-
-  # create temporary working directory to process zip file
-  temp_wd <- file.path(tempdir(), "corine")
-  unlink(temp_wd, recursive = T)
-  dir.create(temp_wd)
-  
-  # Unzip all folders and download raster
-  unzip(zip_path, exdir = temp_wd)
-  
-  # unzip remaining files recursively
-  keep_unzipping <- T
-  while(keep_unzipping){
-    zip_files <- list.files(temp_wd, "\\.zip$", full.names = T, recursive = T)
-    if(length(zip_files) > 0){
-      # unzip and delete
-      for(file in zip_files){
-        unzip(file, exdir = temp_wd, junkpaths = F)
-        unlink(file, recursive = TRUE)
+  if (temporal) {
+    if (!all(!is.na(yearInterval))) {stop("Please specify year interval when downloading temporal data")} else {
+      output_path <- rstudioapi::selectDirectory()
+      
+      # Get each  year
+      corine <- do.call(c, lapply(as.character(yearInterval), FUN = function(y) {
+        corine_path <- list.files(file.path(output_path, y, list.dirs(file.path(output_path, y), F,F)), "\\.tif$", full.names = T)
+        corineSub <- rast(corine_path)
+        levels(corineSub)[[1]][,2] <- gsub(",", "", levels(corineSub)[[1]][,2])
+        corineSub
+      }))
+      names(corine) <- yearInterval
+      
+    }
+  } else {
+    
+    if(is.na(zip_path)){
+      message("'zip_path' not specified, please select CORINE land cover zip file. Data can be downloaded from https://land.copernicus.eu/en/products/corine-land-cover/clc2018.")
+      zip_path <- file.choose()
+    }
+    
+    if(!file.exists(zip_path)) {
+      stop("CORINE land cover data cannot be found. Data can be downloaded from https://land.copernicus.eu/en/products/corine-land-cover/clc2018.")
+    }
+    
+    # create temporary working directory to process zip file
+    temp_wd <- file.path(tempdir(), "corine")
+    unlink(temp_wd, recursive = T)
+    dir.create(temp_wd)
+    
+    # Unzip all folders and download raster
+    unzip(zip_path, exdir = temp_wd)
+    
+    # unzip remaining files recursively
+    keep_unzipping <- T
+    while(keep_unzipping){
+      zip_files <- list.files(temp_wd, "\\.zip$", full.names = T, recursive = T)
+      if(length(zip_files) > 0){
+        # unzip and delete
+        for(file in zip_files){
+          unzip(file, exdir = temp_wd, junkpaths = F)
+          unlink(file, recursive = TRUE)
+        }
+      } else {
+        keep_unzipping <- F
       }
+    }
+    
+    # by country (tested on norway)
+    if("Info" %in% list.dirs(temp_wd, F, F)){
+      # load
+      corine <- rast(list.files(temp_wd, ".tif$", full.names = T))
+      
+      # read raster legend information and relabel values
+      legend_path <- list.files(file.path(temp_wd, "Info/Legend", "Raster"), ".txt$", full.names = T,recursive = T)
+      legend <- read.delim(legend_path, sep =  ",", header = FALSE)
+      values(corine) <- legend$V6[values(corine)[,1]]
     } else {
-      keep_unzipping <- F
+      corine_path <- list.files(file.path(temp_wd, list.dirs(temp_wd, F,F),
+                                          "DATA"), "\\.tif$", full.names = T)
+      # load raster
+      corine <- rast(corine_path)
+      
+      # remove commas from all category labels 
+      levels(corine)[[1]][,2] <- gsub(",", "", levels(corine)[[1]][,2])
     }
   }
-  
-  # by country (tested on norway)
-  if("Info" %in% list.dirs(temp_wd, F, F)){
-    # load
-    corine <- rast(list.files(temp_wd, ".tif$", full.names = T))
-    
-    # read raster legend information and relabel values
-    legend_path <- list.files(file.path(temp_wd, "Info/Legend", "Raster"), ".txt$", full.names = T,recursive = T)
-    legend <- read.delim(legend_path, sep =  ",", header = FALSE)
-    values(corine) <- legend$V6[values(corine)[,1]]
-  } else {
-    corine_path <- list.files(file.path(temp_wd, list.dirs(temp_wd, F,F),
-                                        "DATA"), "\\.tif$", full.names = T)
-    # load raster
-    corine <- rast(corine_path)
-    
-    # remove commas from all category labels 
-    levels(corine)[[1]][,2] <- gsub(",", "", levels(corine)[[1]][,2])
-  }
+
   
   
   # If we want, we can now reclassifiy CORINE's layers. We do this using a csv file name "corineReclassification" that should be
@@ -75,13 +93,16 @@ get_corine <- function(zip_path = NA, output_path = NA, reclassify = TRUE) {
     names(reclassTable) <- c("value", "label")
     reclassTable$newLabel <- corineReclassification$newCategory[match(reclassTable$label, corineReclassification$corineCategory)]
     reclassTable <- reclassTable[,c("value", "newLabel")] %>% rename(label = newLabel)
-    levels(corine)[[1]][,2] <- reclassTable[,2]
+    for (co in 1:nlyr(corine)) {
+      levels(corine)[[co]][,2] <- reclassTable[,2]
+    }
+    if (temporal) {names(corine) <- yearInterval}
   }
   
-  
-  if(!is.na(output_path)) {
-    writeRaster(newRaster, file.path(output_path, "corine.tif"))
-  }
+  # 
+  # if(!is.na(output_path)) {
+  #   writeRaster(corine, file.path(output_path, "corine.tif"))
+  # }
   
   out <- corine
   return(out)

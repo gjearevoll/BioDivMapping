@@ -208,7 +208,9 @@ saveRDS(redList, paste0(folderName, "/redList.RDS"))
 ###-----------------------------------###
 
 # Provide empty raster
-blankRaster <- terra::project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]], paste0("EPSG:",crs))
+envImport <- if (temporal) unwrap(readRDS(paste0(folderName, "/environmentalDataImported.RDS"))[[1]]) else 
+  rast(paste0(folderName, "/environmentalDataImported.tiff"))
+blankRaster <- terra::project(envImport[[1]], paste0("EPSG:",crs))
 allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, blankRaster)
 writeRaster(allSpeciesRichness$rasters, paste0(folderName, "/speciesRichnessData.tiff"), overwrite=TRUE)
 saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))

@@ -129,4 +129,9 @@ c2bb836f-2e2f-4abb-8ed4-1990f2539a3b,Overvåking av insekter i hule eiker 2023,p
 84d26682-f762-11e1-a439-00145eb45e9a,"Danish Mycological Society, fungal records database",presenceOnly,FALSE
 bdfff433-2114-4b18-86cb-d2d281dbe097,Artsprosjekt Endofyttisk sopp i trær 23-19,presenceOnly,FALSE
 e8c7beb7-91ea-477e-91ba-8666b4207a1e,Fungi in Norwegian Coastal Heathlands,presenceOnly,FALSE
-ed391b37-d3d3-4efd-9419-1583c39c0c87,NHMO DNA Bank Fungi and Lichens collection,presenceOnly,FALSE
+ed391b37-d3d3-4efd-9419-1583c39c0c87,NHMO DNA Bank Fungi and Lichens collection,"presenceOnly",FALSE
+81ccd65e-1832-4d4c-aaaa-56541b71ae1b,Fish collection NTNU University Museum,"presenceOnly",FALSE
+3b88fd26-936c-4fe7-bbb7-684ba6264cf1,"PIKE – Distribution, extinctions and introductions of freshwater fish in Sweden",fieldNotesEvent,FALSE
+ea0bb0f7-84cc-4541-96a2-837003f31d99,Norwegian freshwater lake fish inventory,"freshwaterFishInventory",FALSE
+f372a689-31ef-46af-9552-78f90cab9a9a,Salmonidae in streams,"presenceOnly",FALSE
+df12ca07-f133-4550-ab3b-fde13f0e76ba,"Notebook, general observations","presenceOnly",FALSE

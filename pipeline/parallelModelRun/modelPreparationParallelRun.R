@@ -10,12 +10,12 @@ library(terra)
 library(dplyr)
 library(foreach)
 
-start <- Sys.time()
-
 # Specify script parameters
 args <- commandArgs(trailingOnly = TRUE)
 dateAccessed <- as.character(args[1])
+#dateAccessed <- "2025-06-12"
 cat(dateAccessed)
+
 
 # Ensure that dateAccessed is specified
 if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
@@ -45,7 +45,7 @@ if (!dir.exists(paste0(folderName, "/workspaces"))) {
 }
 
 # Use 10000m grid for practice predictions
-res <- 10000
+res <- 20000
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -70,7 +70,7 @@ cat("\nAll data loaded.", length(speciesData), "species datasets successfully lo
 
 # Import bird data from TOV and remove all no-relevant birds from other datasets
 if ("birds" %in% focalTaxa$taxa) {
-  speciesData[["TOVData"]] <- st_transform(readRDS("data/run_2025-01-04/temp/birdDataTOV.RDS"), st_crs(speciesData[[1]])) |>
+  speciesData[["TOVData"]] <- st_transform(readRDS("data/run_2025-06-06/temp/birdDataTOV.RDS"), st_crs(speciesData[[1]])) |>
     st_crop(st_transform(regionGeometry, st_crs(speciesData[[1]])))
   focalTaxa$predictionDataset[focalTaxa$taxa %in% c("birds", "groundNestingBirds", "woodpeckers")] <- "TOVData"
   speciesData <- lapply(speciesData, FUN = function(x) {
@@ -80,11 +80,8 @@ if ("birds" %in% focalTaxa$taxa) {
   cat("Birds data filtered on TOV species.")
 }
 
-
-
 # Define speciesData based on run type and create predictionData
 predictionData <- createPredictionData(c(res, res), regionGeometry, proj = crs)
-
 
 # Split up data for vascular plants
 if ("vascularPlants" %in% focalTaxa$taxa) {
@@ -154,3 +151,4 @@ for(iter in 1:nrow(focalTaxa)){
 }
 
 saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))
+

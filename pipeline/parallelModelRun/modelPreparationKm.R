@@ -3,7 +3,7 @@
 ###----------------------###
 ### 0. Bash preparation ####
 ###----------------------###
-#.libPaths(c("/cluster/projects/nn11017k/R"))
+.libPaths(c("/cluster/projects/nn11017k/R"))
 library(intSDM)
 library(rgbif)
 library(terra)
@@ -12,14 +12,10 @@ library(foreach)
 
 start <- Sys.time()
 
-sink(paste0("data/run_2025-06-12/out/preparation_insects.Rout"))
-
 # Specify script parameters
 args <- commandArgs(trailingOnly = TRUE)
-# dateAccessed <- as.character(args[1])
-dateAccessed <- "2025-06-12"
+dateAccessed <- as.character(args[1])
 cat(dateAccessed)
-
 
 # Ensure that dateAccessed is specified
 if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
@@ -51,7 +47,7 @@ if (!dir.exists(paste0(folderName, "/workspaces"))) {
 }
 
 # Use 10000m grid for practice predictions
-res <- 20
+res <- 10
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)

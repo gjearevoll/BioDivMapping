@@ -6,12 +6,15 @@ start <- Sys.time()
 
 i <- as.numeric(args[1])
 dateToUse <- args[2]
+biasField <- args[3]
 nThreads <- 20
 .libPaths(c("/cluster/projects/nn11017k/R"))
 library(parallel)
 library(foreach)
 library(doParallel)
 getwd()
+
+print(Sys.info())
 
 # Load in segment number and interested group name
 segmentList <- readRDS(paste0("data/run_", dateToUse, "/segmentList.RDS"))
@@ -26,6 +29,8 @@ library(intSDM)
 library(rgbif)
 library(terra)
 library(dplyr)
+library(INLA)
+#inla.binary.install("Ubuntu-22.04",  path = "/cluster/projects/nn11017k/R/bin/inla.binary")
 
 focalGroup <- segmentList[i]
 workflow <- workflowList[[focalGroup]]
@@ -66,16 +71,15 @@ print(predictionDatasetShort)
 # myMesh$offset <- c(20, 100) * 1000
 # myMesh$max.edge <- c(200, 500) * 1000
 # fm_int(domain = meshToUse, samplers = regionGeometry, int.args = list(method = 'direct', nsub1 = 15, nsub2 = 15))
-meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
-
 
 # Add model characteristics (mesh, priors, output)
+meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 workflow$addMesh(Object = meshToUse)
 
 # Sort out model options
 workflow$specifySpatial(prior.range = c(prior.range[1], prior.range[2]),
                         prior.sigma = c(prior.sigma[1], prior.sigma[2]))
-workflow$workflowOutput(c('Predictions', 'Model'))
+workflow$workflowOutput(c('Model'))
 workflow$modelOptions(ISDM = list(pointCovariates = NULL,
                                   Offset = NULL, 
                                   pointsIntercept = TRUE, 
@@ -83,7 +87,6 @@ workflow$modelOptions(ISDM = list(pointCovariates = NULL,
 )
 workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetShort, 
                                       speciesSpatial = "replicate"
-                                      #samplingSize = 0.25
 ))
 
 # Now add environmental covariates to the model
@@ -114,49 +117,50 @@ for (e in envRenamed) {
 
 rm("environmentalDataList")
 
-
 # Specify formula for the model
-cat("Specifying priors for the model")
+cat("\nSpecifying priors for the model")
 workflow$modelFormula(covariateFormula = NULL,
-                      biasFormula = NULL 
+                      biasFormula =  ~ distance_roads
 ) 
 
-workflow$biasFields(datasetName = "mergedDatasetPO", prior.range = c(10 * 1000, 0.01),
-                    prior.sigma = c(0.8, 0.01))
+if (biasField) {
+  workflow$biasFields(datasetName = "mergedDatasetPO", prior.range = c(5*1000, 0.01),
+                      prior.sigma = c(0.8, 0.01))
+}
 
 # Specify priors for the precision of intercept and groups
-cat("Specifying priors for the hyperparameters in the model")
+cat("\nSpecifying priors for the hyperparameters in the model")
 
-predictionData <- createPredictionData(c(5000, 5000), regionGeometry, proj = crs)
+predictionData <- createPredictionData(c(20000, 20000), regionGeometry, proj = crs)
 # Run model (this directly saves output to folder specified above)
 workflow$specifyPriors(effectNames = c("Intercept"), Mean = 0, Precision = 1,
                        priorIntercept = list(initial = -10, fixed = TRUE),
                        priorGroup = list(model = "iid",
                                          hyper = list(prec = list(initial = 0, fixed = TRUE))))
 
-cat("Fitting the models")
+cat("\nFitting the models")
 cat(dateToUse)
 cat(folderName)
 
 intSDM::sdmWorkflow(workflow, 
                     predictionData = predictionData,
-                    inlaOptions = list(control.inla=list(int.strategy = 'eb', cmin = 0.01),
+                    inlaOptions = list(control.inla=list(int.strategy = 'eb', cmin = 0.01, control.vb = list(enable = FALSE)),
                                        num.threads = nThreads,
                                        #num.threads = 5, 
                                        safe = TRUE, 
                                        verbose = TRUE, 
-                                       debug = TRUE),
-                    ipointsOptions = list(method = 'direct', nsub1 = 10, nsub2 = 10)
+                                       debug = TRUE, bru_verbose = 3),
+                    ipointsOptions = list(method = 'direct', nsub1 = 10, nsub2 = 10) # NEW LINE
 )
-cat("Finished fitting the models")
+cat("\nFinished fitting the models")
 
 # Change model name to ensure no overwrite of richness data
-cat("Changing the names of the returned output.")
+cat("\nChanging the names of the returned output.")
 
-file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
-            paste0(folderName, "/modelOutputs/", focalGroup, "/", modelRun, "Preds.rds"))
+# file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
+#             paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPreds.rds"))
 
-cat("Resizing model object")
+cat("\nResizing model object")
 
 source("functions/resetEnvironments.R")
 richnessModel <- readRDS(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.rds"))

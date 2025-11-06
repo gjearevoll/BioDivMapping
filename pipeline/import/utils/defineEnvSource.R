@@ -99,7 +99,7 @@ if (dataSource == "geonorge") {
     yearInterval <- if (!temporal) NA else yearInterval
     rasterisedVersion <- get_corine(temporal = temporal, yearInterval = yearInterval)  
     # save
-    file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+    file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath, temporal = temporal)
     writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
   }
   # calculate distance to water (if necessary)

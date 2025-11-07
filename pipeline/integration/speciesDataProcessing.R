@@ -154,6 +154,9 @@ if (!file.exists("localArchive/mask100.tiff")) {
   maskedCats <-  c("Airports", "Continuous urban fabric", "Discontinuous urban fabric", "Industrial or commercial units",
                    "Green urban areas", "Sport and leisure facilities")
   cityMask <- produceLandscapeMask("data/temp/CORINE/EEA.zip", maskedCats, regionGeometry, crs, res)
+  # save mask
+  make_path("localArchive") # ensure path exists
+  writeRaster(cityMask, "localArchive/mask100.tiff", overwrite = TRUE)
 } else {
   cityMask <- rast("localArchive/mask100.tiff")
 }

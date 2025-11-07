@@ -68,13 +68,18 @@ get_corine <- function(zip_path = NA, output_path = NA, reclassify = TRUE, tempo
     
     if(is.na(zip_path)){
       message("'zip_path' not specified, please select CORINE land cover zip file. Data can be downloaded from 'https://land.copernicus.eu/en/products/corine-land-cover'.")
-      zip_path <- file.choose()
+      message("Enter full path to CORINE land cover zip file:\n")
+      zip_path <- readline()
+      zip_path <- gsub('"', '', zip_path)
     }
     
-    if(!file.exists(zip_path)) {
-      stop("CORINE land cover data cannot be found. Data can be downloaded from 'https://land.copernicus.eu/en/products/corine-land-cover'.")
+    if (!file.exists(zip_path)) {
+      message("'zip_path' does not exist. Please provide CORINE land cover zip file path.")
+      message("Enter full path to CORINE land cover zip file:\n")
+      zip_path <- readline()
+      zip_path <- gsub('"', '', zip_path)
     }
-    
+
     # unzip 
     temp_wd <- unzip_all(zip_path)
     

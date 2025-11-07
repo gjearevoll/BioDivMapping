@@ -33,7 +33,7 @@ if (file.exists(dataFileName)) {
 } else if (dataType == "fieldNotesOslo"){
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
   newDataset <- processFieldNotesOslo(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, 
-                                      coordUncertainty, yearToStart, temporal, yearInterval)
+                                      coordUncertainty, yearToStart)
   
   
 # 5. Field note data (with events table)
@@ -72,28 +72,30 @@ if (file.exists(dataFileName)) {
   newDataset <- st_transform(newDataset, crs)
 }
 
-# Redefine years IF we're using temporal data to match year interval
-newDataset$year <- as.integer(newDataset$year)
-if (temporal) {
-  negative_number <- function(i) i[i <=0]
-  newDataset$year <- sapply(newDataset$year, function(x) {x + max(negative_number(yearInterval - x))})
-}
-
-if (dataType %in% c("presenceOnly", "PO")) {
-  arrangedData <- newDataset %>%
-    arrange(-year)
-} else {
-  arrangedData <- newDataset %>%
-    arrange(-individualCount, -year)
-}
-
-
-if (temporal) {
-  # If it's a temporal model, we remove duplicates from the same species, year and geometry, assuming the 
-  # most recent presence is correct
-  newDataset <- arrangedData[!duplicated(arrangedData[,c("geometry", "year", "acceptedScientificName")]),]
-} else {
-  # If it's a non-temporal model, we just keep the most recent observation, so only remove duplicates
-  # of the same species and geometry
-  newDataset <- arrangedData[!duplicated(arrangedData[,c("geometry", "acceptedScientificName")]),]
+if (!is.null(newDataset)){
+  # Redefine years IF we're using temporal data to match year interval
+  newDataset$year <- as.integer(newDataset$year)
+  if (temporal) {
+    negative_number <- function(i) i[i <=0]
+    newDataset$year <- sapply(newDataset$year, function(x) {x + max(negative_number(yearInterval - x))})
+  }
+  
+  if (dataType %in% c("presenceOnly", "PO")) {
+    arrangedData <- newDataset %>%
+      arrange(-year)
+  } else {
+    arrangedData <- newDataset %>%
+      arrange(-individualCount, -year)
+  }
+  
+  
+  if (temporal) {
+    # If it's a temporal model, we remove duplicates from the same species, year and geometry, assuming the 
+    # most recent presence is correct
+    newDataset <- arrangedData[!duplicated(arrangedData[,c("geometry", "year", "acceptedScientificName")]),]
+  } else {
+    # If it's a non-temporal model, we just keep the most recent observation, so only remove duplicates
+    # of the same species and geometry
+    newDataset <- arrangedData[!duplicated(arrangedData[,c("geometry", "acceptedScientificName")]),]
+  }
 }

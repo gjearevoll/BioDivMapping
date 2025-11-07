@@ -35,6 +35,11 @@ processFieldNotesOslo <- function(focalEndpoint, tempFolderName, datasetName, re
   occurrence <- occurrence %>%
     filter(year >= yearToStart & !is.na(year))
   
+  # return Null if no data
+  if (nrow(occurrence) == 0) {
+    return(NULL)
+  }
+  
   # Remove data with bad coord uncertainty
   if( !is.na(coordUncertainty)) {
     occurrence <- occurrence %>%

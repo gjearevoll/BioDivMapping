@@ -11,8 +11,9 @@ getGbifBackbone <- function(scientificNames){
   # first character to lower-case
   ScientificNames <- stringr::str_to_sentence(scientificNames)
   
-  # match names with gbif
-  speciesNameTable <- as.data.frame(rgbif::name_backbone_checklist(ScientificNames))
+  # match names with gbif (in batches of 1000 to avoid time-out error)
+  batches <- split(ScientificNames, ceiling(seq_along(ScientificNames)/1000))
+  speciesNameTable <- do.call(rbind, lapply(batches, function(x) as.data.frame(rgbif::name_backbone_checklist(x))))
   
   # warning message for missing match/species
   missingMatch <- ScientificNames[speciesNameTable$matchType == "NONE"]

@@ -10,5 +10,4 @@ produceLandscapeMask <- function(corinePath, maskedCats, regionGeometry, crs, re
   
   out <- terra::project(urbanWater, rastToMap, method = "average")
   mask100 <- ifel(out == 1, 0, 1)
-  writeRaster(mask100, "localArchive/mask100.tiff", overwrite = TRUE)
 }

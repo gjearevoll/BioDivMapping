@@ -1,13 +1,20 @@
-generateRastFileName <- function(raster, parameter, dataPath, fileType = "tiff") {
+generateRastFileName <- function(raster, parameter, dataPath, temporal = NULL, fileType = "tiff") {
   # Extract CRS information
   crsInfo <- terra::crs(raster, describe = TRUE)
   
+  # temporal
+  if(isTRUE(temporal)) {
+    temporal <- "_temporal"
+  } else {
+    temporal <- ""
+  }
   # Construct info string based on CRS and extent
   if (!is.na(crsInfo$authority)) {
     extentObj <- terra::ext(raster)
-    info <- sprintf("%s%s_X%s_%s_Y%s_%s",
+    info <- sprintf("%s%s_X%s_%s_Y%s_%s%s",
                     crsInfo$authority, crsInfo$code, 
-                    extentObj[1], extentObj[2], extentObj[3], extentObj[4])
+                    extentObj[1], extentObj[2], extentObj[3], extentObj[4],
+                    temporal)
   } else {
     # Use digest for non-descriptive CRS
     info <- digest::digest(list(terra::crs(raster), terra::ext(raster)))

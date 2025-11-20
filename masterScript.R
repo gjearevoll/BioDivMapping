@@ -21,7 +21,7 @@ sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
 # in the working folder for reproducibility.
 
 # Date of analysis from which working directory will be create/access
-dateAccessed <- "2025-04-13"
+dateAccessed <- "2025-10-20"
 
 # There are instances you want to re-initialise repository and delete some files that should be re-run
 refresh <- FALSE
@@ -31,15 +31,15 @@ level <- "country"
 # specific region to be used as accepted by defineRegion()
 region <- "Norway" 
 # coordinate reference system to use for project. as accepted by sf::st_crs()
-crs <- 32633 
+crs <- 25833 
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
-res <- 500        # Resolution that covariates should be modelled at
+res <- 1000        # Resolution that covariates should be modelled at
 # Coordinate uncertainty to filter to in GBIF
 coordUncertainty <- 250
 # Give first year data can be taken from
-yearToStart <- 1991
+yearToStart <- 2000
 # Parameters to define mesh for random fields
-myMesh <- list(cutoff = 3*1000, max.edge=c(200, 500) * 1000, offset= c(20, 100) * 1000)
+myMesh <- list(cutoff = 3*1000, max.edge=c(50, 300) * 1000, offset= c(20, 100) * 1000)
 # whether to use schedule download for GBIF data
 scheduledDownload <- TRUE
 # whether to wait and automatically download GBIF data when it is ready
@@ -48,16 +48,19 @@ waitForGbif <- FALSE
 redListCategories <- c("VU", "EN", "CR")
 # number of species per group in richness model:
 nSegment <- 10
-speciesOccurenceThreshold <- 50
-datasetOccurreneThreshold <- 5000
+speciesOccurrenceThreshold <- 50
+datasetOccurrenceThreshold <- 5000
 # model priors
-prior.range <- c(22.5 * 1000, 0.01)
+prior.range <- c(15 * 1000, 0.01)
 prior.sigma <- c(0.8, 0.01)
 # Indicates whether you want to run the model in parallel
 parallelisation <- FALSE
+# Indicates whether model should be temporal, and which time intervals we use
+temporal <- TRUE
+yearInterval <- c(2000, 2006, 2012, 2018)
 
 # Indicates whether we want to download the ANOData or use the data from file
-downloadANOData <- TRUE
+downloadANOData <- FALSE
 
 # If we have already run some code with the same dateAccessed and we want to 
 # re-start the initialisation process:

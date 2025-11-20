@@ -20,28 +20,34 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon, downloa
   if (!file.exists(destinationFolder)) {
     dir.create(destinationFolder)
   }
-  
-  # Download and unzip ANO data from endpoint
-  if(download){
+  # define ANO download function
+  downloadANO <- function(destinationFolder = destinationFolder){
     ANOfile <- download.file(url=ANOEndpoint, 
                              destfile=paste0(destinationFolder, "/naturovervaking_eksport.gdb.zip"), mode = "wb")
-    unzip(paste0(destinationFolder, "/naturovervaking_eksport.gdb.zip"), 
-          exdir = destinationFolder)
-    ANOUnzippedFolder <- paste0(destinationFolder, "/naturovervaking_eksport.gdb")
-  } else {
-    externalANOFolder <- "data/external/naturovervaking_eksport.gpkg.zip"
-    
-    # Stop code if file doesn't exist locally already
-    if (!file.exists(externalANOFolder)) {
-      stop("You are requesting a local download of ANO data but do not have the requisite file stored locally. Please save file at ",
-           externalANOFolder,"and retry.")
-    }
-    
-    # Otherwise, extract locally
-    unzip("data/external/naturovervaking_eksport.gpkg.zip", 
-          exdir = destinationFolder)
-    ANOUnzippedFolder <- paste0(destinationFolder, "/naturovervaking_eksport.gpkg")
+    # return file path
+    return(paste0(destinationFolder, "/naturovervaking_eksport.gdb.zip"))
   }
+  # Download and unzip ANO data from endpoint
+  if(download){
+    ANOZipPath <- downloadANO(destinationFolder)
+  } else {
+    # assume ANO in data/external
+    ANOZipPath <- "data/external/naturovervaking_eksport.gpkg.zip"
+    # Stop code if file doesn't exist locally already
+    if (!file.exists(ANOZipPath)) {
+      ans <- readline("Do you want to download a new version? (Y/N): ")
+      if (toupper(ans) %in% c("Y","y")) {
+        message("Downloading ANO data...")
+        ANOZipPath <- downloadANO(destinationFolder)
+      } else {
+        stop("You are requesting a local download of ANO data but do not have the requisite file stored locally. Please save file at ",
+             ANOZipPath,"and retry.")
+      }
+    }
+  }
+  # extract ANO zip
+  unzip(ANOZipPath, exdir = destinationFolder)
+  ANOUnzippedFolder <- paste0(destinationFolder, "/naturovervaking_eksport.gpkg")
   
   # Import geometry data to later match to species occurrnece
   ANOPoints <- st_read(ANOUnzippedFolder, layer="ANO_SurveyPoint")
@@ -49,12 +55,12 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon, downloa
     group_by(ano_flate_id) %>% 
     summarize(geometry = st_union(shape)) %>% 
     st_centroid %>%
-    st_transform(paste0("EPSG:",crs))
+    st_transform(crs)
   ANOPoints <- ANOPoints[,c("globalid", "ano_flate_id", "registeringsdato")]
   ANOPoints <- merge(st_drop_geometry(ANOPoints), ANOFlateMidpoints, all.x = T, by = "ano_flate_id")
   
   # Change to our project coordinates
-  ANOPoints <- st_transform(st_as_sf(ANOPoints), paste0("EPSG:",crs))
+  ANOPoints <- st_transform(st_as_sf(ANOPoints), crs)
   ANOPoints <- st_intersection(ANOPoints, regionGeometry)
   
   # Import list of species

@@ -5,7 +5,7 @@
 # The following script imports our various forms of species data and processes them, based on the type of data
 # (presence-absence/occurrence-only/abundance) and other specifications related to the source.
 
-library(intSDM)
+#library(intSDM)
 library(rgbif)
 library(sf)
 library(stringr)
@@ -14,6 +14,20 @@ library(rinat)
 
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
+
+###----------------------###
+### 0. Bash preparation ####
+###----------------------###
+
+args <- commandArgs(TRUE)
+
+# THis should only run if the script is being run from the command line
+if (length(args) != 0) {
+  # Set arguments
+  dateAccessed <- args[1]
+  # Set the working directory
+  setwd("~/BioDivMapping")
+}
 
 ###-----------------###
 ### 1. Preparation ####

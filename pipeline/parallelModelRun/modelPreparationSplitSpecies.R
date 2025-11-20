@@ -3,19 +3,19 @@
 ###----------------------###
 ### 0. Bash preparation ####
 ###----------------------###
-#.libPaths(c("/cluster/projects/nn11017k/R"))
+.libPaths(c("/cluster/projects/nn11017k/R"))
 library(intSDM)
 library(rgbif)
 library(terra)
 library(dplyr)
 library(foreach)
 
+start <- Sys.time()
+
 # Specify script parameters
 args <- commandArgs(trailingOnly = TRUE)
 dateAccessed <- as.character(args[1])
-#dateAccessed <- "2025-06-12"
 cat(dateAccessed)
-
 
 # Ensure that dateAccessed is specified
 if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
@@ -45,7 +45,7 @@ if (!dir.exists(paste0(folderName, "/workspaces"))) {
 }
 
 # Use 10000m grid for practice predictions
-res <- 20000
+res <- 10000
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -80,42 +80,55 @@ if ("birds" %in% focalTaxa$taxa) {
   cat("Birds data filtered on TOV species.")
 }
 
+
+
 # Define speciesData based on run type and create predictionData
 predictionData <- createPredictionData(c(res, res), regionGeometry, proj = crs)
 
+
 # Split up data for vascular plants
-if ("vascularPlants" %in% focalTaxa$taxa) {
+if ("vascularPlants" %in% focalTaxa$taxa |
+    "beetles" %in% focalTaxa$taxa |
+    "butterfliesMoths" %in% focalTaxa$taxa
+) {
   if (nrow(focalTaxa) > 1) {stop("cannot divide taxa data for more than one taxa simultaneously")}
-  speciesDivisions <- 2
+  speciesDivisions <- 3
   # Get taxa species list
   modelSpeciesDataBasic <- do.call(rbind, lapply(speciesData, FUN = function(ds1) {
-    st_drop_geometry(ds1[,c("simpleScientificName")])
+    ds2 <- ds1[ds1$taxa %in% focalTaxa$taxa,]
+    st_drop_geometry(ds2[,c("simpleScientificName")])
   }))
   talliedData <- arrange(tally(group_by(modelSpeciesDataBasic, simpleScientificName)),-n)
   cleanedData <- talliedData[talliedData$n > 1 & !is.na(talliedData$simpleScientificName),]
-  newTaxaNames <- paste0("vascularPlants", LETTERS[1:speciesDivisions])
+  newTaxaNames <- paste0(focalTaxa$taxa, LETTERS[1:speciesDivisions])
   
   # Assign one of the split taxa to each species
   cleanedData$names <- rep(newTaxaNames, nrow(cleanedData)/speciesDivisions)[1:nrow(cleanedData)]
   
   # Change taxa names to whichever taxa we want
   speciesData <- lapply(speciesData, FUN = function(ds2) {
-    ds2$taxa <- cleanedData$names[match(ds2$simpleScientificName, cleanedData$simpleScientificName)]
-    ds2
+    ds3 <- ds2[ds2$taxa %in% focalTaxa$taxa,]
+    ds3$taxa <- cleanedData$names[match(ds3$simpleScientificName, cleanedData$simpleScientificName)]
+    ds3
   })
+  speciesData <- speciesData[unlist(lapply(speciesData, FUN = nrow)) != 0]
   focalTaxa <- do.call("rbind", replicate(
     speciesDivisions, focalTaxa, simplify = FALSE))
   focalTaxa$taxa <- newTaxaNames
-  cat("Plant data is being split up into ", speciesDivisions, " sections. New taxa names are ", focalTaxa$taxa)
+  cat("\nData is being split up into ", speciesDivisions, " sections. New taxa names are ", focalTaxa$taxa)
 }
 
 cat("\nPrediction data and model species data successfully created. Starting to create segments of", nSegment, "species each.")
+
+speciesData <- lapply(speciesData, FUN = function(x) {
+  st_transform(x, crs = projCRS)
+})
 
 # Create list of taxa run
 listSegments <- list()
 
 # Prepare models
-for(iter in 1:nrow(focalTaxa)){
+for(iter in 1:1){
   predictorSpecies <- focalTaxa$predictorSpecies[iter]
   workflowList <- modelPreparation(focalTaxa[iter, ], focalCovariates, speciesData, 
                                    regionGeometry = regionGeometry,
@@ -151,4 +164,3 @@ for(iter in 1:nrow(focalTaxa)){
 }
 
 saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))
-

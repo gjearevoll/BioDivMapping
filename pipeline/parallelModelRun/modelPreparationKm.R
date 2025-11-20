@@ -3,19 +3,19 @@
 ###----------------------###
 ### 0. Bash preparation ####
 ###----------------------###
-#.libPaths(c("/cluster/projects/nn11017k/R"))
+.libPaths(c("/cluster/projects/nn11017k/R"))
 library(intSDM)
 library(rgbif)
 library(terra)
 library(dplyr)
 library(foreach)
 
+start <- Sys.time()
+
 # Specify script parameters
 args <- commandArgs(trailingOnly = TRUE)
 dateAccessed <- as.character(args[1])
-#dateAccessed <- "2025-06-12"
 cat(dateAccessed)
-
 
 # Ensure that dateAccessed is specified
 if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
@@ -27,6 +27,8 @@ tempFolderName <- paste0(folderName, "/temp")
 # load the control parameters
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
+
+prior.range[1] <- prior.range[1] /1000
 
 ###-----------------###
 ### 1. Preparation ####
@@ -45,7 +47,7 @@ if (!dir.exists(paste0(folderName, "/workspaces"))) {
 }
 
 # Use 10000m grid for practice predictions
-res <- 20000
+res <- 10
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -56,14 +58,21 @@ focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= 
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
 speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 
+crs <- '+proj=utm +zone=33 +datum=WGS84 +units=km +no_defs'
+environmentalDataList <- project(environmentalDataList, crs)
+speciesData <- lapply(speciesData, FUN = function(x) {
+  st_transform(x, crs)
+})
+regionGeometry <- st_transform(regionGeometry, crs)
+
 #changing names with norwegian texts
 speciesDatanameToChange <- names(speciesData)[which(grepl("[^\x01-\x7F]+", names(speciesData)))]
 print(paste("Changing name of this dataset:", speciesDatanameToChange))
 speciesDatanameChanged <- gsub('[^\x01-\x7F]+', ' ', speciesDatanameToChange)
 names(speciesData)[names(speciesData) %in% speciesDatanameToChange] <- speciesDatanameChanged
 
-# # Proj CRS needs to match SSB's Rutenett
-projCRS <- paste0("EPSG:", crs)
+# # # Proj CRS needs to match SSB's Rutenett
+projCRS <- paste0(crs)
 
 cat("\nAll data loaded.", length(speciesData), "species datasets successfully loaded.")
 
@@ -152,3 +161,4 @@ for(iter in 1:nrow(focalTaxa)){
 
 saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))
 
+sink()

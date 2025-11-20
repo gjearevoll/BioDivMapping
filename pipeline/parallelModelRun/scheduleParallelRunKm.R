@@ -71,13 +71,17 @@ print(predictionDatasetShort)
 # myMesh$offset <- c(20, 100) * 1000
 # myMesh$max.edge <- c(200, 500) * 1000
 # fm_int(domain = meshToUse, samplers = regionGeometry, int.args = list(method = 'direct', nsub1 = 15, nsub2 = 15))
+crs <- '+proj=utm +zone=33 +datum=WGS84 +units=km +no_defs'
+myMesh <- lapply(myMesh, FUN = function(x) {x/1000})
+regionGeometry <- st_transform(regionGeometry, crs)
+meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 
 # Add model characteristics (mesh, priors, output)
 meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 workflow$addMesh(Object = meshToUse)
 
 # Sort out model options
-workflow$specifySpatial(prior.range = c(prior.range[1], prior.range[2]),
+workflow$specifySpatial(prior.range = c(prior.range[1]/1000, prior.range[2]),
                         prior.sigma = c(prior.sigma[1], prior.sigma[2]))
 workflow$workflowOutput(c('Model'))
 workflow$modelOptions(ISDM = list(pointCovariates = NULL,
@@ -91,6 +95,7 @@ workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetSho
 
 # Now add environmental covariates to the model
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
+environmentalDataListProj <- project(environmentalDataList, crs)
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 
 print(focalCovariates$parameters)
@@ -105,14 +110,14 @@ env <- c(env, quadratics)
 
 # Add categorical variables
 categoricals <- focalCovariates$parameters[focalCovariates$categorical]
-categoricals2 <- names(environmentalDataList)[apply(sapply(categoricals, FUN = function(x) {grepl(x, names(environmentalDataList))}), 1, any)]
+categoricals2 <- names(environmentalDataListProj)[apply(sapply(categoricals, FUN = function(x) {grepl(x, names(environmentalDataListProj))}), 1, any)]
 env <- c(env, categoricals2)
 envRenamed <- gsub(" ","_",stringr::str_replace_all(env, "[[:punct:]]", "_"))
-names(environmentalDataList) <- gsub(" ","_",stringr::str_replace_all(names(environmentalDataList), "[[:punct:]]", "_"))
+names(environmentalDataListProj) <- gsub(" ","_",stringr::str_replace_all(names(environmentalDataListProj), "[[:punct:]]", "_"))
 #
 for (e in envRenamed) {
   cat(sprintf("Adding covariate '%s' to the model.\n", e))
-  workflow$addCovariates(Object = environmentalDataList[[e]])
+  workflow$addCovariates(Object = environmentalDataListProj[[e]])
 }
 
 rm("environmentalDataList")
@@ -124,14 +129,14 @@ workflow$modelFormula(covariateFormula = NULL,
 ) 
 
 if (biasField) {
-  workflow$biasFields(datasetName = "mergedDatasetPO", prior.range = c(5*1000, 0.01),
+  workflow$biasFields(datasetName = "mergedDatasetPO", prior.range = c(5, 0.01),
                       prior.sigma = c(0.8, 0.01))
 }
 
 # Specify priors for the precision of intercept and groups
 cat("\nSpecifying priors for the hyperparameters in the model")
 
-predictionData <- createPredictionData(c(20000, 20000), regionGeometry, proj = crs)
+predictionData <- createPredictionData(c(20, 20), regionGeometry, proj = crs)
 # Run model (this directly saves output to folder specified above)
 workflow$specifyPriors(effectNames = c("Intercept"), Mean = 0, Precision = 1,
                        priorIntercept = list(initial = -10, fixed = TRUE),
@@ -157,8 +162,8 @@ cat("\nFinished fitting the models")
 # Change model name to ensure no overwrite of richness data
 cat("\nChanging the names of the returned output.")
 
-# file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
-#             paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPreds.rds"))
+file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
+            paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPreds.rds"))
 
 cat("\nResizing model object")
 

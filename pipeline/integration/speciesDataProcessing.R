@@ -88,7 +88,7 @@ for (ds in seq_along(speciesData)) {
   
   # Remove invalid months if we have bird data
   if ("birds" %in% focalData$taxa) {
-    focalData <- focalData[!(focalData$taxa == "birds" & focalData$month %in% c(1,2,3,4,5,9,10,11,12,NA,"")),]
+    focalData <- focalData[!(focalData$taxa == "birds" & focalData$month %in% c(1,2,3,4,9,10,11,12,NA,"")),]
   }
   
   # If the dataset is empty, skip it
@@ -149,12 +149,22 @@ processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 ###-------------------------###
 
 # Import mask for removing species data in cities and lakes
-cityLakeMask <- rast("localArchive/mask100.tiff")
-cityLakeMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityLakeMask == 1, 1, NA))), crs= "+proj=longlat +ellps=WGS84")
+
+if (!file.exists("localArchive/mask100.tiff")) {
+  maskedCats <-  c("Airports", "Continuous urban fabric", "Discontinuous urban fabric", "Industrial or commercial units",
+                   "Green urban areas", "Sport and leisure facilities")
+  cityMask <- produceLandscapeMask("data/temp/CORINE/EEA.zip", maskedCats, regionGeometry, crs, res)
+  # save mask
+  make_path("localArchive") # ensure path exists
+  writeRaster(cityMask, "localArchive/mask100.tiff", overwrite = TRUE)
+} else {
+  cityMask <- rast("localArchive/mask100.tiff")
+}
+cityMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityMask == 1, 1, NA))), crs= "+proj=longlat +ellps=WGS84")
 
 maskedData <- lapply(processedData, FUN = function(x) {
   newDatasetLongLat <- st_transform(x, crs = "+proj=longlat +ellps=WGS84")
-  newDatasetMasked <- st_intersection(newDatasetLongLat, cityLakeMaskNA)
+  newDatasetMasked <- st_intersection(newDatasetLongLat, cityMaskNA)
   cat("\nDataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
   newDatasetMasked2 <- st_transform(newDatasetMasked, crs = crs)
   return(newDatasetMasked2)
@@ -201,7 +211,9 @@ saveRDS(redList, paste0(folderName, "/redList.RDS"))
 ###-----------------------------------###
 
 # Provide empty raster
-blankRaster <- terra::project(rast(paste0(folderName, "/environmentalDataImported.tiff"))[[1]], paste0("EPSG:",crs))
+envImport <- if (temporal) unwrap(readRDS(paste0(folderName, "/environmentalDataImported.RDS"))[[1]]) else 
+  rast(paste0(folderName, "/environmentalDataImported.tiff"))
+blankRaster <- terra::project(envImport[[1]], paste0("EPSG:",crs))
 allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, blankRaster)
 writeRaster(allSpeciesRichness$rasters, paste0(folderName, "/speciesRichnessData.tiff"), overwrite=TRUE)
 saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))

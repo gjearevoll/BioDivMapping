@@ -9,7 +9,7 @@
 #' @return A download key for a GBIF download.
 #'
 
-getDownloadKey <- function(taxa, regionGeometry) {
+getDownloadKey <- function(taxa, regionGeometry, coordUncertainty) {
   # Check if credentials are stored in .Renviron
   gbif_user <- Sys.getenv("gbif_user", "")
   gbif_email <- Sys.getenv("gbif_email", "")
@@ -43,13 +43,20 @@ getDownloadKey <- function(taxa, regionGeometry) {
   }
   
   # Get taxon keys for species
-  
-  download_key <- occ_download(
-    pred_in("taxonKey", keys[!is.na(keys)]),
-    pred("geometry", st_as_text(st_transform(regionGeometry, crs = 4326)[[1]])),
-    pred_lte("coordinateUncertaintyInMeters", coordUncertainty),
-    pred_gte("year", yearToStart),
-    type = "and"
-  ) 
+  if (is.na(coordUncertainty)) {
+    download_key <- occ_download(
+      pred_in("taxonKey", keys[!is.na(keys)]),
+      pred("geometry", st_as_text(st_transform(regionGeometry, crs = 4326)[[1]])),
+      pred_gte("year", yearToStart),
+      type = "and"
+    )    
+  } else {
+    download_key <- occ_download(
+      pred_in("taxonKey", keys[!is.na(keys)]),
+      pred("geometry", st_as_text(st_transform(regionGeometry, crs = 4326)[[1]])),
+      pred_lte("coordinateUncertaintyInMeters", coordUncertainty),
+      pred_gte("year", yearToStart),
+      type = "and")
+  }  
   return(download_key)
 }

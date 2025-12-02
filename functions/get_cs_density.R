@@ -1,17 +1,20 @@
 
-#' @title \emph{get_cs_density}: This function takes the imported species data and create a kernel density
-#' estimate to give sampling density across the years
+#' @title \emph{get_cs_density}: Create a kernel density estimate for sampling bias across Norway
 
-#' @description This function checks whether or not you have the correct data stored locally for the forest line and elevation in Norway
+#' @description This function takes the imported species data and create a kernel density
+#' estimate to give sampling density across the years specified. It only works for temporal data at the moment.
+#'
+#' @param dateAccessed Indicates which date folder should be used to find the species data.
+#' @param regionGeometry Region for which to calculate density.
+#' @param citizenDatasets Names of datasets to derive sampling density from.
+#' @param yearInterval Years for which data needs to be derived
+#' @param crs CRS for the project
 #'
 #' @return An aggregated raster containing cs density data for Norway.
 #'
-#' @import terra
-#' 
-#' 
+#' @import spatstat
+#' @import dplyr
 
-library(spatstat)
-library(dplyr)
 
 get_cs_density <- function(dateAccessed, regionGeometry, citizenDatasets, yearInterval, crs) {
   

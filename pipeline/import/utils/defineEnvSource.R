@@ -138,11 +138,18 @@ if (dataSource == "geonorge") {
 ### 10. MET ###  
 } else if (dataSource == "met") {
   rasterisedVersion <- get_met(focalParameter, dataPath)
+
+### 10. MET ###  
+} else if (dataSource == "gbif") {
+  citizenDatasets <- c("Norwegian Species Observation Service", "iNaturalist Research-grade Observations")
+  rasterisedVersion <- get_cs_density(dateAccessed, regionGeometry, citizenDatasets, yearInterval, crs)
 }  
 
 ### merge with requested download area to make missing data explicit
 rasterisedVersion <- extend(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion), snap = "out")
 
 ### generate descriptive file name and save
-file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
-writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
+if (focalParameter != "cs_density") {
+  file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+  writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
+}

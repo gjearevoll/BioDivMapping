@@ -18,3 +18,4 @@
 "summer_precipitation",TRUE,"met",TRUE,FALSE,FALSE
 "summer_temperature",TRUE,"met",TRUE,FALSE,TRUE
 "habitat_heterogeneity",TRUE,"corine",FALSE,FALSE,FALSE
+"cs_density",TRUE,"gbif",FALSE,FALSE,TRUE

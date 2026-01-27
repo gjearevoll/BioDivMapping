@@ -18,6 +18,6 @@ if(!("rasterdiv" %in% row.names(installedPackages))) {
 necessaryPackages <- c("rgbif", "sf", "stringr", "dplyr", "rinat", "raster", "csmaps", "ggplot2",
                        "shiny", "shinydashboard", "PointedSDMs", "terra",
                        "shinyjs", "inlabru", "randomcoloR", "plotKML", "fasterize", "httr", "jsonlite",
-                       "tidyterra", "MODISTools", "MODIStsp")
+                       "tidyterra", "MODISTools", "MODIStsp", "qs", "spatstat")
 uninstalledPackages <- necessaryPackages[!(necessaryPackages %in% row.names(installedPackages))]
 install.packages(uninstalledPackages)

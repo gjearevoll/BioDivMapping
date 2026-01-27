@@ -47,7 +47,7 @@ importANOData <- function(destinationFolder, regionGeometry, focalTaxon, downloa
   }
   # extract ANO zip
   unzip(ANOZipPath, exdir = destinationFolder)
-  ANOUnzippedFolder <- paste0(destinationFolder, "/naturovervaking_eksport.gpkg")
+  ANOUnzippedFolder <- paste0(destinationFolder, "/naturovervaking_eksport.gdb")
   
   # Import geometry data to later match to species occurrnece
   ANOPoints <- st_read(ANOUnzippedFolder, layer="ANO_SurveyPoint")

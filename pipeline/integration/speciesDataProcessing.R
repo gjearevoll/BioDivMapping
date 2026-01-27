@@ -10,6 +10,7 @@ library(stringr)
 library(sf)
 #library(rgdal)
 library(terra)
+library(qs)
 
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
@@ -142,6 +143,7 @@ names(processedData) <- namesProcessedData
 
 # Remove empty datasets
 processedData <- processedData[!(unlist(lapply(processedData,is.null)))]
+processedData <- processedData[!(unlist(lapply(processedData,FUN = function(x) {is.null(nrow(x))})))]
 processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 
 ###-------------------------###
@@ -171,7 +173,9 @@ maskedData <- lapply(processedData, FUN = function(x) {
 })
 
 maskedData <- maskedData[lapply(maskedData,nrow)>0]
-saveRDS(maskedData, paste0(folderName, "/speciesDataProcessed.RDS"))
+qsave(maskedData, paste0(folderName, "/speciesDataProcessed.qs"))
+#saveRDS(maskedData, paste0(folderName, "/speciesDataProcessed.RDS"))
+
 
 ###--------------------------------###
 ### 4. Compile into one data.frame ####
@@ -194,7 +198,8 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(maskedData), FUN = funct
 # Remove absences, combine into one data frame and add date accessed
 processedPresenceData <- processedDataCompiled[processedDataCompiled$individualCount > 0,]
 processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
-saveRDS(processedPresenceData, paste0(folderName, "/processedPresenceData.RDS"))
+#saveRDS(processedPresenceData, paste0(folderName, "/processedPresenceData.RDS"))
+qsave(processedPresenceData, paste0(folderName, "/processedPresenceData.qs"))
 
 
 # ###----------------------------###

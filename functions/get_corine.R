@@ -40,8 +40,11 @@ get_corine <- function(zip_path = NA, output_path = NA, reclassify = TRUE, tempo
     }
     # load for each year
     corine <- list()
+    availableYears <- c(2000,2006,2012,2018)
     for (i in seq_along(yearInterval)) {
-      corine_yr_path <- file.path(output_path, yearInterval[i])
+      yearDiffs <- availableYears - yearInterval[i]
+      yearFolder <- max(availableYears[which(yearDiffs <= 0)])
+      corine_yr_path <- file.path(output_path, yearFolder, "DATA")
       # find existing file paths 
       tif_paths <- list.files(corine_yr_path, "\\.tif$", full.names = TRUE)
       zip_paths <- list.files(corine_yr_path, "\\.zip$", full.names = TRUE)

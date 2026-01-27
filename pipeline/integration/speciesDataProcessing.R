@@ -25,6 +25,7 @@ args <- commandArgs(TRUE)
 if (length(args) != 0) {
   # Set arguments
   dateAccessed <- args[1]
+  maskCityData <- args[2]
   # Set the working directory
   setwd("~/BioDivMapping")
 }
@@ -152,25 +153,29 @@ processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 
 # Import mask for removing species data in cities and lakes
 
-if (!file.exists("localArchive/mask100.tiff")) {
-  maskedCats <-  c("Airports", "Continuous urban fabric", "Discontinuous urban fabric", "Industrial or commercial units",
-                   "Green urban areas", "Sport and leisure facilities")
-  cityMask <- produceLandscapeMask("data/temp/CORINE/EEA.zip", maskedCats, regionGeometry, crs, res)
-  # save mask
-  make_path("localArchive") # ensure path exists
-  writeRaster(cityMask, "localArchive/mask100.tiff", overwrite = TRUE)
+if (maskCityData) {
+  if (!file.exists("localArchive/mask100.tiff")) {
+    maskedCats <-  c("Airports", "Continuous urban fabric", "Discontinuous urban fabric", "Industrial or commercial units",
+                     "Green urban areas", "Sport and leisure facilities")
+    cityMask <- produceLandscapeMask("data/temp/CORINE/EEA.zip", maskedCats, regionGeometry, crs, res)
+    # save mask
+    make_path("localArchive") # ensure path exists
+    writeRaster(cityMask, "localArchive/mask100.tiff", overwrite = TRUE)
+  } else {
+    cityMask <- rast("localArchive/mask100.tiff")
+  }
+  cityMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityMask == 1, 1, NA))), crs= "+proj=longlat +ellps=WGS84")
+  
+  maskedData <- lapply(processedData, FUN = function(x) {
+    newDatasetLongLat <- st_transform(x, crs = "+proj=longlat +ellps=WGS84")
+    newDatasetMasked <- st_intersection(newDatasetLongLat, cityMaskNA)
+    cat("\nDataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
+    newDatasetMasked2 <- st_transform(newDatasetMasked, crs = crs)
+    return(newDatasetMasked2)
+  })
 } else {
-  cityMask <- rast("localArchive/mask100.tiff")
+  maskedData <- processedData
 }
-cityMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityMask == 1, 1, NA))), crs= "+proj=longlat +ellps=WGS84")
-
-maskedData <- lapply(processedData, FUN = function(x) {
-  newDatasetLongLat <- st_transform(x, crs = "+proj=longlat +ellps=WGS84")
-  newDatasetMasked <- st_intersection(newDatasetLongLat, cityMaskNA)
-  cat("\nDataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
-  newDatasetMasked2 <- st_transform(newDatasetMasked, crs = crs)
-  return(newDatasetMasked2)
-})
 
 maskedData <- maskedData[lapply(maskedData,nrow)>0]
 qsave(maskedData, paste0(folderName, "/speciesDataProcessed.qs"))

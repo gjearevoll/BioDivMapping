@@ -12,6 +12,7 @@ library(raster)
 library(terra)
 library(sf)
 library(fasterize)
+library(dplyr)
 library(digest)  # create hash of raster CRS and projection for saving
 
 # Import local functions
@@ -162,6 +163,7 @@ for(parameter in seq_along(selectedParameters)) {
 }
 names(parameterList) <- selectedParameters
 
+
 ###--------------------------------------###
 ### 3. Expansion of categorical rasters ####
 ###--------------------------------------###
@@ -172,14 +174,14 @@ for (par in catParams) {
   focalCatParameter <- parameterList[[par]]
   levelTable <- levels(focalCatParameter)[[1]]
   allCats <- unique(levelTable[,2])
-  # if (par == "land_cover_corine") {allCats <- c("Coniferous forest"
-  #                                              , "Transitional woodland-shrub",
-  #                                               "Moors and heathland", "Built up area"
-  #                                               )}
+  if (par == "land_cover_corine") {
+    allCats <- allCats[(!allCats %in% c(NA, "Sclerophyllous vegetation"))]
+    #allCats <- c("Built up area", "Coniferous forest", "Transitional woodland-shrub", "Moors and heathland")
+    }
   catList <- lapply(allCats, FUN = function(cat1) {
     if (par == "kalkinnhold" & cat1 == "no data") {return(NA)}
     catLevels <- levelTable$value[levelTable[,2] %in% cat1]
-    cat("\nAggregating",cat1)
+    print(paste0("Aggregating",cat1))
     catRaster <- ifel(focalCatParameter %in% catLevels, 1, 0)
     contRaster <- terra::project(catRaster, baseRaster, method="average")
     contRaster

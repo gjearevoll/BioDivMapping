@@ -9,6 +9,7 @@ library(rgbif)
 library(terra)
 library(dplyr)
 library(foreach)
+library(qs)
 
 start <- Sys.time()
 
@@ -56,7 +57,7 @@ focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
-speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
+speciesData <- qread(paste0(folderName, "/speciesDataProcessed.qs"))
 
 crs <- '+proj=utm +zone=33 +datum=WGS84 +units=km +no_defs'
 environmentalDataList <- project(environmentalDataList, crs)

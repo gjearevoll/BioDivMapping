@@ -25,6 +25,7 @@ get_cs_density <- function(dateAccessed, regionGeometry, citizenDatasets, yearIn
   
   speciesDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))[["species"]]
   
+  library(spatstat)
   cityOwin <- as.owin(sf::st_as_sf(vect(regionGeometry)))
   
   # Dictate numebr of samples to take

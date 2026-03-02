@@ -11,9 +11,9 @@
 
 getDownloadKey <- function(taxa, regionGeometry, coordUncertainty) {
   # Check if credentials are stored in .Renviron
-  gbif_user <- Sys.getenv("gbif_user", "")
-  gbif_email <- Sys.getenv("gbif_email", "")
-  gbif_pwd <- Sys.getenv("gbif_pwd", "")
+  if (!exists("gbif_user")) {gbif_user <- Sys.getenv("gbif_user", "")}
+  if (!exists("gbif_email")) {gbif_email <- Sys.getenv("gbif_email", "")}
+  if (!exists("gbif_pwd")) {gbif_pwd <- Sys.getenv("gbif_pwd", "")}
   
   # If not found in .Renviron, check in options, or ask the user
   if (gbif_user == "") {

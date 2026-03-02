@@ -10,38 +10,38 @@ if (file.exists(dataFileName)) {
   cat("\tPre-processed version used\n")
   newDataset <- readRDS(dataFileName)
   
-# 1. The national insect Monitoring in Norway dataset
+  # 1. The national insect Monitoring in Norway dataset
 } else if (dataType == "insectMonitoring") {
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
   newDataset <- processNationalInsectMonitoring(focalData, focalEndpoint, tempFolderName, crs, coordUncertainty)
   
-# 1b. The national insect Monitoring in Norway dataset sturcture, but for other similar datasets
+  # 1b. The national insect Monitoring in Norway dataset sturcture, but for other similar datasets
 } else if (dataType == "insectMonitoringStandard") {
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
   newDataset <- processInsectMonitoring(focalData, focalEndpoint, tempFolderName, crs, coordUncertainty)
   
-# 2. ANO Data
+  # 2. ANO Data
 } else if (dataType == "ANO") {
   newDataset <- processANOData(focalData, crs)
   
-# 3. Field note data  
+  # 3. Field note data  
 } else if (dataType == "fieldNotes"){
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
   newDataset <- processFieldNotes(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, coordUncertainty, yearToStart)
   
-# 4. Field note data  - Oslo and Agder
+  # 4. Field note data  - Oslo and Agder
 } else if (dataType == "fieldNotesOslo"){
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
   newDataset <- processFieldNotesOslo(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, 
                                       coordUncertainty, yearToStart)
   
   
-# 5. Field note data (with events table)
+  # 5. Field note data (with events table)
 } else if (dataType == "fieldNotesEvent") {
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
   newDataset <- processFieldNotesEvent(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, coordUncertainty, yearToStart)
   
-# No need to do anything to presence only data (yet) except add individualCount column
+  # No need to do anything to presence only data (yet) except add individualCount column
 } else if (dataType == "freshwaterFishInventory") {
   focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
   newDataset <- processFreshwaterFishInventory(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, coordUncertainty, yearToStart)
@@ -72,7 +72,7 @@ if (file.exists(dataFileName)) {
   newDataset <- st_transform(newDataset, crs)
 }
 
-if (!is.null(newDataset)){
+if ("data.frame" %in% class(newDataset)) {
   # Redefine years IF we're using temporal data to match year interval
   newDataset$year <- as.integer(newDataset$year)
   if (temporal) {

@@ -25,7 +25,7 @@ sapply(list.files("functions", full.names = TRUE), source)
 args <- commandArgs(TRUE)
 
 # THis should only run if the script is being run from the command line
-if (length(args) != 0) {
+if (length(args) != 0 & !exists("dateAccessed")) {
   # Set arguments
   dateAccessed <- args[1]
   # Set the working directory
@@ -163,7 +163,6 @@ for(parameter in seq_along(selectedParameters)) {
 }
 names(parameterList) <- selectedParameters
 
-
 ###--------------------------------------###
 ### 3. Expansion of categorical rasters ####
 ###--------------------------------------###
@@ -194,7 +193,7 @@ names(fullCatList) <- gsub(" ","_",stringr::str_replace_all(names(fullCatList), 
 
 parameterListCont <- parameterList[!(names(parameterList) %in% catParams)]
 parameterListCont <- c(parameterListCont, fullCatList)
-parameterNames <- names(parameterListCont)
+parameterNames <- removeAccents(names(parameterListCont))
 
 
 ###------------------------###

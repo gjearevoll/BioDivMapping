@@ -104,7 +104,7 @@ readRDS(paste0(folderName,"/controlPars.RDS")) %>%
 cat("Loaded contral pars")
 
 # Prediction resolution in stated in the units used in preparing the data
-predRes <- 2
+predRes <- 4
 
 # Import model objects datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
@@ -173,9 +173,16 @@ if(any(types == "factor")){
 
 cat("Defined prediction data")
 
+# Import tight boundary
+regionGeometryTight <- sf::read_sf("data/external/norge_border/Noreg_polygon.shp")
+regionGeometryTight <- st_union(regionGeometryTight)
+regionGeometryTight <-  st_transform(regionGeometryTight, crs =  "+proj=longlat +ellps=WGS84")
+regionGeometryTight <- st_buffer(regionGeometryTight, dist = 0.001)
+regionGeometryTight <-  st_transform(regionGeometryTight, crs)
+
 # The prediction data is in a bounded box, and for landCover, we have values within
 # the entire bounded box. We need to mask the covariates by the regionGeometry
-predGrid <- regionGeometry %>%
+predGrid <- regionGeometryTight %>%
   st_transform(., projCRS)%>%
   vect( )%>%
   mask(predGrid, .)
@@ -253,11 +260,11 @@ for(mod in seq_along(models)){
   transformedPredRast <- project(predRast, modelCRS)
   cat("\nTransformed pred rast")
   
-  regionGeometry <- regionGeometry %>%
+  regionGeometryTight <- regionGeometryTight %>%
     st_transform(modelCRS)
   
   cat("Starting prediction")
-  predData <- sf::st_intersection(predData, regionGeometry)
+  predData <- sf::st_intersection(predData, regionGeometryTight)
   # update names
   names(predData) <- c(covs,
                        paste(rep(speciesIn, each = length(covs)), 

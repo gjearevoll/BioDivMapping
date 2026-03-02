@@ -86,28 +86,31 @@ readRDS(paste0(folderName,"/controlPars.RDS")) %>%
 
 # Prediction resolution in stated in the units used in preparing the data
 # That is metres
-predRes <- 5000
+predRes <- 5
 
 # Import model objects datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
 
+crs <- '+proj=utm +zone=33 +datum=WGS84 +units=km +no_defs'
+environmentalDataList <- project(environmentalDataList, crs)
+regionGeometry <- st_transform(regionGeometry, crs)
+
+myMesh <- lapply(myMesh, FUN = function(x) {x/1000})
 mesh <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 #load("data/meshForProject.RData")
 #mesh <- meshToUse
 cat("Loaded mesh")
 
 # Get the crs used in preparing the data for the models
-projCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
-
-# Get the crs used in fitting the models
-modelCRS <- "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+projCRS <- modelCRS <-  crs
 
 # Import fitted models
 models <- lapply(paste0(modelFolderName, "/", focalGroup), function(x){
   try(list.files(x, pattern = paste0("richnessModel.rds"), recursive = TRUE, full.names = TRUE))
 })
+cat(modelFolderName, "/", focalGroup)
 
 ###-----------------###
 ### 2. Prep objects ###

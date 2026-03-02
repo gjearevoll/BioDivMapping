@@ -3,19 +3,21 @@
 ###----------------------###
 ### 0. Bash preparation ####
 ###----------------------###
-#.libPaths(c("/cluster/projects/nn11017k/R"))
+.libPaths(c("/cluster/projects/nn11017k/R"))
+print(R.Version())
 library(intSDM)
 library(rgbif)
 library(terra)
 library(dplyr)
 library(foreach)
+library(qs)
+
+start <- Sys.time()
 
 # Specify script parameters
 args <- commandArgs(trailingOnly = TRUE)
 dateAccessed <- as.character(args[1])
-#dateAccessed <- "2025-06-12"
 cat(dateAccessed)
-
 
 # Ensure that dateAccessed is specified
 if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
@@ -27,6 +29,8 @@ tempFolderName <- paste0(folderName, "/temp")
 # load the control parameters
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
+
+prior.range[1] <- prior.range[1] /1000
 
 ###-----------------###
 ### 1. Preparation ####
@@ -44,8 +48,13 @@ if (!dir.exists(paste0(folderName, "/workspaces"))) {
   dir.create(paste0(folderName, "/workspaces"))
 }
 
+# create folder for out scripts
+if (!dir.exists(paste0(folderName, "/out"))) {
+  dir.create(paste0(folderName, "/out"))
+}
+
 # Use 10000m grid for practice predictions
-res <- 20000
+res <- 10
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -54,16 +63,21 @@ focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
-speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
+speciesData <- qread(paste0(folderName, "/speciesDataProcessed.qs"))
+
+crs <- '+proj=utm +zone=33 +datum=WGS84 +units=km +no_defs'
+environmentalDataList <- project(environmentalDataList, crs)
+speciesData <- lapply(speciesData, FUN = function(x) {
+  st_transform(x, crs)
+})
+regionGeometry <- st_transform(regionGeometry, crs)
+
 
 #changing names with norwegian texts
 speciesDatanameToChange <- names(speciesData)[which(grepl("[^\x01-\x7F]+", names(speciesData)))]
 print(paste("Changing name of this dataset:", speciesDatanameToChange))
 speciesDatanameChanged <- gsub('[^\x01-\x7F]+', ' ', speciesDatanameToChange)
 names(speciesData)[names(speciesData) %in% speciesDatanameToChange] <- speciesDatanameChanged
-
-# # Proj CRS needs to match SSB's Rutenett
-projCRS <- paste0("EPSG:", crs)
 
 cat("\nAll data loaded.", length(speciesData), "species datasets successfully loaded.")
 
@@ -83,32 +97,6 @@ if ("birds" %in% focalTaxa$taxa) {
 # Define speciesData based on run type and create predictionData
 predictionData <- createPredictionData(c(res, res), regionGeometry, proj = crs)
 
-# Split up data for vascular plants
-if ("vascularPlants" %in% focalTaxa$taxa) {
-  if (nrow(focalTaxa) > 1) {stop("cannot divide taxa data for more than one taxa simultaneously")}
-  speciesDivisions <- 2
-  # Get taxa species list
-  modelSpeciesDataBasic <- do.call(rbind, lapply(speciesData, FUN = function(ds1) {
-    st_drop_geometry(ds1[,c("simpleScientificName")])
-  }))
-  talliedData <- arrange(tally(group_by(modelSpeciesDataBasic, simpleScientificName)),-n)
-  cleanedData <- talliedData[talliedData$n > 1 & !is.na(talliedData$simpleScientificName),]
-  newTaxaNames <- paste0("vascularPlants", LETTERS[1:speciesDivisions])
-  
-  # Assign one of the split taxa to each species
-  cleanedData$names <- rep(newTaxaNames, nrow(cleanedData)/speciesDivisions)[1:nrow(cleanedData)]
-  
-  # Change taxa names to whichever taxa we want
-  speciesData <- lapply(speciesData, FUN = function(ds2) {
-    ds2$taxa <- cleanedData$names[match(ds2$simpleScientificName, cleanedData$simpleScientificName)]
-    ds2
-  })
-  focalTaxa <- do.call("rbind", replicate(
-    speciesDivisions, focalTaxa, simplify = FALSE))
-  focalTaxa$taxa <- newTaxaNames
-  cat("Plant data is being split up into ", speciesDivisions, " sections. New taxa names are ", focalTaxa$taxa)
-}
-
 cat("\nPrediction data and model species data successfully created. Starting to create segments of", nSegment, "species each.")
 
 # Create list of taxa run
@@ -121,7 +109,7 @@ for(iter in 1:nrow(focalTaxa)){
                                    regionGeometry = regionGeometry,
                                    modelFolderName = modelFolderName, 
                                    environmentalDataList = environmentalDataList, 
-                                   crs = projCRS, 
+                                   crs = crs, 
                                    segmentation = TRUE,
                                    nSegment = nSegment,
                                    speciesOccurrenceThreshold = speciesOccurrenceThreshold,
@@ -152,3 +140,4 @@ for(iter in 1:nrow(focalTaxa)){
 
 saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))
 
+sink()

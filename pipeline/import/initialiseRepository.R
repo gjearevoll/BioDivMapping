@@ -76,7 +76,8 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
                       speciesOccurrenceThreshold = speciesOccurrenceThreshold,
                       datasetOccurrenceThreshold = datasetOccurrenceThreshold,
                       temporal = temporal,
-                      yearInterval = yearInterval)
+                      yearInterval = yearInterval,
+                      maskCityData = maskCityData)
   # save
   saveRDS(controlPars, paste0(folderName,"/controlPars.RDS"))
 }

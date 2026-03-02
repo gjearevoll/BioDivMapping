@@ -25,7 +25,6 @@ args <- commandArgs(TRUE)
 if (length(args) != 0) {
   # Set arguments
   dateAccessed <- args[1]
-  maskCityData <- args[2]
   # Set the working directory
   setwd("~/BioDivMapping")
 }

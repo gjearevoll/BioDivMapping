@@ -58,6 +58,7 @@ parallelisation <- FALSE
 # Indicates whether model should be temporal, and which time intervals we use
 temporal <- TRUE
 yearInterval <- c(2000, 2006, 2012, 2018)
+maskCityData <- TRUE
 
 # Indicates whether we want to download the ANOData or use the data from file
 downloadANOData <- FALSE

@@ -22,7 +22,7 @@ sapply(list.files("functions", full.names = TRUE), source)
 args <- commandArgs(TRUE)
 
 # THis should only run if the script is being run from the command line
-if (length(args) != 0) {
+if (length(args) != 0 & !exists("dateAccessed")) {
   # Set arguments
   dateAccessed <- args[1]
   # Set the working directory

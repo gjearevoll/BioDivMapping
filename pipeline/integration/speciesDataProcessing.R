@@ -10,6 +10,7 @@ library(stringr)
 library(sf)
 #library(rgdal)
 library(terra)
+library(qs)
 
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
@@ -142,6 +143,7 @@ names(processedData) <- namesProcessedData
 
 # Remove empty datasets
 processedData <- processedData[!(unlist(lapply(processedData,is.null)))]
+processedData <- processedData[!(unlist(lapply(processedData,FUN = function(x) {is.null(nrow(x))})))]
 processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 
 ###-------------------------###
@@ -150,28 +152,34 @@ processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 
 # Import mask for removing species data in cities and lakes
 
-if (!file.exists("localArchive/mask100.tiff")) {
-  maskedCats <-  c("Airports", "Continuous urban fabric", "Discontinuous urban fabric", "Industrial or commercial units",
-                   "Green urban areas", "Sport and leisure facilities")
-  cityMask <- produceLandscapeMask("data/temp/CORINE/EEA.zip", maskedCats, regionGeometry, crs, res)
-  # save mask
-  make_path("localArchive") # ensure path exists
-  writeRaster(cityMask, "localArchive/mask100.tiff", overwrite = TRUE)
+if (maskCityData) {
+  if (!file.exists("localArchive/mask100.tiff")) {
+    maskedCats <-  c("Airports", "Continuous urban fabric", "Discontinuous urban fabric", "Industrial or commercial units",
+                     "Green urban areas", "Sport and leisure facilities")
+    cityMask <- produceLandscapeMask("data/temp/CORINE/EEA.zip", maskedCats, regionGeometry, crs, res)
+    # save mask
+    make_path("localArchive") # ensure path exists
+    writeRaster(cityMask, "localArchive/mask100.tiff", overwrite = TRUE)
+  } else {
+    cityMask <- rast("localArchive/mask100.tiff")
+  }
+  cityMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityMask == 1, 1, NA))), crs= "+proj=longlat +ellps=WGS84")
+  
+  maskedData <- lapply(processedData, FUN = function(x) {
+    newDatasetLongLat <- st_transform(x, crs = "+proj=longlat +ellps=WGS84")
+    newDatasetMasked <- st_intersection(newDatasetLongLat, cityMaskNA)
+    cat("\nDataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
+    newDatasetMasked2 <- st_transform(newDatasetMasked, crs = crs)
+    return(newDatasetMasked2)
+  })
 } else {
-  cityMask <- rast("localArchive/mask100.tiff")
+  maskedData <- processedData
 }
-cityMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityMask == 1, 1, NA))), crs= "+proj=longlat +ellps=WGS84")
-
-maskedData <- lapply(processedData, FUN = function(x) {
-  newDatasetLongLat <- st_transform(x, crs = "+proj=longlat +ellps=WGS84")
-  newDatasetMasked <- st_intersection(newDatasetLongLat, cityMaskNA)
-  cat("\nDataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
-  newDatasetMasked2 <- st_transform(newDatasetMasked, crs = crs)
-  return(newDatasetMasked2)
-})
 
 maskedData <- maskedData[lapply(maskedData,nrow)>0]
-saveRDS(maskedData, paste0(folderName, "/speciesDataProcessed.RDS"))
+qsave(maskedData, paste0(folderName, "/speciesDataProcessed.qs"))
+#saveRDS(maskedData, paste0(folderName, "/speciesDataProcessed.RDS"))
+
 
 ###--------------------------------###
 ### 4. Compile into one data.frame ####
@@ -194,7 +202,8 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(maskedData), FUN = funct
 # Remove absences, combine into one data frame and add date accessed
 processedPresenceData <- processedDataCompiled[processedDataCompiled$individualCount > 0,]
 processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
-saveRDS(processedPresenceData, paste0(folderName, "/processedPresenceData.RDS"))
+#saveRDS(processedPresenceData, paste0(folderName, "/processedPresenceData.RDS"))
+qsave(processedPresenceData, paste0(folderName, "/processedPresenceData.qs"))
 
 
 # ###----------------------------###

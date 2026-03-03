@@ -86,12 +86,12 @@ if (dataSource == "geonorge") {
     
 ### 4. MODIS ####    
 } else if (dataSource == "modis") {
-  rasterisedVersion <- get_modis(regionGeometry, projCRS, focalParameter)
+  rasterisedVersion <- get_modis(regionGeometry, projCRS, focalParameter, temporalFactor, yearInterval)
   
 ### 5. CORINE ###  
 } else if (dataSource == "corine") {
   # check if encompassing corine alreadydownloaded
-  rasterisedVersion <- checkAndImportRast("land_cover_corine", regionGeometryBuffer, dataPath, quiet = TRUE, temporal, yearInterval)
+  rasterisedVersion <- checkAndImportRast("land_cover_corine", regionGeometryBuffer, dataPath, quiet = TRUE, temporalFactor, yearInterval)
   # rasterisedVersion <- terra::crop(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion))
   # download and save if missing
   if(is.null(rasterisedVersion)){

@@ -3,12 +3,14 @@
 ###----------------------###
 ### 0. Bash preparation ####
 ###----------------------###
+print(R.Version())
 .libPaths(c("/cluster/projects/nn11017k/R"))
 library(intSDM)
 library(rgbif)
 library(terra)
 library(dplyr)
 library(foreach)
+library(qs)
 
 start <- Sys.time()
 
@@ -28,6 +30,8 @@ tempFolderName <- paste0(folderName, "/temp")
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
 
+prior.range[1] <- prior.range[1] /1000
+
 ###-----------------###
 ### 1. Preparation ####
 ###-----------------###
@@ -44,8 +48,13 @@ if (!dir.exists(paste0(folderName, "/workspaces"))) {
   dir.create(paste0(folderName, "/workspaces"))
 }
 
+# create folder for out scripts
+if (!dir.exists(paste0(folderName, "/out"))) {
+  dir.create(paste0(folderName, "/out"))
+}
+
 # Use 10000m grid for practice predictions
-res <- 10000
+res <- 10
 
 # Import species list
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -54,7 +63,14 @@ focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
-speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
+speciesData <- qread(paste0(folderName, "/speciesDataProcessed.qs"))
+
+crs <- '+proj=utm +zone=33 +datum=WGS84 +units=km +no_defs'
+environmentalDataList <- project(environmentalDataList, crs)
+speciesData <- lapply(speciesData, FUN = function(x) {
+  st_transform(x, crs)
+})
+regionGeometry <- st_transform(regionGeometry, crs)
 
 #changing names with norwegian texts
 speciesDatanameToChange <- names(speciesData)[which(grepl("[^\x01-\x7F]+", names(speciesData)))]
@@ -62,8 +78,6 @@ print(paste("Changing name of this dataset:", speciesDatanameToChange))
 speciesDatanameChanged <- gsub('[^\x01-\x7F]+', ' ', speciesDatanameToChange)
 names(speciesData)[names(speciesData) %in% speciesDatanameToChange] <- speciesDatanameChanged
 
-# # Proj CRS needs to match SSB's Rutenett
-projCRS <- paste0("EPSG:", crs)
 
 cat("\nAll data loaded.", length(speciesData), "species datasets successfully loaded.")
 
@@ -80,19 +94,17 @@ if ("birds" %in% focalTaxa$taxa) {
   cat("Birds data filtered on TOV species.")
 }
 
-
-
 # Define speciesData based on run type and create predictionData
 predictionData <- createPredictionData(c(res, res), regionGeometry, proj = crs)
-
 
 # Split up data for vascular plants
 if ("vascularPlants" %in% focalTaxa$taxa |
     "beetles" %in% focalTaxa$taxa |
-    "butterfliesMoths" %in% focalTaxa$taxa
+    "butterfliesMoths" %in% focalTaxa$taxa |
+    "fungi" %in% focalTaxa$taxa
 ) {
   if (nrow(focalTaxa) > 1) {stop("cannot divide taxa data for more than one taxa simultaneously")}
-  speciesDivisions <- 3
+  speciesDivisions <- 2
   # Get taxa species list
   modelSpeciesDataBasic <- do.call(rbind, lapply(speciesData, FUN = function(ds1) {
     ds2 <- ds1[ds1$taxa %in% focalTaxa$taxa,]
@@ -117,15 +129,15 @@ if ("vascularPlants" %in% focalTaxa$taxa |
   focalTaxa$taxa <- newTaxaNames
   cat("\nData is being split up into ", speciesDivisions, " sections. New taxa names are ", focalTaxa$taxa)
 }
-
 cat("\nPrediction data and model species data successfully created. Starting to create segments of", nSegment, "species each.")
-
-speciesData <- lapply(speciesData, FUN = function(x) {
-  st_transform(x, crs = projCRS)
-})
 
 # Create list of taxa run
 listSegments <- list()
+
+
+environmentalDataList[["road_environment"]] <- environmentalDataList$distance_roads
+focalTaxa$road_environment <- TRUE
+
 
 # Prepare models
 for(iter in 1:1){
@@ -134,7 +146,7 @@ for(iter in 1:1){
                                    regionGeometry = regionGeometry,
                                    modelFolderName = modelFolderName, 
                                    environmentalDataList = environmentalDataList, 
-                                   crs = projCRS, 
+                                   crs = crs, 
                                    segmentation = TRUE,
                                    nSegment = nSegment,
                                    speciesOccurrenceThreshold = speciesOccurrenceThreshold,
@@ -164,3 +176,5 @@ for(iter in 1:1){
 }
 
 saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))
+
+sink()

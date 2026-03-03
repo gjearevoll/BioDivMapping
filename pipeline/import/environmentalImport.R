@@ -12,6 +12,7 @@ library(raster)
 library(terra)
 library(sf)
 library(fasterize)
+library(dplyr)
 library(digest)  # create hash of raster CRS and projection for saving
 
 # Import local functions
@@ -24,7 +25,7 @@ sapply(list.files("functions", full.names = TRUE), source)
 args <- commandArgs(TRUE)
 
 # THis should only run if the script is being run from the command line
-if (length(args) != 0) {
+if (length(args) != 0 & !exists("dateAccessed")) {
   # Set arguments
   dateAccessed <- args[1]
   # Set the working directory
@@ -172,14 +173,14 @@ for (par in catParams) {
   focalCatParameter <- parameterList[[par]]
   levelTable <- levels(focalCatParameter)[[1]]
   allCats <- unique(levelTable[,2])
-  # if (par == "land_cover_corine") {allCats <- c("Coniferous forest"
-  #                                              , "Transitional woodland-shrub",
-  #                                               "Moors and heathland", "Built up area"
-  #                                               )}
+  if (par == "land_cover_corine") {
+    allCats <- allCats[(!allCats %in% c(NA, "Sclerophyllous vegetation"))]
+    #allCats <- c("Built up area", "Coniferous forest", "Transitional woodland-shrub", "Moors and heathland")
+    }
   catList <- lapply(allCats, FUN = function(cat1) {
     if (par == "kalkinnhold" & cat1 == "no data") {return(NA)}
     catLevels <- levelTable$value[levelTable[,2] %in% cat1]
-    cat("\nAggregating",cat1)
+    print(paste0("Aggregating",cat1))
     catRaster <- ifel(focalCatParameter %in% catLevels, 1, 0)
     contRaster <- terra::project(catRaster, baseRaster, method="average")
     contRaster
@@ -192,7 +193,7 @@ names(fullCatList) <- gsub(" ","_",stringr::str_replace_all(names(fullCatList), 
 
 parameterListCont <- parameterList[!(names(parameterList) %in% catParams)]
 parameterListCont <- c(parameterListCont, fullCatList)
-parameterNames <- names(parameterListCont)
+parameterNames <- removeAccents(names(parameterListCont))
 
 
 ###------------------------###

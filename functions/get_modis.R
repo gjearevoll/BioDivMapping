@@ -1,10 +1,10 @@
 
-
+# 
 library(MODISTools)
 library(MODIStsp)
 
 
-get_modis <- function(regionGeometry, projCRS, parameter) {
+get_modis <- function(regionGeometry, projCRS, focalParameter, temporalFactor, yearInterval) {
   
   Noreg_si <- st_transform(regionGeometry, crs="+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +R=6371007.181 +units=m +no_defs") #Correct
   ll <- st_bbox(Noreg_si)
@@ -14,7 +14,7 @@ get_modis <- function(regionGeometry, projCRS, parameter) {
   
   ### 1. Net primary productivity ####
   
-  if (parameter == "net_primary_productivity") {
+  if (focalParameter == "net_primary_productivity") {
     
     # To get the NPP data
     bands <- MODIStsp_get_prodlayers("Net_PP_GapFil_Yearly_500m (M*D17A3HGF)") # The different bands in the NPP data
@@ -54,7 +54,7 @@ get_modis <- function(regionGeometry, projCRS, parameter) {
       print(i)
       flush.console()
     }
-    
+    names(NoregNPP) <- c(2002:2019,2021,2022)
     
     # Values as stored as integers, and must be multiplied with 0.0001 to get the
     # correct unit: kgC/m²/year
@@ -64,8 +64,23 @@ get_modis <- function(regionGeometry, projCRS, parameter) {
     # Fill values (ice, water etc) are values > 32760*0.0001. Set these to NA
     NoregNPP[NoregNPP > 3.276] <- NA
     
-    # mean over all years, the final product
-    NoregMeanNPP <- scale(app(NoregNPP, fun=function(x) mean(x, na.rm=TRUE)))
+    if (temporalFactor) {
+      # Get individual years. If more recent years missing, fill in with most recent year
+      presentYears <- yearInterval[as.character(yearInterval) %in% names(NoregNPP)]
+      NoregNPPSub <- NoregNPP[[as.character(presentYears)]]
+      # Find missing years
+      missingYears <- yearInterval[!(as.character(yearInterval) %in% names(NoregNPP))]
+      missingYearsRast <- lapply(missingYears, FUN =function(y) {
+        yearVec <- y - as.numeric(names(NoregNPP))
+        NoregNPP[[names(NoregNPP)[max(which(yearVec >= 0))]]]
+      }) |> rast() |> setNames(missingYears)
+      NoregMeanNPP <- c(NoregNPPSub, missingYearsRast)[[as.character(yearInterval)]]
+    } else {
+      # mean over all years, the final product
+      NoregMeanNPP <- scale(app(NoregNPP, fun=function(x) mean(x, na.rm=TRUE)))
+      }
+    
+
     finalMap <- terra::project(NoregMeanNPP, projCRS)
     return(finalMap)
     
@@ -73,7 +88,7 @@ get_modis <- function(regionGeometry, projCRS, parameter) {
   
   ### 2. Peak NDVI ####
   
-  else if (parameter == "ndvi_peak") {
+  else if (focalParameter == "ndvi_peak") {
     # Extract NDVI for spring and summer, and get the peak value (maximum NDVI during the year)
     bands <- MODIStsp_get_prodlayers("Vegetation Indexes_16Days_250m (M*D13Q1)")
     

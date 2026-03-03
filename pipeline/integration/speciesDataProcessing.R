@@ -146,8 +146,19 @@ processedData <- processedData[!(unlist(lapply(processedData,is.null)))]
 processedData <- processedData[!(unlist(lapply(processedData,FUN = function(x) {is.null(nrow(x))})))]
 processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 
+
+###------------------------------------###
+### 3. Remove alien species from data ####
+###------------------------------------###
+
+alienSpeciesList <- readRDS("data/external/alienSpeciesList.RDS")
+processedData <- lapply(processedData, FUN = function(ds) {
+  ds[!(ds$simpleScientificName %in% alienSpeciesList$simpleScientificName),]
+})
+
+
 ###-------------------------###
-### 3. Mask lake/city data ####
+### 4. Mask lake/city data ####
 ###-------------------------###
 
 # Import mask for removing species data in cities and lakes
@@ -182,7 +193,7 @@ qsave(maskedData, paste0(folderName, "/speciesDataProcessed.qs"))
 
 
 ###--------------------------------###
-### 4. Compile into one data.frame ####
+### 5. Compile into one data.frame ####
 ###--------------------------------###
 
 # Edit data frames to have the same number of columns
@@ -207,7 +218,7 @@ qsave(processedPresenceData, paste0(folderName, "/processedPresenceData.qs"))
 
 
 # ###----------------------------###
-# ### 5. Produce red list check ####
+# ### 6. Produce red list check ####
 # ###----------------------------###
 # 
 # Here we see which species have sufficient presence/count data to actually run an individual species model
@@ -216,7 +227,7 @@ redList$valid <- redList$GBIFName %in% redListSpecies$validSpecies
 saveRDS(redList, paste0(folderName, "/redList.RDS"))
 
 ###-----------------------------------###
-### 6. Produce species richness data ####
+### 7. Produce species richness data ####
 ###-----------------------------------###
 
 # Provide empty raster
@@ -234,7 +245,7 @@ if(nrow(processedRedListPresenceData) > 0){
 }
 
 ###----------------------###
-### 7. Produce metadata ####
+### 8. Produce metadata ####
 ###----------------------###
 
 # To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.

@@ -1,3 +1,4 @@
+#### MODEL Predictions ####
 
 ###----------------------###
 ### 0. Bash preparation ####
@@ -9,8 +10,6 @@ start <- Sys.time()
 i <- as.numeric(args[1])
 dateToUse <- args[2]
 covariatesSquared <- TRUE
-.libPaths(c("/cluster/projects/nn11017k/R"))
-#devtools::install_github("skiptoniam/qrbp")
 # You can run this from the command line using for example
 # Rscript filePath/speciesModelRuns.R 2024-02-08 allSPecies
 
@@ -20,14 +19,14 @@ covariatesSquared <- TRUE
 
 print("Preparing data for model prediction.")
 
-library(PointedSDMs)
 library(intSDM)
 library(dplyr)
 library(purrr)
 library(terra)
 library(tidyterra)
 library(stringr)
-#library(ppmData)
+library(INLA)
+library(qs)
 
 # Load in segment number and interested group name
 segmentList <- readRDS(paste0("data/run_", dateToUse, "/segmentList.RDS"))
@@ -38,13 +37,6 @@ load(paste0("data/run_", dateToUse, "/workspaces/", interestedGroup,"workflowWor
 # For some reason i changes to 1 after loading the workspace
 
 print(segmentList[i])
-#Load packages
-#.libPaths(c("/cluster/projects/nn11017k/R"))
-
-library(intSDM)
-library(rgbif)
-library(terra)
-library(dplyr)
 
 # Load the workspace witht the workflowList object
 #load("workflowWorkspace.RData")
@@ -53,10 +45,13 @@ focalGroup <- segmentList[i]
 workflow <- workflowList[[focalGroup]]
 print(focalGroup)
 
-sampSize <- focalTaxa$sampleSize[focalTaxa$taxa == interestedGroup]
-sampSize <- ifelse(is.na(sampSize), 1, sampSize)
+
+sampSize <- 1
+
+print(paste0("Sample size used for prediction is ", sampSize))
 
 rm("workflowList")
+
 
 # load the control parameters
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
@@ -78,7 +73,7 @@ namesSpeciesDataShort <- gsub(" ", "", gsub("[[:punct:]]", "", datasetNames))
 if(!predictionDatasetShort %in% datasetNames){
   predictionDatasetShort <-  namesSpeciesDataShort[!predictionDatasetShort %in% namesSpeciesDataShort][1]
 }
-cat("Prediction data used is",predictionDatasetShort)
+cat("\nPrediction data used is",predictionDatasetShort)
 
 
 dateAccessed <- dateToUse
@@ -101,15 +96,20 @@ modelFolderName <- paste0(folderName, "/modelOutputs")
 # import project control parameters into the environment
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
-cat("Loaded contral pars")
+cat("\nLoaded contral pars")
 
-# Prediction resolution in stated in the units used in preparing the data
-predRes <- 4
+
+# Ensure that modelRun is specified
+if (!exists("modelRun")) stop("You need to specify the variable modelRun")
+
+# Prediction resolution
+predRes <- 1
 
 # Import model objects datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
+environmentalDataList[["road_environment"]] <- environmentalDataList$distance_roads
 
 crs <- '+proj=utm +zone=33 +datum=WGS84 +units=km +no_defs'
 environmentalDataList <- project(environmentalDataList, crs)
@@ -119,15 +119,14 @@ myMesh <- lapply(myMesh, FUN = function(x) {x/1000})
 mesh <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 #load("data/meshForProject.RData")
 #mesh <- meshToUse
-cat("Loaded mesh \n")
+cat("\nLoaded mesh")
 
 # Get the crs used in preparing the data for the models
 projCRS <- modelCRS <-  crs
 
-
 # Import fitted models
 models <- lapply(paste0(modelFolderName, "/", focalGroup), function(x){
-  try(list.files(x, pattern = paste0("richnessModel.rds"), recursive = TRUE, full.names = TRUE))
+  try(list.files(x, pattern = paste0("richnessModel.qs"), recursive = TRUE, full.names = TRUE))
 })
 cat(modelFolderName, "/", focalGroup)
 
@@ -137,13 +136,14 @@ cat(modelFolderName, "/", focalGroup)
 
 # Define prediction raster grid
 
+
 types <- sapply(seq(nlyr(environmentalDataList)), function(x){
   environmentalDataList[[x]][,1] %>% unlist %>% class
 })
-cat("Loaded types")
+cat("\nLoaded types")
 origCovs <- names(environmentalDataList)
 
-cat("Named env list")
+cat("\nNamed env list")
 
 # define template prediction raster 
 # convert crs to format accepted by sf, terra, and intSDM (& dependencies) 
@@ -173,16 +173,9 @@ if(any(types == "factor")){
 
 cat("Defined prediction data")
 
-# Import tight boundary
-regionGeometryTight <- sf::read_sf("data/external/norge_border/Noreg_polygon.shp")
-regionGeometryTight <- st_union(regionGeometryTight)
-regionGeometryTight <-  st_transform(regionGeometryTight, crs =  "+proj=longlat +ellps=WGS84")
-regionGeometryTight <- st_buffer(regionGeometryTight, dist = 0.001)
-regionGeometryTight <-  st_transform(regionGeometryTight, crs)
-
 # The prediction data is in a bounded box, and for landCover, we have values within
 # the entire bounded box. We need to mask the covariates by the regionGeometry
-predGrid <- regionGeometryTight %>%
+predGrid <- regionGeometry %>%
   st_transform(., projCRS)%>%
   vect( )%>%
   mask(predGrid, .)
@@ -197,23 +190,20 @@ geometries <- xyFromCell(predGrid, seq(ncell(predGrid))) %>%
 origCovs <- names(environmentalDataList)
 cat(origCovs)
 # Define model outputs based on modelRun
-modelOutputs <- if(modelRun == "richness") {
-  c('Richness')
-} else if (modelRun == "redListRichness") {
-  'Richness' 
-} else {
-  c('Predictions', 'Bias', 'Covs', 'Spatial')
-}
+modelOutputs <- "Richness"
 
 ###-------------------------###
 ### 3. Generate predictions ###
 ###-------------------------###
 
+inla.setOption(inla.call = "inla")
+Sys.setenv(TZ = "UTC")
+
 for(mod in seq_along(models)){
   # identify focal taxon
   focalTaxon <- strsplit(models[mod][[1]], split = "/")[[1]][[4]]
   # import model
-  model <- readRDS(models[mod][[1]])
+  model <- qread(models[mod][[1]])
   # identify species in model
   speciesIn <- model$species$speciesIn %>% unlist %>% unique
   # indentify if bias field
@@ -238,10 +228,6 @@ for(mod in seq_along(models)){
     })]
     covs <- unique(c(covs, catCovs))
   }
-  
-  
-  # get complete list of covariate columns from which to predict
-  
   cat("\nCompleted list of covs")
   
   # Obtain prediction data
@@ -260,11 +246,11 @@ for(mod in seq_along(models)){
   transformedPredRast <- project(predRast, modelCRS)
   cat("\nTransformed pred rast")
   
-  regionGeometryTight <- regionGeometryTight %>%
+  regionGeometry <- regionGeometry %>%
     st_transform(modelCRS)
   
-  cat("Starting prediction")
-  predData <- sf::st_intersection(predData, regionGeometryTight)
+  cat("\nStarting prediction")
+  predData <- sf::st_intersection(predData, regionGeometry)
   # update names
   names(predData) <- c(covs,
                        paste(rep(speciesIn, each = length(covs)), 

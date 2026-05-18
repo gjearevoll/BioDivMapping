@@ -1,16 +1,13 @@
 
-
 ###----------------------###
 ### 0. Bash preparation ####
 ###----------------------###
-print(R.Version())
-.libPaths(c("/cluster/projects/nn11017k/R"))
+
+#library(INLA)
 library(intSDM)
-library(rgbif)
 library(terra)
 library(dplyr)
-library(foreach)
-library(qs)
+library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
 
 start <- Sys.time()
 
@@ -48,10 +45,6 @@ if (!dir.exists(paste0(folderName, "/workspaces"))) {
   dir.create(paste0(folderName, "/workspaces"))
 }
 
-# create folder for out scripts
-if (!dir.exists(paste0(folderName, "/out"))) {
-  dir.create(paste0(folderName, "/out"))
-}
 
 # Use 10000m grid for practice predictions
 res <- 10
@@ -133,11 +126,6 @@ cat("\nPrediction data and model species data successfully created. Starting to 
 
 # Create list of taxa run
 listSegments <- list()
-
-
-environmentalDataList[["road_environment"]] <- environmentalDataList$distance_roads
-focalTaxa$road_environment <- TRUE
-
 
 # Prepare models
 for(iter in 1:1){

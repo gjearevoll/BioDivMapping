@@ -3,14 +3,11 @@
 ###----------------------###
 ### 0. Bash preparation ####
 ###----------------------###
-.libPaths(c("/cluster/projects/nn11017k/R"))
-print(R.Version())
 library(intSDM)
-library(rgbif)
 library(terra)
 library(dplyr)
-library(foreach)
-library(qs)
+library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
+
 
 start <- Sys.time()
 
@@ -29,6 +26,9 @@ tempFolderName <- paste0(folderName, "/temp")
 # load the control parameters
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
+
+# get segment number
+nSegment <- as.numeric(args[2])
 
 prior.range[1] <- prior.range[1] /1000
 
@@ -84,7 +84,7 @@ cat("\nAll data loaded.", length(speciesData), "species datasets successfully lo
 
 # Import bird data from TOV and remove all no-relevant birds from other datasets
 if ("birds" %in% focalTaxa$taxa) {
-  speciesData[["TOVData"]] <- st_transform(readRDS("data/run_2025-06-06/temp/birdDataTOV.RDS"), st_crs(speciesData[[1]])) |>
+  speciesData[["TOVData"]] <- st_transform(readRDS("data/temp/birdDataTOV.RDS"), st_crs(speciesData[[1]])) |>
     st_crop(st_transform(regionGeometry, st_crs(speciesData[[1]])))
   focalTaxa$predictionDataset[focalTaxa$taxa %in% c("birds", "groundNestingBirds", "woodpeckers")] <- "TOVData"
   speciesData <- lapply(speciesData, FUN = function(x) {
@@ -101,6 +101,7 @@ cat("\nPrediction data and model species data successfully created. Starting to 
 
 # Create list of taxa run
 listSegments <- list()
+
 
 # Prepare models
 for(iter in 1:nrow(focalTaxa)){

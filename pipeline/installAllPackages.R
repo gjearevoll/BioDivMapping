@@ -17,7 +17,11 @@ if(!("rasterdiv" %in% row.names(installedPackages))) {
 # Now we bring int he rest of the necessary packages
 necessaryPackages <- c("rgbif", "sf", "stringr", "dplyr", "rinat", "raster", "csmaps", "ggplot2",
                        "shiny", "shinydashboard", "PointedSDMs", "terra",
-                       "shinyjs", "inlabru", "randomcoloR", "plotKML", "fasterize", "httr", "jsonlite",
-                       "tidyterra", "MODISTools", "MODIStsp", "qs", "spatstat")
+                       "shinyjs", "inlabru", "randomcoloR",# "plotKML",
+                       "fasterize", "httr", "jsonlite",
+                       "tidyterra", "MODISTools", "MODIStsp", 
+                       "qs", "spatstat",
+                       "concaveman","cartogramR")
 uninstalledPackages <- necessaryPackages[!(necessaryPackages %in% row.names(installedPackages))]
+if("MODIStsp" %in% uninstalledPackages) devtools::install_github("ropensci/MODIStsp")
 install.packages(uninstalledPackages)

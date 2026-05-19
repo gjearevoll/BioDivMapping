@@ -13,6 +13,7 @@
 
 updateModel <- function(dateAccessed, object = NULL, newValue = NULL, ...){
   folderName <- paste0("data/run_", dateAccessed)
+  if (!file.exists(folderName)) stop(paste0("Folder name '", folderName, "' does not exist. Check 'dateAccessed'."))
   args <- list(...)
   if(length(args) == 0 & is.null(object)){
     stop("Must specify either 'object' or '...'.")

@@ -8,10 +8,16 @@ i <- as.numeric(args[1])
 dateToUse <- args[2]
 biasField <- args[3]
 nThreads <- 20
-#.libPaths(c("/cluster/projects/nn11017k/R"))
-library(parallel)
-library(foreach)
-library(doParallel)
+library(sf)
+library(ggplot2)
+library(terra)
+library(dplyr)
+library(INLA)
+library(intSDM)
+library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
+#.libPaths(c("/cluster/projects/nn11017k/BioDivMapping/packages"))
+
+
 getwd()
 
 print(Sys.info())
@@ -20,17 +26,13 @@ print(Sys.info())
 segmentList <- readRDS(paste0("data/run_", dateToUse, "/segmentList.RDS"))
 
 interestedGroup <- gsub('[[:digit:]]+', '', segmentList[i])
-load(paste0("data/run_", dateToUse, "/workspaces/", interestedGroup,"workflowWorkspace.RData"))
-sapply(list.files("functions", full.names = TRUE), source)
 
 print(segmentList[i])
 
-library(intSDM)
-library(rgbif)
-library(terra)
-library(dplyr)
-library(INLA)
-library(qs)
+load(paste0("data/run_", dateToUse, "/workspaces/", interestedGroup,"workflowWorkspace.RData"))
+sapply(list.files("functions", full.names = TRUE), source)
+
+
 #inla.binary.install("Ubuntu-22.04",  path = "/cluster/projects/nn11017k/R/bin/inla.binary")
 
 focalGroup <- segmentList[i]
@@ -77,7 +79,6 @@ regionGeometry <- st_transform(regionGeometry, crs)
 meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 
 # Add model characteristics (mesh, priors, output)
-meshToUse <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
 workflow$addMesh(Object = meshToUse)
 
 # Sort out model options
@@ -95,6 +96,7 @@ workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetSho
 
 # Now add environmental covariates to the model
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
+
 environmentalDataListProj <- project(environmentalDataList, crs)
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 
@@ -104,14 +106,18 @@ focalTaxa <- focalTaxa[,c("taxa", env)]
 focalTaxa <- focalTaxa[focalTaxa$taxa %in% interestedGroup,]
 env <- env[apply(focalTaxa[,-1], 2, any)]
 
-# Add quadratic variables
-quadratics <- paste0(focalCovariates$parameters[focalCovariates$quadratic & focalCovariates$parameters %in% env], "_squared")
-env <- c(env, quadratics)
 
+# Add quadratic variables
+if (any(focalCovariates$quadratic[focalCovariates$parameters %in% env])) {
+  quadratics <- paste0(focalCovariates$parameters[focalCovariates$quadratic & focalCovariates$parameters %in% env], "_squared")
+  env <- c(env, quadratics)
+}
+print(env)
 # Add categorical variables
 categoricals <- focalCovariates$parameters[focalCovariates$categorical]
 categoricals2 <- names(environmentalDataListProj)[apply(sapply(categoricals, FUN = function(x) {grepl(x, names(environmentalDataListProj))}), 1, any)]
 env <- c(env, categoricals2)
+
 envRenamed <- gsub(" ","_",stringr::str_replace_all(env, "[[:punct:]]", "_"))
 names(environmentalDataListProj) <- gsub(" ","_",stringr::str_replace_all(names(environmentalDataListProj), "[[:punct:]]", "_"))
 #
@@ -147,32 +153,35 @@ cat("\nFitting the models")
 cat(dateToUse)
 cat(folderName)
 
+inla.setOption(inla.call = "inla")
+Sys.setenv(TZ = "UTC")
+
 intSDM::sdmWorkflow(workflow, 
                     predictionData = predictionData,
-                    inlaOptions = list(control.inla=list(int.strategy = 'eb', cmin = 0.01, 
-                                                         control.vb = list(enable = FALSE)),
+                    inlaOptions = list(control.inla=list(int.strategy = 'eb', cmin = 0.01, control.vb = list(enable = FALSE)),
                                        num.threads = nThreads,
+                                       #num.threads = 5, 
                                        safe = TRUE, 
                                        verbose = TRUE, 
                                        debug = TRUE, bru_verbose = 3),
-                    ipointsOptions = list(method = 'direct', nsub1 = 10, nsub2 = 10)
+                    ipointsOptions = list(method = 'direct', nsub1 = 10, nsub2 = 10) # NEW LINE
 )
 cat("\nFinished fitting the models")
 
 # Change model name to ensure no overwrite of richness data
 cat("\nChanging the names of the returned output.")
 
-file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
-            paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPreds.rds"))
+# file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
+#             paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPreds.rds"))
 
 cat("\nResizing model object")
 
 source("functions/resetEnvironments.R")
 richnessModel <- readRDS(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.rds"))
-file.remove(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.rds"))
 #obj_size(richnessModel)
 reducedModel <- reset_environments(richnessModel)
 qsave(reducedModel, paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.qs"))
+file.remove(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.rds"))
 
 print(folderName)
 print(focalGroup)

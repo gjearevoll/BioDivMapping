@@ -3,6 +3,8 @@
 .RData
 .Ruserdata
 .Renviron
+.qs
+.Rproj
 
 /ignored/*
 
@@ -12,3 +14,4 @@ data/*/temp
 !data/temp/README.md
 
 localArchive
+*.Rproj

@@ -193,7 +193,7 @@ speciesData2 <- lapply(taxaToMerge, FUN = function(taxa) {
 # 4. Create masking for species richness and bias data
 # Here we apply a mask which turns all data in urban areas and water bodies to zero.
 # Must prepare spatial data for masking, need to import water and urban areas to fiure out which rasters to mask
-corineUnclassified <- get_corine("data/temp/CORINE/EEA.zip", reclassify = FALSE)
+corineUnclassified <- get_corine(file.path(downloadCovFolder, "CORINE/EEA.zip"), reclassify = FALSE)
 maskedCats <-  c("Airports", "Continuous urban fabric", "Discontinuous urban fabric", "Industrial or commercial units",
                  "Green urban areas", "Sport and leisure facilities", "Sea and ocean", "Water bodies", "Water courses")
 urbanWater <- ifel(corineUnclassified %in% maskedCats, 1, 0)

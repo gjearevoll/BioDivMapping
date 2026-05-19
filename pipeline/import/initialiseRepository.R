@@ -28,6 +28,7 @@ if (!exists("dateAccessed")) {
 # create missing folders 
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
+
 if (!file.exists(folderName)) {
   dir.create(folderName)
   dir.create(tempFolderName)
@@ -40,11 +41,35 @@ if (!file.exists(modelFolderName)) {
 }
 
 # location where focalTaxa, polyphyleticSpecies, metadataSummary, and focalCovariates CSVs are stored 
-externalFolder <- "data/external"
+if (exists("externalFolder")){
+  if (is.null(externalFolder)) {
+    # create if defined as NULL
+    externalFolder <- "data/external"
+  }
+} else {
+  # create if it is not defined
+  externalFolder <- "data/external"
+}
 # location where local environmental covariates are stored 
-localCovFolder <- "data/external/environmentalCovariates" 
+if (exists("localCovFolder")){
+  if (is.null(localCovFolder)) {
+    # create if defined as NULL
+    localCovFolder <- "data/external/environmentalCovariates" 
+  }
+} else {
+  # create if it is not defined
+  localCovFolder <- "data/external/environmentalCovariates"  
+}
 # location where externaly downloaded environmental covariates are to be saved
-downloadCovFolder <- "data/temp" 
+if (exists("downloadCovFolder")){
+  if (is.null(downloadCovFolder)) {
+    # create if defined as NULL
+    downloadCovFolder <- "data/temp" 
+  }
+} else {
+  # create if it is not defined
+  downloadCovFolder <- "data/temp" 
+}
 
 ###-----------------------------###
 ### 2. Save control parameters ####

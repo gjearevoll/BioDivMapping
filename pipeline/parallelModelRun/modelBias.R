@@ -1,4 +1,3 @@
-#### MODEL Predictions ####
 
 ###----------------------###
 ### 0. Bash preparation ####
@@ -9,8 +8,10 @@ start <- Sys.time()
 
 i <- as.numeric(args[1])
 dateToUse <- args[2]
-covariatesSquared <- TRUE
-.libPaths(c("/cluster/projects/nn11017k/R"))
+#.libPaths(c("/cluster/projects/nn11017k/R"))
+#devtools::install_github("skiptoniam/qrbp")
+# You can run this from the command line using for example
+# Rscript filePath/speciesModelRuns.R 2024-02-08 allSPecies
 
 ###-----------------###
 ### 1. Import data ####
@@ -18,6 +19,7 @@ covariatesSquared <- TRUE
 
 print("Preparing data for model prediction.")
 
+library(INLA)
 library(PointedSDMs)
 library(intSDM)
 library(dplyr)
@@ -25,16 +27,18 @@ library(purrr)
 library(terra)
 library(tidyterra)
 library(stringr)
-library(rgbif)
-#library(ppmData)
+library(dplyr)
+library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
 
 # Load in segment number and interested group name
 segmentList <- readRDS(paste0("data/run_", dateToUse, "/segmentList.RDS"))
 
 interestedGroup <- gsub('[[:digit:]]+', '', segmentList[i])
 load(paste0("data/run_", dateToUse, "/workspaces/", interestedGroup,"workflowWorkspace.RData"))
+sampSize <- 1
+# For some reason i changes to 1 after loading the workspace
 
-print(i)
+print(segmentList[i])
 
 focalGroup <- segmentList[i]
 workflow <- workflowList[[focalGroup]]
@@ -57,11 +61,9 @@ datasetNames
 namesSpeciesData <- names(speciesData)
 namesSpeciesDataShort <- gsub(" ", "", gsub("[[:punct:]]", "", datasetNames))
 
-
 if(!predictionDatasetShort %in% datasetNames){
   predictionDatasetShort <-  namesSpeciesDataShort[!predictionDatasetShort %in% namesSpeciesDataShort][1]
 }
-
 
 dateAccessed <- dateToUse
 modelRun <- "richness"
@@ -86,42 +88,47 @@ readRDS(paste0(folderName,"/controlPars.RDS")) %>%
 
 # Prediction resolution in stated in the units used in preparing the data
 # That is metres
-predRes <- 5
+predRes <- 1
 
 # Import model objects datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
 
+# Reporject crs
 crs <- '+proj=utm +zone=33 +datum=WGS84 +units=km +no_defs'
 environmentalDataList <- project(environmentalDataList, crs)
 regionGeometry <- st_transform(regionGeometry, crs)
 
 myMesh <- lapply(myMesh, FUN = function(x) {x/1000})
 mesh <- meshTest(myMesh, regionGeometry, crs = crs, print = TRUE)
-#load("data/meshForProject.RData")
-#mesh <- meshToUse
-cat("Loaded mesh")
 
 # Get the crs used in preparing the data for the models
 projCRS <- modelCRS <-  crs
 
 # Import fitted models
 models <- lapply(paste0(modelFolderName, "/", focalGroup), function(x){
-  try(list.files(x, pattern = paste0("richnessModel.rds"), recursive = TRUE, full.names = TRUE))
+  try(list.files(x, pattern = paste0("richnessModel.qs"), recursive = TRUE, full.names = TRUE))
 })
-cat(modelFolderName, "/", focalGroup)
+
+print(paste0("Model for ", focalGroup, " loaded. File name ", models[[1]][1]))
 
 ###-----------------###
 ### 2. Prep objects ###
 ###-----------------##
 
+inla.setOption(inla.call = "inla")
+Sys.setenv(TZ = "UTC")
+
 # Define prediction raster grid
+
+
 types <- sapply(seq(nlyr(environmentalDataList)), function(x){
   environmentalDataList[[x]][,1] %>% unlist %>% class
 })
-cat("Loaded types")
+
 origCovs <- names(environmentalDataList)
+
 
 # define template prediction raster 
 # convert crs to format accepted by sf, terra, and intSDM (& dependencies) 
@@ -161,9 +168,11 @@ geometries <- xyFromCell(predGrid, seq(ncell(predGrid))) %>%
   as.data.frame() %>% 
   st_as_sf(coords = c("x", "y"), crs = crs) 
 
+
+
 origCovs <- names(environmentalDataList)
 # Define model outputs based on modelRun
-modelOutputs <- 'Bias'
+modelOutputs <- "Bias"
 
 ###-------------------------###
 ### 3. Generate predictions ###
@@ -173,11 +182,11 @@ for(mod in seq_along(models)){
   # identify focal taxon
   focalTaxon <- strsplit(models[mod][[1]], split = "/")[[1]][[4]]
   # import model
-  model <- readRDS(models[i][[1]])
+  model <- qread(models[mod][[1]])
   # identify species in model
   speciesIn <- model$species$speciesIn %>% unlist %>% unique
   # indentify if bias field
-  biasField <- !is.null(model$summary.random$sharedBias_biasField) | !is.null(model$spatCovs$biasFormula)
+  biasField <- !is.null(model$summary.random$mergedDatasetPO_biasField)
   # identify covariates used in model 
   covs <- model$spatCovs$name
   # identify categorical covariate factors 
@@ -194,7 +203,7 @@ for(mod in seq_along(models)){
     })]
     covs <- unique(c(covs, catCovs))
   }
-
+  
   # identify bias covs
   if(!is.null(model$spatCovs$biasFormula)){
     biasCovs <- covs[covs %in% attributes(terms(model$spatCovs$biasFormula))$term.labels]
@@ -240,13 +249,28 @@ for(mod in seq_along(models)){
       # dplyr::filter(speciesName == 1)
     })%>%
       do.call("rbind", .)%>%
-      dplyr::select("mean", "sd", "q0.025", "q0.5", "q0.975", "median")
+      dplyr::select("mean", "sd")
+    
+    if (biasField) {
+      cat("Bias field included in model, calculating bias predictions.\n")
+      spPredField <- lapply(pred, function(x){
+        res <-   x[[1]][[2]]#%>%
+        # dplyr::filter(speciesName == 1)
+      })%>%
+        do.call("rbind", .)%>%
+        dplyr::select("mean", "sd")
+      spPredGroup <- rbind(spPred, spPredField)
+      spPred <- spPredGroup %>%
+        group_by(geometry) %>%
+        summarise(mean = mean(mean),
+                  sd = sqrt(mean(sd^2)))
+    }
     
     head(spPred)
     
     spPred <- rasterize(spPred, transformedPredRast , names(spPred)[!names(spPred) %in% names(predData)])
     # define species directory & save prediction
-    path <- paste(c(strsplit(models[i][[1]], "/")[[1]][1:4], "Bias"), collapse = "/")  # path
+    path <- paste(c(strsplit(models[mod][[1]], "/")[[1]][1:4], "Bias"), collapse = "/")  # path
     # make_path(path)
     if(!file.exists(path)){
       dir.create(path)
@@ -255,5 +279,4 @@ for(mod in seq_along(models)){
     
   }
 }
-
 

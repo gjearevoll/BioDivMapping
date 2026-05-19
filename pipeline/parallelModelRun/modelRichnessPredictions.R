@@ -10,6 +10,7 @@ start <- Sys.time()
 i <- as.numeric(args[1])
 dateToUse <- args[2]
 covariatesSquared <- TRUE
+
 # You can run this from the command line using for example
 # Rscript filePath/speciesModelRuns.R 2024-02-08 allSPecies
 
@@ -26,26 +27,20 @@ library(terra)
 library(tidyterra)
 library(stringr)
 library(INLA)
-library(qs)
+library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
 
 # Load in segment number and interested group name
 segmentList <- readRDS(paste0("data/run_", dateToUse, "/segmentList.RDS"))
 
+# Load relevant workspace
 interestedGroup <- gsub('[[:digit:]]+', '', segmentList[i])
 load(paste0("data/run_", dateToUse, "/workspaces/", interestedGroup,"workflowWorkspace.RData"))
-
-# For some reason i changes to 1 after loading the workspace
-
-print(segmentList[i])
-
-# Load the workspace witht the workflowList object
-#load("workflowWorkspace.RData")
 
 focalGroup <- segmentList[i]
 workflow <- workflowList[[focalGroup]]
 print(focalGroup)
 
-
+# Define sample size 
 sampSize <- 1
 
 print(paste0("Sample size used for prediction is ", sampSize))
@@ -109,7 +104,7 @@ predRes <- 1
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
-environmentalDataList[["road_environment"]] <- environmentalDataList$distance_roads
+
 
 crs <- '+proj=utm +zone=33 +datum=WGS84 +units=km +no_defs'
 environmentalDataList <- project(environmentalDataList, crs)
@@ -129,6 +124,7 @@ models <- lapply(paste0(modelFolderName, "/", focalGroup), function(x){
   try(list.files(x, pattern = paste0("richnessModel.qs"), recursive = TRUE, full.names = TRUE))
 })
 cat(modelFolderName, "/", focalGroup)
+
 
 ###-----------------###
 ### 2. Prep objects ###

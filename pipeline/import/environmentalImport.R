@@ -144,8 +144,13 @@ for(parameter in seq_along(selectedParameters)) {
     ### 2. Check whether we have previously downloaded a version of the external data that encompasses the area we need.
     dataPath <- file.path(downloadCovFolder, dataSource)
     if(dir.exists(dataPath)){
-      rasterisedVersion <- checkAndImportRast(focalParameter, regionGeometryBuffer, dataPath, 
-                                              temporalFactor, yearInterval)
+      
+      if (focalParameter == "cs_density") {
+        rasterisedVersion <- NULL
+      } else {
+        rasterisedVersion <- checkAndImportRast(focalParameter, regionGeometryBuffer, dataPath, 
+                                                temporalFactor, yearInterval)
+      }
       # 3. Create new temp folder to download necessary external data.
     } else {
       dir.create(dataPath)

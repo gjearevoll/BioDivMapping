@@ -4,14 +4,13 @@ checkAndImportRast <- function(focalParameter, regionGeometryBuffer, dataPath, t
   # Initialize the raster found flag
   raster <- NULL
   
-  if (focalParameter == "cs_density") {return(raster)}
-  
   # List all files in the directory that match the parameter
   filePattern <- paste0(focalParameter, sprintf(".*\\.%s$", fileType))
   fileList <- list.files(path = dataPath, pattern = filePattern, full.names = TRUE)
   
   # Check each file
   for (file in fileList) {
+    # browser()
     rastObj <- terra::rast(file)
     
     # First make sure all correct yuears are there if we're looking at a temporal dataset

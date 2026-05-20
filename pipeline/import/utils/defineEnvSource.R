@@ -143,6 +143,9 @@ if (dataSource == "geonorge") {
 } else if (dataSource == "gbif") {
   citizenDatasets <- c("Norwegian Species Observation Service", "iNaturalist Research-grade Observations")
   rasterisedVersion <- get_cs_density(dateAccessed, regionGeometry, citizenDatasets, yearInterval, crs)
+  rasterisedVersion <- if (!temporal) app(rasterisedVersion, "mean") |> 
+    setNames("cs_density")
+  
 }  
 
 ### merge with requested download area to make missing data explicit

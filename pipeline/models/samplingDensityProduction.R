@@ -35,8 +35,16 @@ if (!exists("dateStored")) stop("You need to specify the variable dateStored")
 # Specify folders for storage of all run data
 folderName <- paste0("data/run_", dateAccessed)
 destFolderName <- paste0("data/run_", dateStored, "/samplingDensities")
-tempFolderName <- paste0(folderName, "/temp")
-
+# define tempFolderName
+if (exists("tempFolderName")){
+  if (is.null(tempFolderName)) {
+    # create if defined as NULL
+    tempFolderName <- paste0(folderName, "/temp")
+  }
+} else {
+  # create if it is not defined
+  tempFolderName <- paste0(folderName, "/temp")
+}
 if (!dir.exists(destFolderName)) {
   dir.create(destFolderName)
 }

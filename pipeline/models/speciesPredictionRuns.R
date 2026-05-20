@@ -42,7 +42,16 @@ if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed
 
 # Specify folders for storage of all run data
 folderName <- paste0("data/run_", dateAccessed)
-tempFolderName <- paste0(folderName, "/temp")
+# define tempFolderName
+if (exists("tempFolderName")){
+  if (is.null(tempFolderName)) {
+    # create if defined as NULL
+    tempFolderName <- paste0(folderName, "/temp")
+  }
+} else {
+  # create if it is not defined
+  tempFolderName <- paste0(folderName, "/temp")
+}
 
 # model output folder
 modelFolderName <- paste0(folderName, "/modelOutputs")

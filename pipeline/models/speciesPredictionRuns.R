@@ -234,6 +234,23 @@ for(i in seq_along(models)){
   }
 }
 
+###--------------------###
+### 4. update JSON    ####
+###--------------------###
+
+# read existing json
+json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
+
+# define json content
+json_ls$step_4 <- list(
+  foo = "x"
+)
+
+# write json
+jsonlite:::write_json(json_ls,
+                      file.path(extFolderName, "metadata.json"), 
+                      pretty = TRUE)
+
 
 #
 # print(object.size(predData),units="Kb")

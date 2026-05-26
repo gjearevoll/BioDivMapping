@@ -194,3 +194,33 @@ dataList <- list(species = GBIFLists, redList = redList, metadata = metadataList
 attr(dataList, "level") <- attr(regionGeometry, "level")
 attr(dataList, "region") <- attr(regionGeometry, "region")
 saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
+
+###--------------------###
+### 6. update JSON    ####
+###--------------------###
+
+# read existing json
+json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
+
+search_object(downloadKey, "DOI")
+gbif_citation(downloadKey)$download
+
+# define json content
+json_ls$step_1a <- list(
+    # doi
+  doi =  gbif_citation(downloadKey$key)$download
+    # number of datasets 
+    # n total obs
+    # datasetSummaries # per DS
+    ## numberRecords
+    ## numberSpecies
+    ## numberRedListSpecies
+    ## numberRedListRecords
+)
+
+# write json
+jsonlite:::write_json(json_ls,
+                      file.path(extFolderName, "metadata.json"), 
+                      pretty = TRUE)
+
+

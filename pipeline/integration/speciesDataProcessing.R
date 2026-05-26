@@ -251,4 +251,34 @@ if(nrow(processedRedListPresenceData) > 0){
 # To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
 rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
 
+###--------------------###
+### 9. update JSON    ####
+###--------------------###
+
+# read existing json
+json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
+
+# define json content
+json_ls$step_1b <- list(
+  ## speciesOccurrenceThreshold <- 50
+  ## datasetOccurrenceThreshold <- 5000
+  
+  # number of datasets 
+  # n total obs
+  # datasetSummaries # per DS
+  ## dataType
+  ## processingScript
+  
+  ## numberRecords  # (nrow)
+  ## numberObservations  # (rows > 0)
+  ## numberSpecies
+  ## numberRedListSpecies  # (nrow)
+  ## numberRedListObservations
+  ## numberRedListRecords
+)
+
+# write json
+jsonlite:::write_json(json_ls,
+                      file.path(extFolderName, "metadata.json"), 
+                      pretty = TRUE)
 

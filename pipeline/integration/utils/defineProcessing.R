@@ -12,7 +12,7 @@ if (file.exists(dataFileName)) {
   
   # 1. The national insect Monitoring in Norway dataset
 } else if (dataType == "insectMonitoring") {
-  focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
+  focalEndpoint <- unique(focalData$DWCEndpoint)
   newDataset <- processNationalInsectMonitoring(focalData, focalEndpoint, tempFolderName, crs, coordUncertainty)
   
   # 1b. The national insect Monitoring in Norway dataset sturcture, but for other similar datasets
@@ -38,7 +38,7 @@ if (file.exists(dataFileName)) {
   
   # 5. Field note data (with events table)
 } else if (dataType == "fieldNotesEvent") {
-  focalEndpoint <- metadata$DWCEndpoint[metadata$name == datasetName]
+  focalEndpoint <- unique(focalData$DWCEndpoint)
   newDataset <- processFieldNotesEvent(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon, crs, coordUncertainty, yearToStart)
   
   # No need to do anything to presence only data (yet) except add individualCount column
@@ -64,7 +64,7 @@ if (file.exists(dataFileName)) {
   # No need to do anything to presence only data (yet) except add individualCount column
 }else if (dataType == "presenceOnly") {
   focalData$dataType <- "PO"
-  newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year", "taxonKeyProject")]
+  newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year", "taxonKeyProject", "redListStatus")]
   newDataset <- st_transform(newDataset, crs)
 } else {
   focalData$dataType <- "PO"

@@ -73,11 +73,6 @@ if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
   stop("Please source defineRegionGeometry.R first.")
 }
 
-# Import metadata information
-if(file.exists(paste0(folderName, "/metadataSummary.csv"))){
-  dataTypes <- read.csv(paste0(folderName, "/metadataSummary.csv"))
-} 
-
 ###---------------------###
 ### 2. Filter Red list ####
 ###---------------------###
@@ -151,7 +146,6 @@ metadataList <- metadataPrep(occurrences, metaSummary = TRUE)
 # Import dataset type based on dataset name. If no dataset information is provided, all data will be downloaded and assumed to
 # be presence only data
 occurrences <- merge(occurrences, metadataList$metadata, all.x=TRUE, by = "datasetKey")
-occurrences$name[is.na(occurrences$name)] <- "Dataset not included in metadata"
 
 # Include red list
 occurrences$redListStatus <- redList$status[match(occurrences$acceptedScientificName, redList$GBIFName)]
@@ -192,8 +186,6 @@ saveRDS(occurrences, paste0(folderName, "/temp/speciesDataImported.RDS"))
 
 # read existing json
 json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
-
-gbif_citation(downloadKey$key)
 
 # define json content
 json_ls$step_1a <- list(

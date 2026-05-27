@@ -154,15 +154,15 @@ occurrences <- merge(occurrences, metadataList$metadata, all.x=TRUE, by = "datas
 occurrences$name[is.na(occurrences$name)] <- "Dataset not included in metadata"
 
 # Include red list
-occurrences$redList <- ifelse(occurrences$acceptedScientificName %in% redList$GBIFName, TRUE, FALSE)
+occurrences$redListStatus <- redList$status[match(occurrences$acceptedScientificName, redList$GBIFName)]
 
 # Get basic data summary
 datasetSummaries <- occurrences %>%
   group_by(taxa, name) %>%
   summarise(totalObs = n(),
-            totalRedListObs = sum(redList == TRUE),
+            totalRedListObs = sum(!is.na(redList)),
             totalSpecies = n_distinct(acceptedScientificName),
-            totalRedListSpecies = n_distinct(acceptedScientificName[redList == TRUE]))
+            totalRedListSpecies = n_distinct(acceptedScientificName[!is.na(redListStatus)]))
 
 
 ###----------------###
@@ -182,10 +182,7 @@ datasetSummaries <- occurrences %>%
 
 # For now we're just doing this to the data/temp folder, later this will go to Wallace. A version also needs to be saved in
 # the visualisation folder though, as this will go into the occurrence mapping.
-dataList <- list(species = GBIFLists, redList = redList, metadata = metadataList, projcrs = projcrs)
-attr(dataList, "level") <- attr(regionGeometry, "level")
-attr(dataList, "region") <- attr(regionGeometry, "region")
-saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
+saveRDS(occurrences, paste0(folderName, "/temp/speciesDataImported.RDS"))
 
 
 

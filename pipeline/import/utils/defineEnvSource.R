@@ -92,7 +92,7 @@ if (dataSource == "geonorge") {
 } else if (dataSource == "corine") {
   # check if encompassing corine alreadydownloaded
   rasterisedVersion <- checkAndImportRast("land_cover_corine", baseRaster, dataPath, quiet = TRUE, temporalFactor, yearInterval)
-  # rasterisedVersion <- terra::crop(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion))
+  # rasterisedVersion <- terra::crop(rasterisedVersion, terra::project(baseRaster, rasterisedVersion))
   # download and save if missing
   if(is.null(rasterisedVersion)){
     # download
@@ -145,7 +145,6 @@ if (dataSource == "geonorge") {
   rasterisedVersion <- get_cs_density(dateAccessed, regionGeometry, citizenDatasets, yearInterval, crs)
   rasterisedVersion <- if (!temporal) app(rasterisedVersion, "mean") |> 
     setNames("cs_density")
-  
 }  
 
 ### merge with requested download area to make missing data explicit

@@ -11,6 +11,7 @@ library(digest)  # create hash of raster CRS and projection for saving
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
 
+
 ###----------------------###
 ### 0. Bash preparation ####
 ###----------------------###
@@ -24,6 +25,7 @@ if (length(args) != 0 & !exists("dateAccessed")) {
   # Set the working directory
   setwd("~/BioDivMapping")
 }
+
 
 ###-----------------###
 ### 1. Preparation ####
@@ -65,41 +67,46 @@ if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
 # import baseRaster
 baseRaster <- rast(file.path(folderName, "baseRaster.tiff"))
 
-# imprt rasters
-# reclassify categorical rasters ------------------------------------------ ####
-parameterList[[parameter]] <- rasterisedVersion
-names(parameterList) <- selectedParameters
+# import downloaded rasters
+json_ls <- jsonlite::fromJSON(file.path(extFolderName, "metadata.json"))
+parameterList <- lapply(json_ls$step_2a, function(cov) {
+  rast(cov$file)
+})
 
-if(focalParameter == "land_cover_corine") {
-  browser()
-  # If we want, we can now reclassifiy CORINE's layers. We do this using a csv file name "corineReclassification" that should be
-  # uploaded to the same data/temp/corine folder you are storing corine rasters. The file should have two columns, one names 
-  # corineCategory (with existing corine categories) and the second (with your reclassifications) called newCategory.
-  if(!file.exists("data/temp/corine/corineReclassification.csv")) {
-    warning("No CORINE reclassification system has been provided. Using all 52 potential categories.")
-  } else if (reclassify == TRUE) {
-    corineReclassification <- read.csv("data/temp/corine/corineReclassification.csv", header = TRUE)
-    reclassTable <- levels(corine)[[1]]
-    names(reclassTable) <- c("value", "label")
-    reclassTable$newLabel <- corineReclassification$newCategory[match(reclassTable$label, corineReclassification$corineCategory)]
-    reclassTable <- reclassTable[,c("value", "newLabel")] %>% rename(label = newLabel)
-    for (co in 1:nlyr(corine)) {
-      levels(corine)[[co]][,2] <- reclassTable[,2]
-    }
-    if (temporal) {names(corine) <- yearInterval}
+
+###--------------------------------------###
+### 2. reclassify categorical rasters    ####
+###--------------------------------------###
+
+# Track which parameters were reclassified (for JSON metadata)
+reclass_log <- list()
+
+cat_params_present <- parameters$parameters[
+  parameters$categorical & parameters$parameters %in% names(parameterList)
+]
+
+for (par in cat_params_present) {
+  
+  reclass_path <- parameters$reclassFile[parameters$parameters == par]
+  
+  # Skip if no reclassification file specified
+  if (is.na(reclass_path) || reclass_path == "") {
+    reclass_log[[par]] <- list(applied = FALSE, reclassFile = NULL)
+    next
   }
   
-  
-  browser()
-  corineReclassification <- read.csv("data/temp/corine/corineReclassification.csv", header = TRUE)
-  reclassTable <- levels(rasterisedVersion)[[1]]
-  names(reclassTable) <- c("value", "label")
-  reclassTable$newLabel <- corineReclassification$newCategory[match(reclassTable$label, corineReclassification$corineCategory)]
-  reclassTable <- reclassTable[,c("value", "newLabel")] %>% rename(label = newLabel)
-  for (co in 1:nlyr(rasterisedVersion)) {
-    levels(rasterisedVersion)[[co]][,2] <- reclassTable[,2]
+  if (!file.exists(reclass_path)) {
+    warning(sprintf("Reclassification file for '%s' not found at '%s'. Skipping.", par, reclass_path))
+    reclass_log[[par]] <- list(applied = FALSE, reclassFile = reclass_path, error = "file not found")
+    next
   }
+  
+  reclass_df          <- read.csv(reclass_path, header = TRUE)
+  parameterList[[par]] <- reclassRasterCats(parameterList[[par]], reclass_df[, 1], reclass_df[, 2])
+  reclass_log[[par]]  <- list(applied = TRUE, reclassFile = reclass_path)
+  message(sprintf("Reclassified '%s' using '%s'.", par, reclass_path))
 }
+
 ###--------------------------------------###
 ### 3. Expansion of categorical rasters ####
 ###--------------------------------------###
@@ -109,24 +116,26 @@ catParams <- parameters$parameters[parameters$categorical]
 for (par in catParams) {
   focalCatParameter <- parameterList[[par]]
   levelTable <- levels(focalCatParameter)[[1]]
-  allCats <- unique(levelTable[,2])
+  allCats <- unique(levelTable[, 2])
   if (par == "land_cover_corine") {
     allCats <- allCats[(!allCats %in% c(NA, "Sclerophyllous vegetation"))]
     #allCats <- c("Built up area", "Coniferous forest", "Transitional woodland-shrub", "Moors and heathland")
   }
   catList <- lapply(allCats, FUN = function(cat1) {
     if (par == "kalkinnhold" & cat1 == "no data") {return(NA)}
-    catLevels <- levelTable$value[levelTable[,2] %in% cat1]
-    print(paste0("Aggregating: ",cat1))
+    catLevels <- levelTable$value[levelTable[, 2] %in% cat1]
+    print(paste0("Aggregating: ", cat1))
     catRaster <- ifel(focalCatParameter %in% catLevels, 1, 0)
-    contRaster <- terra::project(catRaster, baseRaster, method="average")
+    contRaster <- terra::project(catRaster, baseRaster, method = "average")
     contRaster
   }) |> setNames(allCats)
   contList[[par]] <- catList
 }
 
 fullCatList <- unlist(contList)[!is.na(unlist(contList))]
-names(fullCatList) <- gsub(" ","_",stringr::str_replace_all(names(fullCatList), "[[:punct:]]", "_")) 
+names(fullCatList) <- gsub(" ", "_", 
+                           stringr::str_replace_all(names(fullCatList),
+                                                    "[[:punct:]]", "_")) 
 
 parameterListCont <- parameterList[!(names(parameterList) %in% catParams)]
 parameterListCont <- c(parameterListCont, fullCatList)
@@ -134,8 +143,9 @@ parameterNames <- removeAccents(names(parameterListCont))
 
 
 ###------------------------###
-### 3. Data Consolidation ####
+### 4. Data Consolidation ####
 ###------------------------###
+
 # Crop, match projections and compile raster layers into one object
 parametersCropped <- parameterListCont |> 
   lapply(function(x) {
@@ -170,7 +180,7 @@ if (!temporal) {
 
 
 ###----------------------------###
-### 3. Create quadratic terms ####
+### 5. Create quadratic terms ####
 ###----------------------------###
 
 # Check which parameters are needed to make sure we don't take the quadratic of an unwanted term
@@ -186,13 +196,9 @@ if (nrow(quadratics) > 0) {
 }
 
 
-
 ###--------------------###
-### 4. Dataset Upload ####
+### 6. Dataset Upload ####
 ###--------------------###
-
-# save projCRS
-saveRDS(projCRS, paste0(tempFolderName,"/projCRS.RDS"))
 
 # Save both to temp file for model processing and visualisation folder for mapping
 if (temporal) {
@@ -215,7 +221,8 @@ agg <- function(x, fact){
 if (!temporal) {
   parametersAggregated <- sapp(x = parametersCropped, fun = agg, fact = 2) |>
     crop(baseRaster)
-  writeRaster(parametersAggregated, paste0(folderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
+  # writeRaster(parametersAggregated, paste0(folderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
+  writeRaster(parametersAggregated, paste0(extFolderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
 } else {
   parametersAggregated <- lapply(parametersCropped, FUN = function(x){
     if(unique(is.factor(unwrap(x))))
@@ -224,25 +231,87 @@ if (!temporal) {
         terra::aggregate(unwrap(x), 2) |> crop(baseRaster)
   }) 
   parametersAggregated <- lapply(parametersAggregated, terra::wrap)
-  saveRDS(parametersAggregated, paste0(folderName,"/environmentalDataImported.RDS"))
+  # saveRDS(parametersAggregated, paste0(folderName,"/environmentalDataImported.RDS"))
+  browser()
+  saveRDS(parametersAggregated, paste0(extFolderName,"/environmentalDataImported.RDS"))
 }
 
+
 ###--------------------###
-### 5. update JSON    ####
+### 7. Update JSON    ####
 ###--------------------###
 
-# read existing json
-json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
+json_ls <- jsonlite::fromJSON(file.path(extFolderName, "metadata.json"))
 
-# define json content
+# Summarise quadratic terms added
+quad_summary <- if (nrow(quadratics) > 0) {
+  lapply(quadratics$parameters, function(par) {
+    list(source_parameter = par, derived_parameter = paste0(par, "_squared"))
+  }) |> setNames(quadratics$parameters)
+} else {
+  list()
+}
+
+# Summarise final parameter set
+final_params <- lapply(names(parametersCropped), function(par) {
+    # data type
+    r_type <- c("integer", "numeric", "factor")[
+      which(c(terra::is.int(parametersCropped[[par]]),
+              terra::is.num(parametersCropped[[par]]),
+              terra::is.factor(parametersCropped[[par]])))[1]]
+    list(
+      typeof = r_type
+    )
+  }) |> setNames(names(parametersCropped))
+
 json_ls$step_2b <- list(
-  foo = "x"
+  processing_steps = list(
+    
+    categorical_reclassification = list(
+      applied                  = any(sapply(reclass_log, `[[`, "applied")),
+      parameters_reclassified  = names(Filter(function(x) x$applied, reclass_log)),
+      details                  = reclass_log
+    ),
+    
+    categorical_expansion = list(
+      applied            = length(contList) > 0,
+      parameters_expanded = names(contList),
+      details            = cat_expansion_summary
+    ),
+    
+    continuous_scaling = list(
+      method           = "z-score (mean 0, unit variance)",
+      applied_to_nlyr1 = "scale()",
+      applied_to_nlyrN = "manual standardisation via global mean and RMS"
+    ),
+    
+    quadratic_terms = list(
+      applied    = nrow(quadratics) > 0,
+      details    = quad_summary
+    ),
+    
+    projection = list(
+      target     = "baseRaster",
+      resolution = res(baseRaster),
+      crs        = crs(baseRaster, proj = TRUE),
+      extent     = as.list(ext(baseRaster))
+    )
+  ),
+  
+  output = list(
+    temporal = temporal,
+    format   = "GeoTIFF",
+    n_layers = nlyr(parametersCropped),
+    parameters = final_params,
+    files = list(
+      ext = paste0(extFolderName, "/environmentalDataImported.tiff")
+    )
+  )
 )
 
-# write json
-jsonlite:::write_json(json_ls,
-                      file.path(extFolderName, "metadata.json"), 
-                      pretty = TRUE)
-
-
-
+jsonlite::write_json(
+  json_ls,
+  file.path(extFolderName, "metadata.json"),
+  pretty     = TRUE,
+  auto_unbox = TRUE
+)

@@ -65,7 +65,7 @@ redList <- readRDS(paste0(folderName, "/redList.RDS"))
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
-environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
+environmentalDataList <- rast(paste0(extFolderName, "/environmentalDataImported.tiff"))
 speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 

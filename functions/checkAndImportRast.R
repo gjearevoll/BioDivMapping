@@ -10,7 +10,6 @@ checkAndImportRast <- function(focalParameter, regionGeometryBuffer, dataPath, t
   
   # Check each file
   for (file in fileList) {
-    # browser()
     rastObj <- terra::rast(file)
     
     # First make sure all correct yuears are there if we're looking at a temporal dataset

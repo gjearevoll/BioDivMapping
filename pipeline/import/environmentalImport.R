@@ -1,5 +1,4 @@
 
-
 #### ENVIRONMENTAL DATA IMPORT ####
 
 # The following script imports our various forms of environmental data and processes them, based on the type of data
@@ -104,12 +103,13 @@ regionGeometryRast <- regionGeometry |>
 
 # download environmental data
 parameterList <- list()
+covariate_meta <- list()
 
 for(parameter in seq_along(selectedParameters)) {
   rasterisedVersion <- NULL
   focalParameter <- selectedParameters[parameter]
   temporalFactor <- if (temporal) parameters$temporal[parameters$parameters == focalParameter] else FALSE
- 
+  
   
   ### 1. Check if the data needs to be downloaded externally.
   external <- parameters$external[parameters$parameters == focalParameter]
@@ -132,119 +132,77 @@ for(parameter in seq_along(selectedParameters)) {
       dir.create(dataPath)
     }
     if(is.null(rasterisedVersion)) {
-      # download file
+      # download file if still missing
       source(paste0("pipeline/import/utils/defineEnvSource.R"))
     }
   } else {
+    dataSource        <- "local"
+    dataPath          <- localCovFolder
     rasterisedVersion <- rast(file.path(localCovFolder, paste0(focalParameter, ".tiff")))
   }
   
-  # save as nc-file in dataSet folder
-  nc_path <- file.path(dataPath, paste0(focalParameter, ".nc"))
-  # if (file.exists(nc_path)) file.remove(nc_path)
-  # dir.create(dirname(nc_path), recursive = TRUE, showWarnings = FALSE)
-  writeCDF(
-    x         = rasterisedVersion,
-    filename  = nc_path,
-    varname   = focalParameter,
-    longname  = gsub("_", " ", focalParameter),
-    unit      = units(rasterisedVersion),
-    zname     = if (nlyr(rasterisedVersion) > 1) "time" else NULL,
-    atts      = list(
-      layer_names = paste(names(rasterisedVersion), collapse = ","),
-      source_file = sources(rasterisedVersion),
-      dataSource = dataSource
+  ### 4. Build covariate metadata from in-memory raster.
+  param_row <- parameters[parameters$parameters == focalParameter, ]
+  
+  r_ext <- ext(rasterisedVersion)
+  r_res <- res(rasterisedVersion)
+  
+  # temporal metadata
+  has_time  <- nlyr(rasterisedVersion) > 1 || !is.null(time(rasterisedVersion))
+  time_info <- if (has_time) {
+    t_dates <- as.character(time(rasterisedVersion))
+    list(
+      temporal         = TRUE,
+      temporal_extent  = c(t_dates[1], t_dates[length(t_dates)]),
+      temporal_n_steps = nlyr(rasterisedVersion)
+    )
+  } else {
+    list(temporal = FALSE)
+  }
+  
+  # data type
+  r_type <- c("integer", "numeric", "factor")[
+    which(c(terra::is.int(rasterisedVersion),
+            terra::is.num(rasterisedVersion),
+            terra::is.factor(rasterisedVersion)))[1]]
+  
+  covariate_meta[[focalParameter]] <- c(
+    list(
+      covariate  = focalParameter,
+      longname   = gsub("_", " ", focalParameter),
+      source     = dataSource,
+      citation   = if ("citation" %in% names(param_row)) param_row$citation else NA,
+      file       = file.path(dataPath, paste0(focalParameter, ".nc")),
+      type       = "raster",
+      extent     = list(xmin = r_ext$xmin, xmax = r_ext$xmax,
+                        ymin = r_ext$ymin, ymax = r_ext$ymax),
+      resolution = list(x = r_res[1], y = r_res[2]),
+      crs        = crs(rasterisedVersion, proj = TRUE),
+      crs_wkt    = crs(rasterisedVersion, proj = FALSE),
+      units      = units(rasterisedVersion),
+      typeof     = r_type
     ),
-    overwrite = TRUE
+    time_info
   )
+  
   rm("rasterisedVersion")
   gc()
 }
 
 ###--------------------###
-### 5. update JSON    ####
+### 5. Update JSON    ####
 ###--------------------###
 
-# read existing json
 json_ls <- jsonlite::fromJSON(file.path(extFolderName, "metadata.json"))
 
-# Build a list entry per covariate from the saved nc files
-covariate_meta <- lapply(selectedParameters, function(focalParameter) {
-  param_row  <- parameters[parameters$parameters == focalParameter, ]
-  dataSource <- param_row$dataSource
-  nc_path    <- file.path(downloadCovFolder, dataSource, paste0(focalParameter, ".nc"))
-  
-  # Open nc to extract spatial/temporal metadata
-  nc  <- nc_open(nc_path)
-  on.exit(nc_close(nc))
-  
-  # spatial summaries
-  crs_str <- ncatt_get(nc, "crs", "proj4")$value
-  # Detect spatial dimension names (handles x/y, easting/northing, lon/lat, etc.)
-  dim_names  <- names(nc$dim)
-  x_dim_name <- dim_names[grepl("east|^x$|^lon", dim_names, ignore.case = TRUE)]
-  y_dim_name <- dim_names[grepl("north|^y$|^lat", dim_names, ignore.case = TRUE)]
-  
-  x_vals <- ncvar_get(nc, x_dim_name)
-  y_vals <- ncvar_get(nc, y_dim_name)
-  
-  # geotransform: xmin, xres, 0, ymax, 0, -yres  (GDAL convention)
-  gt <- as.numeric(strsplit(ncatt_get(nc, "crs", "geotransform")$value, " ")[[1]])
-  # gt[1]=xmin, gt[2]=xres, gt[4]=ymax, gt[6]=-yres
-  
-  extent_info <- list(
-    xmin = gt[1],
-    xmax = gt[1] + gt[2] * length(x_vals),
-    ymin = gt[4] + gt[6] * length(y_vals),   # gt[6] is negative
-    ymax = gt[4]
-  )
-  resolution_info <- list(x = gt[2], y = abs(gt[6]))
-  
-  # temporal summaries
-  has_time  <- "time" %in% names(nc$dim)
-  time_info <- if (has_time) {
-    t_vals    <- ncvar_get(nc, "time")
-    t_units   <- ncatt_get(nc, "time", "units")$value   # e.g. "days since 1970-01-01"
-    t_origin  <- as.Date(sub("days since ", "", t_units))
-    t_dates   <- as.character(t_origin + t_vals)
-    list(
-      temporal           = TRUE,
-      temporal_extent    = c(t_dates[1], t_dates[length(t_dates)]),
-      temporal_n_steps   = length(t_vals),
-      temporal_units     = t_units
-    )
-  } else {
-    list(temporal = FALSE)
-  }
- 
-  # combine to dataSet summary list
-  c(
-    list(
-      covariate   = focalParameter,
-      longname    = gsub("_", " ", focalParameter),
-      source      = dataSource,
-      citation    = if (!is.null(param_row$citation)) param_row$citation else NA,
-      file        = nc_path,
-      type        = "raster",
-      extent      = list(
-        xmin = min(x_vals), xmax = max(x_vals),
-        ymin = min(y_vals), ymax = max(y_vals)
-      ),
-      resolution  = resolution_info,
-      crs         = ncatt_get(nc, "crs", "crs_wkt")$value,
-      units       = nc$var[[focalParameter]]$units
-    ),
-    time_info
-  )
-})
+json_ls$step_2a <- list(
+  date_run   = dateAccessed,
+  covariates = covariate_meta
+)
 
-names(covariate_meta) <- selectedParameters
-
-# define json content
-json_ls$step_2a <- covariate_meta
-
-# write json
-jsonlite:::write_json(json_ls,
-                      file.path(extFolderName, "metadata.json"), 
-                      pretty = TRUE)
-
+jsonlite::write_json(
+  json_ls,
+  file.path(extFolderName, "metadata.json"),
+  pretty      = TRUE,
+  auto_unbox  = TRUE
+)

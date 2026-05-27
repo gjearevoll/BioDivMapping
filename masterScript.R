@@ -95,14 +95,14 @@ source("pipeline/import/defineRegionGeometry.R")
 
 source("pipeline/import/taxaImport.R")
 
-# Next we run the environmental import script, which brings in a set of rasters that apply to the region
-# we defined in the last step.
-
-source("pipeline/import/environmentalImport.R")
-
 # Next we start on data processing, which adds extra information to our datasets.
 
 source("pipeline/integration/speciesDataProcessing.R")
+
+# Next we run the environmental import script, which brings in a set of rasters that apply to the region
+# we defined in the last step.
+source("pipeline/import/environmentalImport.R")
+source("pipeline/import/environmentalProcessing.R")
 
 # We then run our models. NOTE: This is the point where defining a Mesh becomes important. You can read
 # more about what a Mesh is, and how it works in the README.md file in the head of the repository, or in the

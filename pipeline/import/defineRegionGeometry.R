@@ -42,3 +42,24 @@ if (level == "box") {
 
 # save into working folder
 saveRDS(regionGeometry, paste0(folderName, "/regionGeometry.RDS"))
+
+###-----------------------------###
+### 3. define template raster  ####
+###-----------------------------###
+projCRS <- sf::st_crs(crs)$proj4string
+
+# buffer around regionGeometry
+regionGeometryBuffer <- st_union(regionGeometry) |>
+  st_buffer(2000) |>
+  st_transform(projCRS) |> 
+  st_bbox() |> 
+  st_as_sfc() |>
+  st_segmentize(dfMaxLength = 10000) |> 
+  vect() 
+
+# define working project raster 
+baseRaster <- terra::rast(extent = ext(regionGeometryBuffer), res = res, crs = projCRS)
+values(baseRaster) <- NA
+
+# save
+writeRaster(baseRaster, file.path(folderName, "baseRaster.tiff"))

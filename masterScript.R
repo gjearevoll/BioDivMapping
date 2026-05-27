@@ -33,11 +33,12 @@ region <- "Norway"
 # coordinate reference system to use for project. as accepted by sf::st_crs()
 crs <- 25833 
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
-res <- 1000        # Resolution that covariates should be modelled at
+res <- 500        # Resolution that covariates should be modelled at
 # Coordinate uncertainty to filter to in GBIF
 coordUncertainty <- 250
+issuesToFlag <- c("ZERO_COORDINATE|COORDINATE_OUT_OF_RANGE|COORDINATE_INVALID|COORDINATE_PRECISION_INVALID|COORDINATE_UNCERTAINTY_METRES_INVALID")
 # Give first year data can be taken from
-yearToStart <- 2000
+yearToStart <- 2018
 # Parameters to define mesh for random fields
 myMesh <- list(cutoff = 3*1000, max.edge=c(50, 300) * 1000, offset= c(20, 100) * 1000)
 # whether to use schedule download for GBIF data

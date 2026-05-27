@@ -148,7 +148,9 @@ for(parameter in seq_along(selectedParameters)) {
   r_res <- res(rasterisedVersion)
   
   # temporal metadata
-  has_time  <- nlyr(rasterisedVersion) > 1 || !is.null(time(rasterisedVersion))
+  has_time  <- nlyr(rasterisedVersion) > 1 || (
+    !is.null(time(rasterisedVersion)) & 
+      isTRUE(!is.na(time(rasterisedVersion))))
   time_info <- if (has_time) {
     t_dates <- as.character(time(rasterisedVersion))
     list(
@@ -165,14 +167,14 @@ for(parameter in seq_along(selectedParameters)) {
     which(c(terra::is.int(rasterisedVersion),
             terra::is.num(rasterisedVersion),
             terra::is.factor(rasterisedVersion)))[1]]
-  
+  # combine metadata
   covariate_meta[[focalParameter]] <- c(
     list(
       covariate  = focalParameter,
       longname   = gsub("_", " ", focalParameter),
       source     = dataSource,
       citation   = if ("citation" %in% names(param_row)) param_row$citation else NA,
-      file       = file.path(dataPath, paste0(focalParameter, ".nc")),
+      file       = sources(rasterisedVersion),
       type       = "raster",
       extent     = list(xmin = r_ext$xmin, xmax = r_ext$xmax,
                         ymin = r_ext$ymin, ymax = r_ext$ymax),
@@ -195,10 +197,7 @@ for(parameter in seq_along(selectedParameters)) {
 
 json_ls <- jsonlite::fromJSON(file.path(extFolderName, "metadata.json"))
 
-json_ls$step_2a <- list(
-  date_run   = dateAccessed,
-  covariates = covariate_meta
-)
+json_ls$step_2a <- covariate_meta
 
 jsonlite::write_json(
   json_ls,

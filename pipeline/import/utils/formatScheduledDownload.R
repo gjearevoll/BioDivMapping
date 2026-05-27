@@ -15,9 +15,8 @@ occurrences <- occurrences[,c("acceptedScientificName", "decimalLongitude", "dec
                               "familyKey", "genusKey", "speciesKey", "issue")]
 
 # Remove any occurrences with certain issues attached to them
-issuesToFlag <- c("ZERO_COORDINATE|COORDINATE_OUT_OF_RANGE|COORDINATE_INVALID|COORDINATE_PRECISION_INVALID|COORDINATE_UNCERTAINTY_METRES_INVALID")
 occurrences <- occurrences %>%
-  filter(datasetKey %in% dataTypes$datasetKey[!is.na(dataTypes$processing)]) %>%
+#  filter(datasetKey %in% dataTypes$datasetKey[!is.na(dataTypes$processing)]) %>%
   filter(!grepl(issuesToFlag,issue))
 
 # Assign a taxon key based on what level of taxonomy the key is valid for

@@ -232,6 +232,7 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(maskedData), FUN = funct
   datasetShort$dsName <- datasetName
   datasetShort
 }))
+write_sf(processedDataCompiled, file.path(extFolderName, "speciesDataProcessed.gpkg"), append = FALSE)
 
 
 ###--------------------###
@@ -286,8 +287,6 @@ json_ls$step_1b <- list(
   )
   
 )
-
-
 
 # write json
 jsonlite:::write_json(json_ls,

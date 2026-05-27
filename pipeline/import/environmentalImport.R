@@ -8,12 +8,13 @@
 
 # NOTE: Before running this script, the speciesImport.R script needs to have been run.
 
-library(raster)
+# library(raster)
 library(terra)
 library(sf)
 library(fasterize)
 library(dplyr)
 library(digest)  # create hash of raster CRS and projection for saving
+library(ncdf4)
 
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
@@ -123,7 +124,7 @@ for(parameter in seq_along(selectedParameters)) {
       if (focalParameter == "cs_density") {
         rasterisedVersion <- NULL
       } else {
-        rasterisedVersion <- checkAndImportRast(focalParameter, regionGeometryBuffer, dataPath, 
+        rasterisedVersion <- checkAndImportRast(focalParameter, baseRaster, dataPath, 
                                                 temporalFactor, yearInterval)
       }
       # 3. Create new temp folder to download necessary external data.
@@ -137,8 +138,11 @@ for(parameter in seq_along(selectedParameters)) {
   } else {
     rasterisedVersion <- rast(file.path(localCovFolder, paste0(focalParameter, ".tiff")))
   }
+  
   # save as nc-file in dataSet folder
   nc_path <- file.path(dataPath, paste0(focalParameter, ".nc"))
+  # if (file.exists(nc_path)) file.remove(nc_path)
+  # dir.create(dirname(nc_path), recursive = TRUE, showWarnings = FALSE)
   writeCDF(
     x         = rasterisedVersion,
     filename  = nc_path,
@@ -160,9 +164,9 @@ for(parameter in seq_along(selectedParameters)) {
 ###--------------------###
 ### 5. update JSON    ####
 ###--------------------###
-browser()
+
 # read existing json
-json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
+json_ls <- jsonlite::fromJSON(file.path(extFolderName, "metadata.json"))
 
 # Build a list entry per covariate from the saved nc files
 covariate_meta <- lapply(selectedParameters, function(focalParameter) {

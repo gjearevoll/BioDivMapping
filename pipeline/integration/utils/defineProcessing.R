@@ -72,6 +72,11 @@ if (file.exists(dataFileName)) {
   newDataset <- st_transform(newDataset, crs)
 }
 
+if (!("redListStatus" %in% colnames(newDataset))) {
+  newDataset$redListStatus <- focalData$redListStatus[match(newDataset$acceptedScientificName, 
+                                                                           focalData$acceptedScientificName)]
+}
+
 if ("data.frame" %in% class(newDataset)) {
   # Redefine years IF we're using temporal data to match year interval
   newDataset$year <- as.integer(newDataset$year)

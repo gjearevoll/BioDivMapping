@@ -92,7 +92,6 @@ redList$taxa <- ifelse(redList$GBIFName %in% polyphyleticSpecies$acceptedScienti
 # Cut out NAs and save redList
 redList <- redList[!is.na(redList$taxa),]
 
-
 ###-----------------###
 ### 3. GBIF Import ####
 ###-----------------###
@@ -176,9 +175,7 @@ datasetSummaries <- occurrences %>%
 
 # For now we're just doing this to the data/temp folder, later this will go to Wallace. A version also needs to be saved in
 # the visualisation folder though, as this will go into the occurrence mapping.
-saveRDS(occurrences, paste0(folderName, "/temp/speciesDataImported.RDS"))
-
-
+write_sf(occurrences, file.path(extFolderName, "speciesDataImported.gpkg"), append = FALSE)
 
 ###--------------------###
 ### 6. Update JSON    ####
@@ -205,6 +202,4 @@ json_ls$step_1a <- list(
 jsonlite:::write_json(json_ls,
                       file.path(extFolderName, "metadata.json"), 
                       pretty = TRUE)
-
-
 

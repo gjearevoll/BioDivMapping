@@ -29,11 +29,13 @@ if (!exists("dateAccessed")) {
 folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 extFolderName <- paste0(folderName, "/ext")
+outFolderName <- paste0(folderName, "/out")
 
 if (!file.exists(folderName)) {
   dir.create(folderName)
   dir.create(tempFolderName)
   dir.create(extFolderName)
+  dir.create(outFolderName)
 }
 
 # model output folder
@@ -86,11 +88,13 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
   controlPars <- list(externalFolder = externalFolder,
                       localCovFolder = localCovFolder,
                       downloadCovFolder = downloadCovFolder,
+                      extFolderName = extFolderName,
                       level = level,
                       region = region,
                       crs = crs,
                       res = res,
                       coordUncertainty = coordUncertainty,
+                      issuesToFlag = issuesToFlag,
                       yearToStart = yearToStart,
                       scheduledDownload = scheduledDownload,
                       waitForGbif = waitForGbif,

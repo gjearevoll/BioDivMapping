@@ -71,6 +71,9 @@ if(file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
   polyphyleticSpecies <- read.csv(paste0(folderName, "/polyphyleticSpecies.csv"), header = T)
 } 
 
+# import baseRaster
+baseRaster <- rast(file.path(folderName, "baseRaster.tiff"))
+  
 ###----------------###
 ### 2. Processing ####
 ###----------------###
@@ -230,16 +233,13 @@ saveRDS(redList, paste0(folderName, "/redList.RDS"))
 ### 7. Produce species richness data ####
 ###-----------------------------------###
 
-# Provide empty raster
-envImport <- if (temporal) unwrap(readRDS(paste0(folderName, "/environmentalDataImported.RDS"))[[1]]) else 
-  rast(paste0(folderName, "/environmentalDataImported.tiff"))
-blankRaster <- terra::project(envImport[[1]], paste0("EPSG:",crs))
-allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, blankRaster)
+# create template raster 
+allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, baseRaster)
 writeRaster(allSpeciesRichness$rasters, paste0(folderName, "/speciesRichnessData.tiff"), overwrite=TRUE)
 saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))
 
 if(nrow(processedRedListPresenceData) > 0){
-  redListRichness <- speciesRichnessConverter(regionGeometry, processedRedListPresenceData, blankRaster)
+  redListRichness <- speciesRichnessConverter(regionGeometry, processedRedListPresenceData, baseRaster)
   writeRaster(redListRichness$rasters, paste0(folderName, "/redListRichnessData.tiff"), overwrite=TRUE)
   saveRDS(redListRichness$richness, paste0(folderName, "/redListRichnessData.RDS"))
 }

@@ -69,6 +69,9 @@ if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
   stop("Please source defineRegionGeometry.R first.")
 }
 
+# import baseRaster
+baseRaster <- rast(file.path(folderName, "baseRaster.tiff"))
+
 ###--------------------###
 ### 2. Dataset Import ####
 ###--------------------###
@@ -90,34 +93,6 @@ if (length(emptyParameters) > 0) {
                  }
                },
                if (length(vec) == 1) "a source" else "sources"))}
-
-# convert crs to format accepted by sf, terra, and intSDM (& dependencies) 
-projCRS <- sf::st_crs(crs)$proj4string
-
-# define region to download as bounding box of buffered and projected mesh/regionGeometry
-# regionGeometryBuffer <- st_union(if(exists("myMesh")) {
-#   meshTest(myMesh, regionGeometry, print = F, crs = crs) |>
-#     inlaMeshToSf()
-# }
-#   else regionGeometry) |>
-#   st_buffer(2000) |>
-#   st_transform(projCRS) |> 
-#   st_bbox() |> 
-#   st_as_sfc() |>
-#   st_segmentize(dfMaxLength = 10000) |> 
-#   vect() 
-
-regionGeometryBuffer <- st_union(regionGeometry) |>
-  st_buffer(2000) |>
-  st_transform(projCRS) |> 
-  st_bbox() |> 
-  st_as_sfc() |>
-  st_segmentize(dfMaxLength = 10000) |> 
-  vect() 
-
-
-# define working project raster 
-baseRaster <- terra::rast(extent = ext(regionGeometryBuffer), res = res, crs = projCRS)
 
 # rasterise regionGeometry
 regionGeometryRast <- regionGeometry |>
@@ -162,150 +137,107 @@ for(parameter in seq_along(selectedParameters)) {
   } else {
     rasterisedVersion <- rast(file.path(localCovFolder, paste0(focalParameter, ".tiff")))
   }
-  parameterList[[parameter]] <- rasterisedVersion
+  # save as nc-file in dataSet folder
+  nc_path <- file.path(dataPath, paste0(focalParameter, ".nc"))
+  writeCDF(
+    x         = rasterisedVersion,
+    filename  = nc_path,
+    varname   = focalParameter,
+    longname  = gsub("_", " ", focalParameter),
+    unit      = units(rasterisedVersion),
+    zname     = if (nlyr(rasterisedVersion) > 1) "time" else NULL,
+    atts      = list(
+      layer_names = paste(names(rasterisedVersion), collapse = ","),
+      source_file = sources(rasterisedVersion),
+      dataSource = dataSource
+    ),
+    overwrite = TRUE
+  )
   rm("rasterisedVersion")
   gc()
-}
-names(parameterList) <- selectedParameters
-
-###--------------------------------------###
-### 3. Expansion of categorical rasters ####
-###--------------------------------------###
-
-contList <- list()
-catParams <- parameters$parameters[parameters$categorical]
-for (par in catParams) {
-  focalCatParameter <- parameterList[[par]]
-  levelTable <- levels(focalCatParameter)[[1]]
-  allCats <- unique(levelTable[,2])
-  if (par == "land_cover_corine") {
-    allCats <- allCats[(!allCats %in% c(NA, "Sclerophyllous vegetation"))]
-    #allCats <- c("Built up area", "Coniferous forest", "Transitional woodland-shrub", "Moors and heathland")
-    }
-  catList <- lapply(allCats, FUN = function(cat1) {
-    if (par == "kalkinnhold" & cat1 == "no data") {return(NA)}
-    catLevels <- levelTable$value[levelTable[,2] %in% cat1]
-    print(paste0("Aggregating",cat1))
-    catRaster <- ifel(focalCatParameter %in% catLevels, 1, 0)
-    contRaster <- terra::project(catRaster, baseRaster, method="average")
-    contRaster
-  }) |> setNames(allCats)
-  contList[[par]] <- catList
-}
-
-fullCatList <- unlist(contList)[!is.na(unlist(contList))]
-names(fullCatList) <- gsub(" ","_",stringr::str_replace_all(names(fullCatList), "[[:punct:]]", "_")) 
-
-parameterListCont <- parameterList[!(names(parameterList) %in% catParams)]
-parameterListCont <- c(parameterListCont, fullCatList)
-parameterNames <- removeAccents(names(parameterListCont))
-
-
-###------------------------###
-### 3. Data Consolidation ####
-###------------------------###
-# Crop, match projections and compile raster layers into one object
-parametersCropped <- parameterListCont |> 
-  lapply(function(x) {
-    # Crop each covariate to extent of regionGeometryBuffer
-    out <- x
-    # Project all rasters to baseRaster and combine
-    if(unique(is.factor(x))) {
-      # project categorical rasters
-      out <- terra::project(out, baseRaster, method = "mode")
-      levels(out) <- levels(x)  # reassign levels 
-      out
-    } else if (nlyr(x) == 1) {
-      # project & scale continuous rasters
-      ifel(is.na(regionGeometryRast), NA,
-           terra::project(out, baseRaster)) |>
-        scale()  
-    } else {
-      projVersion <- ifel(is.na(regionGeometryRast), NA,
-                          terra::project(out, baseRaster))
-      totalMean <- global( mean(projVersion), "mean", na.rm = TRUE)
-      rr <- projVersion - totalMean[,1]
-      rms <- global(mean(rr), "rms", na.rm = TRUE)
-      rr / rms[,1]
-    }
-    })
-
-if (!temporal) {
-  parametersCropped <- parametersCropped |>  
-    rast() |>  # combine raster layers
-    setNames(parameterNames)  # assign names
-}
-
-
-###----------------------------###
-### 3. Create quadratic terms ####
-###----------------------------###
-
-# Check which parameters are needed to make sure we don't take the quadratic of an unwanted term
-useParam <- apply(focalTaxa[, colnames(focalTaxa) %in% parameters$parameters], 2, any)
-parametersForUse <- names(useParam)[useParam]
-
-quadratics <- parameters[parameters$quadratic & parameters$parameters %in% parametersForUse,]
-if (nrow(quadratics) > 0) {
-  for(i in seq_along(quadratics$quadratic)) {
-    parameter <- quadratics$parameters[i]
-    parametersCropped[[paste0(parameter, "_squared")]] <- parametersCropped[[parameter]]^2
-  }
-}
-
-
-
-###--------------------###
-### 4. Dataset Upload ####
-###--------------------###
-
-# save projCRS
-saveRDS(projCRS, paste0(tempFolderName,"/projCRS.RDS"))
-
-# Save both to temp file for model processing and visualisation folder for mapping
-if (temporal) {
-  parametersCropped <- lapply(parametersCropped, terra::wrap)
-  saveRDS(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.RDS"))
-} else {
-  writeRaster(parametersCropped, paste0(tempFolderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
-}
-
-
-# Create aggregated version for all non-land cover visualisation and reference data
-agg <- function(x, fact){
-  if(is.factor(x))
-    # If the variable is a factor, use the most common result as the average
-    terra::aggregate(x, fact, fun = "modal") else 
-      terra::aggregate(x, fact)
-}
-
-# Aggregate and save raster
-if (!temporal) {
-  parametersAggregated <- sapp(x = parametersCropped, fun = agg, fact = 2) |>
-    crop(baseRaster)
-  writeRaster(parametersAggregated, paste0(folderName,"/environmentalDataImported.tiff"), overwrite=TRUE)
-} else {
-  parametersAggregated <- lapply(parametersCropped, FUN = function(x){
-    if(unique(is.factor(unwrap(x))))
-      # If the variable is a factor, use the most common result as the average
-      terra::aggregate(unwrap(x), 2, fun = "modal") |> crop(baseRaster) else 
-        terra::aggregate(unwrap(x), 2) |> crop(baseRaster)
-  }) 
-  parametersAggregated <- lapply(parametersAggregated, terra::wrap)
-  saveRDS(parametersAggregated, paste0(folderName,"/environmentalDataImported.RDS"))
 }
 
 ###--------------------###
 ### 5. update JSON    ####
 ###--------------------###
-
+browser()
 # read existing json
 json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
 
+# Build a list entry per covariate from the saved nc files
+covariate_meta <- lapply(selectedParameters, function(focalParameter) {
+  param_row  <- parameters[parameters$parameters == focalParameter, ]
+  dataSource <- param_row$dataSource
+  nc_path    <- file.path(downloadCovFolder, dataSource, paste0(focalParameter, ".nc"))
+  
+  # Open nc to extract spatial/temporal metadata
+  nc  <- nc_open(nc_path)
+  on.exit(nc_close(nc))
+  
+  # spatial summaries
+  crs_str <- ncatt_get(nc, "crs", "proj4")$value
+  # Detect spatial dimension names (handles x/y, easting/northing, lon/lat, etc.)
+  dim_names  <- names(nc$dim)
+  x_dim_name <- dim_names[grepl("east|^x$|^lon", dim_names, ignore.case = TRUE)]
+  y_dim_name <- dim_names[grepl("north|^y$|^lat", dim_names, ignore.case = TRUE)]
+  
+  x_vals <- ncvar_get(nc, x_dim_name)
+  y_vals <- ncvar_get(nc, y_dim_name)
+  
+  # geotransform: xmin, xres, 0, ymax, 0, -yres  (GDAL convention)
+  gt <- as.numeric(strsplit(ncatt_get(nc, "crs", "geotransform")$value, " ")[[1]])
+  # gt[1]=xmin, gt[2]=xres, gt[4]=ymax, gt[6]=-yres
+  
+  extent_info <- list(
+    xmin = gt[1],
+    xmax = gt[1] + gt[2] * length(x_vals),
+    ymin = gt[4] + gt[6] * length(y_vals),   # gt[6] is negative
+    ymax = gt[4]
+  )
+  resolution_info <- list(x = gt[2], y = abs(gt[6]))
+  
+  # temporal summaries
+  has_time  <- "time" %in% names(nc$dim)
+  time_info <- if (has_time) {
+    t_vals    <- ncvar_get(nc, "time")
+    t_units   <- ncatt_get(nc, "time", "units")$value   # e.g. "days since 1970-01-01"
+    t_origin  <- as.Date(sub("days since ", "", t_units))
+    t_dates   <- as.character(t_origin + t_vals)
+    list(
+      temporal           = TRUE,
+      temporal_extent    = c(t_dates[1], t_dates[length(t_dates)]),
+      temporal_n_steps   = length(t_vals),
+      temporal_units     = t_units
+    )
+  } else {
+    list(temporal = FALSE)
+  }
+ 
+  # combine to dataSet summary list
+  c(
+    list(
+      covariate   = focalParameter,
+      longname    = gsub("_", " ", focalParameter),
+      source      = dataSource,
+      citation    = if (!is.null(param_row$citation)) param_row$citation else NA,
+      file        = nc_path,
+      type        = "raster",
+      extent      = list(
+        xmin = min(x_vals), xmax = max(x_vals),
+        ymin = min(y_vals), ymax = max(y_vals)
+      ),
+      resolution  = resolution_info,
+      crs         = ncatt_get(nc, "crs", "crs_wkt")$value,
+      units       = nc$var[[focalParameter]]$units
+    ),
+    time_info
+  )
+})
+
+names(covariate_meta) <- selectedParameters
+
 # define json content
-json_ls$step_2a <- list(
-  foo = "x"
-)
+json_ls$step_2a <- covariate_meta
 
 # write json
 jsonlite:::write_json(json_ls,

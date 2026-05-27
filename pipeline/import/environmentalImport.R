@@ -94,13 +94,6 @@ if (length(emptyParameters) > 0) {
                },
                if (length(vec) == 1) "a source" else "sources"))}
 
-# rasterise regionGeometry
-regionGeometryRast <- regionGeometry |>
-  st_as_sf() |>
-  st_transform(projCRS) |> 
-  vect() |>
-  terra::rasterize(baseRaster, FUN = "mode") 
-
 # download environmental data
 parameterList <- list()
 covariate_meta <- list()

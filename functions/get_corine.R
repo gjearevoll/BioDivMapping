@@ -10,7 +10,7 @@
 #' @return A SpatRaster of WorldClim layers.
 library(terra)
 
-get_corine <- function(zip_path = NA, output_path = NA, reclassify = TRUE, temporal = FALSE, yearInterval = NA) {
+get_corine <- function(zip_path = NA, output_path = NA, temporal = FALSE, yearInterval = NA) {
   # define unzipping function (outputs location of unzipped file)
   unzip_all <- function(zip_path) {
     # create temporary working directory to process zip file
@@ -68,7 +68,6 @@ get_corine <- function(zip_path = NA, output_path = NA, reclassify = TRUE, tempo
     # combine layers 
     corine <- rast(corine) %>% setNames(yearInterval)
   } else {
-    
     if(is.na(zip_path)){
       message("'zip_path' not specified, please select CORINE land cover zip file. Data can be downloaded from 'https://land.copernicus.eu/en/products/corine-land-cover'.")
       message("Enter full path to CORINE land cover zip file:\n")
@@ -103,23 +102,6 @@ get_corine <- function(zip_path = NA, output_path = NA, reclassify = TRUE, tempo
       # remove commas from all category labels 
       levels(corine)[[1]][,2] <- gsub(",", "", levels(corine)[[1]][,2])
     }
-  }
-  
-  # If we want, we can now reclassifiy CORINE's layers. We do this using a csv file name "corineReclassification" that should be
-  # uploaded to the same data/temp/corine folder you are storing corine rasters. The file should have two columns, one names 
-  # corineCategory (with existing corine categories) and the second (with your reclassifications) called newCategory.
-  if(!file.exists("data/temp/corine/corineReclassification.csv")) {
-    warning("No CORINE reclassification system has been provided. Using all 52 potential categories.")
-  } else if (reclassify == TRUE) {
-    corineReclassification <- read.csv("data/temp/corine/corineReclassification.csv", header = TRUE)
-    reclassTable <- levels(corine)[[1]]
-    names(reclassTable) <- c("value", "label")
-    reclassTable$newLabel <- corineReclassification$newCategory[match(reclassTable$label, corineReclassification$corineCategory)]
-    reclassTable <- reclassTable[,c("value", "newLabel")] %>% rename(label = newLabel)
-    for (co in 1:nlyr(corine)) {
-      levels(corine)[[co]][,2] <- reclassTable[,2]
-    }
-    if (temporal) {names(corine) <- yearInterval}
   }
   
   # 

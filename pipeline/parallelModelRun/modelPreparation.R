@@ -24,7 +24,7 @@ folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 
 # load the control parameters
-readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
+readRDS(paste0(folderName,"/controlPars.RDS")) %>%
   list2env(envir = .GlobalEnv)
 
 # get segment number
@@ -93,13 +93,13 @@ if ("birds" %in% focalTaxa$taxa) {
   } else {
     speciesData[["TOVData"]] <- TOVData
   }
-  
+
   focalTaxa$predictionDataset[focalTaxa$taxa %in% c("birds", "groundNestingBirds", "woodpeckers")] <- "TOVData"
   speciesData <- lapply(speciesData, FUN = function(x) {
     x <- x[!(x$taxa %in% c("birds", "woodpeckers", "groundNestingBirds") &
                !(x$acceptedScientificName %in% unique(speciesData$TOVData$acceptedScientificName))),]
   })
-  
+
   cat("Birds data filtered on TOV species.")
 }
 
@@ -115,23 +115,23 @@ listSegments <- list()
 # Prepare models
 for(iter in 1:nrow(focalTaxa)){
   predictorSpecies <- focalTaxa$predictorSpecies[iter]
-  workflowList <- modelPreparation(focalTaxa[iter, ], focalCovariates, speciesData, 
+  workflowList <- modelPreparation(focalTaxa[iter, ], focalCovariates, speciesData,
                                    regionGeometry = regionGeometry,
-                                   modelFolderName = modelFolderName, 
-                                   environmentalDataList = environmentalDataList, 
-                                   crs = crs, 
+                                   modelFolderName = modelFolderName,
+                                   environmentalDataList = environmentalDataList,
+                                   crs = crs,
                                    segmentation = TRUE,
                                    nSegment = nSegment,
                                    speciesOccurrenceThreshold = speciesOccurrenceThreshold,
-                                   datasetOccurrenceThreshold = datasetOccurrenceThreshold, 
+                                   datasetOccurrenceThreshold = datasetOccurrenceThreshold,
                                    mergeAllDatasets = TRUE,
                                    richness = TRUE, predictorSpecies = predictorSpecies)
   focalTaxaRun <- names(workflowList)
-  
-  
+
+
   cat("Finished creating workflows.")
-  
-  
+
+
   # Get bias fields
   if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
     dataTypes <- read.csv(paste0(folderName, "/metadataSummary.csv"))
@@ -139,10 +139,10 @@ for(iter in 1:nrow(focalTaxa)){
   } else {
     biasFieldList <- rep(list(NULL), length(focalTaxaRun))
   }
-  
-  
+
+
   modelOutputs <- "Richness"
-  
+
   listSegments[[iter]] <- focalTaxaRun
   if (grepl("vascularPlants", focalTaxa$taxa[iter])) {saveRDS(focalTaxaRun, paste0(folderName, "/segmentList", focalTaxa$taxa[iter] ,".RDS"))}
   save.image(file = paste0(folderName,"/workspaces/",  focalTaxa[iter, "taxa"], "workflowWorkspace.RData"))
@@ -150,41 +150,6 @@ for(iter in 1:nrow(focalTaxa)){
 
 saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))
 
-sink()
 
-###--------------------###
-### 2. update JSON    ####
-###--------------------###
-
-# read existing json
-json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
-
-# define json content
-json_ls$step_3a <- list(
-  # programing language (eg. R, python )
-  # modelling framework ()
-  ## pointprocess integrated SDM
-  ## eg INLA
-  ## statistical type: Beyesian 
-  # modelling library  (eg, intSDM, pointDSDM, inlabru, INLA, baseR)
-  # library citation 
-  
-  # library-spceficic definitions
-  ## nSegment <- 10  # number of spp per segment
-  ## mesh
-  ## model priors
-  ### prior.range <- c(15 * 1000, 0.01)
-  ### prior.sigma <- c(0.8, 0.01)
-  ## speciesSpatial = 'replicate', 
-  ## kFoldCV
-  ### type (eg dataset, blocked)
-  ### <arguments/definition># (eg number of segments) 
-  ## ... # (other eg. hierarchical)
-)
-
-# write json
-jsonlite:::write_json(json_ls,
-                      file.path(extFolderName, "metadata.json"), 
-                      pretty = TRUE)
 
 # Combination of response and environmental variables

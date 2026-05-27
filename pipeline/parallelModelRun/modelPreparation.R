@@ -151,3 +151,40 @@ for(iter in 1:nrow(focalTaxa)){
 saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))
 
 sink()
+
+###--------------------###
+### 2. update JSON    ####
+###--------------------###
+
+# read existing json
+json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
+
+# define json content
+json_ls$step_3a <- list(
+  # programing language (eg. R, python )
+  # modelling framework ()
+  ## pointprocess integrated SDM
+  ## eg INLA
+  ## statistical type: Beyesian 
+  # modelling library  (eg, intSDM, pointDSDM, inlabru, INLA, baseR)
+  # library citation 
+  
+  # library-spceficic definitions
+  ## nSegment <- 10  # number of spp per segment
+  ## mesh
+  ## model priors
+  ### prior.range <- c(15 * 1000, 0.01)
+  ### prior.sigma <- c(0.8, 0.01)
+  ## speciesSpatial = 'replicate', 
+  ## kFoldCV
+  ### type (eg dataset, blocked)
+  ### <arguments/definition># (eg number of segments) 
+  ## ... # (other eg. hierarchical)
+)
+
+# write json
+jsonlite:::write_json(json_ls,
+                      file.path(extFolderName, "metadata.json"), 
+                      pretty = TRUE)
+
+# Combination of response and environmental variables

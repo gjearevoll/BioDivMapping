@@ -42,7 +42,7 @@ print(focalGroup)
 rm("workflowList")
 
 # load the control parameters
-readRDS(paste0(folderName,"/controlPars.RDS")) %>%
+readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
 
 # Find prediction dataset
@@ -64,7 +64,7 @@ if(!predictionDatasetShort %in% datasetNames){
   predictionDatasetShort <-  namesSpeciesDataShort[!predictionDatasetShort %in% namesSpeciesDataShort][1]
 }
 
-rm("speciesData")
+rm("speciesData") 
 gc()
 
 print(predictionDatasetShort)
@@ -86,11 +86,11 @@ workflow$specifySpatial(prior.range = c(prior.range[1]/1000, prior.range[2]),
                         prior.sigma = c(prior.sigma[1], prior.sigma[2]))
 workflow$workflowOutput(c('Model'))
 workflow$modelOptions(ISDM = list(pointCovariates = NULL,
-                                  Offset = NULL,
-                                  pointsIntercept = TRUE,
+                                  Offset = NULL, 
+                                  pointsIntercept = TRUE, 
                                   pointsSpatial = NULL)
 )
-workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetShort,
+workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetShort, 
                                       speciesSpatial = "replicate"
 ))
 
@@ -132,7 +132,7 @@ rm("environmentalDataList")
 cat("\nSpecifying priors for the model")
 workflow$modelFormula(covariateFormula = NULL,
                       biasFormula =  ~ distance_roads
-)
+) 
 
 if (biasField) {
   workflow$biasFields(datasetName = "mergedDatasetPO", prior.range = c(5, 0.01),
@@ -156,15 +156,13 @@ cat(folderName)
 inla.setOption(inla.call = "inla")
 Sys.setenv(TZ = "UTC")
 
-intSDM::sdmWorkflow(workflow,
+intSDM::sdmWorkflow(workflow, 
                     predictionData = predictionData,
-                    inlaOptions = list(control.inla=list(int.strategy = 'eb',
-                                                         #cmin = 0.01, is this needed?
-                                                         control.vb = list(enable = FALSE)),
+                    inlaOptions = list(control.inla=list(int.strategy = 'eb', cmin = 0.01, control.vb = list(enable = FALSE)),
                                        num.threads = nThreads,
-                                       #num.threads = 5,
-                                       safe = TRUE,
-                                       verbose = TRUE,
+                                       #num.threads = 5, 
+                                       safe = TRUE, 
+                                       verbose = TRUE, 
                                        debug = TRUE, bru_verbose = 3),
                     ipointsOptions = list(method = 'direct', nsub1 = 10, nsub2 = 10) # NEW LINE
 )
@@ -173,15 +171,26 @@ cat("\nFinished fitting the models")
 # Change model name to ensure no overwrite of richness data
 cat("\nChanging the names of the returned output.")
 
-# file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"),
+# file.rename(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPredictions.rds"), 
 #             paste0(folderName, "/modelOutputs/", focalGroup, "/richnessPreds.rds"))
 
 cat("\nResizing model object")
 
 source("functions/resetEnvironments.R")
 richnessModel <- readRDS(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.rds"))
+#obj_size(richnessModel)
+reducedModel <- reset_environments(richnessModel)
+qsave(reducedModel, paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.qs"))
+file.remove(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.rds"))
 
-sink()
+print(folderName)
+print(focalGroup)
+
+end <- Sys.time()
+timeTaken <- end - start
+print(timeTaken)
+saveRDS(nThreads * timeTaken, paste0(folderName, "/modelOutputs/", focalGroup, "/timeTaken.RDS"))
+
 
 ###--------------------###
 ### 2. update JSON    ####

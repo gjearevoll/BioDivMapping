@@ -74,8 +74,69 @@ parameterList <- lapply(json_ls$step_2a, function(cov) {
 })
 
 
+###---------------------###
+### 2. crop covariates ####
+###---------------------###
+
+# define spatial domain cropping
+## high resolution vector of buffered baseRaster extent for cropping
+extExpanded <- vect(buffer(ext(baseRaster), 0.1, 
+                           lonlat = is.lonlat(baseRaster)), 
+                    crs = crs(baseRaster)) %>% 
+  densify(interval = 10) 
+
+# temporal domain cropping
+## get time period of species data
+timePeriod <- as.POSIXct(json_ls$step_0$timePeriod, tz = "UTC")
+
+# loop to crop each covariate to spatial & temporal
+parameterList <- lapply(parameterList, function(cov) {
+  # project cropping extent to crs of covariate & crop
+  cov <- crop(cov, project(extExpanded, cov))
+  # crop time
+  if (sum(!is.na(time(cov))) > 1) {
+    # sort cov layers by time
+    cov <- cov[[order(time(cov))]]
+    if (temporal) {
+      browser()
+      # will probably want to use yearInterval, 
+      # but I think yearInterval should be replaced with temporal resoultion
+      # ie instead of vector of years, specify "1 year" as resolution,
+      # and have temporal extent determined by timePeriod
+      
+      # select layers within timePeriod (inclusive)
+      xid <- which(time(cov) >= timePeriod[1] & time(cov) <= timePeriod[2])
+      if (length(xid)) {
+        cov <- cov[[xid]]
+      } else {
+        warning("No time slices within timePeriod; returning nearest layer.")
+        cov <- cov[[which.min(abs(time(cov) - timePeriod[1]))]]
+      }
+    } else {
+      # select first time(cov) that's > timePeriod[2]
+      xid <- which(time(cov) >= timePeriod[2])
+      if (length(xid)) {
+        cov[[min(xid)]]
+      } else {
+        # else, select most recent time(cov) 
+        cov[[nlyr(cov)]]
+      }
+    }
+  }
+})
+# cov <- rast("C:/Users/rtogunov/Downloads/land_cover_corine_EPSG3035_X9e+05_7400000_Y9e+05_5500000 - Copy - Copy.tiff")
+# path <- "C:/Users/rtogunov/Downloads/land_cover_corine_EPSG3035_X9e+05_7400000_Y9e+05_5500000.tiff"
+# temp_path <- gsub(".tiff", "_temp.tiff", path)
+# cov <- rast(path)
+# time(cov) <- as.POSIXct(paste0(names(cov), "-01-01"), tz = "UTC")
+# writeRaster(cov, temp_path, overwrite = TRUE)
+# file.remove(path)  # delete original
+# file.rename(temp_path, path)  # rename original
+# cov <- rast(path)  # load
+# time(cov)
+
 ###--------------------------------------###
-### 2. reclassify categorical rasters    ####
+### 3. reclassify categorical rasters    ####
 ###--------------------------------------###
 
 # Track which parameters were reclassified (for JSON metadata)
@@ -108,7 +169,7 @@ for (par in cat_params_present) {
 }
 
 ###--------------------------------------###
-### 3. Expansion of categorical rasters ####
+### 4. Expansion of categorical rasters ####
 ###--------------------------------------###
 
 contList <- list()
@@ -143,7 +204,7 @@ parameterNames <- removeAccents(names(parameterListCont))
 
 
 ###------------------------###
-### 4. Data Consolidation ####
+### 5. Data Consolidation ####
 ###------------------------###
 
 # Crop, match projections and compile raster layers into one object
@@ -178,9 +239,8 @@ if (!temporal) {
     setNames(parameterNames)  # assign names
 }
 
-
 ###----------------------------###
-### 5. Create quadratic terms ####
+### 6. Create quadratic terms ####
 ###----------------------------###
 
 # Check which parameters are needed to make sure we don't take the quadratic of an unwanted term
@@ -197,7 +257,7 @@ if (nrow(quadratics) > 0) {
 
 
 ###--------------------###
-### 6. Dataset Upload ####
+### 7. Dataset Upload ####
 ###--------------------###
 
 # Save both to temp file for model processing and visualisation folder for mapping
@@ -238,7 +298,7 @@ if (!temporal) {
 
 
 ###--------------------###
-### 7. Update JSON    ####
+### 8. Update JSON    ####
 ###--------------------###
 
 json_ls <- jsonlite::fromJSON(file.path(extFolderName, "metadata.json"))

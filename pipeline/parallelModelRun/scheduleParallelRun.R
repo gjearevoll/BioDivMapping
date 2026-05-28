@@ -194,43 +194,34 @@ json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
 json_ls$step_3a <- list(
 
   #Information about the model
+  modelInformation = list(
   modelFramework = 'Point process',
   modelType = 'Integrated species distribution model',
-  modelMethod = 'INLA',
+  modelMethod = 'Integrated nested Laplace approximation',
   statisticalMethodology = 'Bayesian',
+  RVersion = R.version.string,
   packageCitations = c(INLA = citation('INLA')$doi,
                        inlabru = citation('inlabru')$doi,
                        PointedSDMs = citation('PointedSDMs')$doi,
                        intSDM = citation('intSDM')$doi),
+  packageVersions = c(INLA = packageVersion('INLA'),
+                      inlabru = packageVersion('inlabru'),
+                      PointedSDMs = packageVersion('PointedSDMs'),
+                      intSDM = packageVersion('intSDM'))
+  )
+  ,
   #Model outputs
+  modelDefinition = list(
   modelPriors = INLA:::inla.priors.used(richnessModel), ## Won’t work nicely for PC priors
   inlabruComponents = richnessModel$componentsJoint,
-  modelFamilies = sapply(richnessModel $bru_info$lhoods, function(x) x$family),
+  modelFamilies = sapply(richnessModel$bru_info$lhoods, function(x) x$family),
   modelLink = setNames(sapply(richnessModel$.args$control.family, function(x) x$link), richnessModel$source),
   modelFormulas = sapply(richnessModel$bru_info$lhoods,
                          function(x) update.formula(x$formula,
                                                     new = formula(paste('. ~',
                                                            paste0(x$used$effect,
                                                                   collapse = ' + ')))))
-  # programing language (eg. R, python )
-  # modelling framework ()
-  ## pointprocess integrated SDM
-  ## eg INLA
-  ## statistical type: Beyesian
-  # modelling library  (eg, intSDM, pointDSDM, inlabru, INLA, baseR)
-  # library citation
-
-  # library-spceficic definitions
-  ## nSegment <- 10  # number of spp per segment
-  ## mesh
-  ## model priors
-  ### prior.range <- c(15 * 1000, 0.01)
-  ### prior.sigma <- c(0.8, 0.01)
-  ## speciesSpatial = 'replicate',
-  ## kFoldCV
-  ### type (eg dataset, blocked)
-  ### <arguments/definition># (eg number of segments)
-  ## ... # (other eg. hierarchical)
+  )
 )
 # write json
 jsonlite:::write_json(json_ls,

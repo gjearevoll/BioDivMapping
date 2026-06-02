@@ -73,6 +73,12 @@ parameterList <- lapply(json_ls$step_2a, function(cov) {
   rast(cov$file)
 })
 
+# rasterise regionGeometry
+regionGeometryRast <- regionGeometry |>
+  st_as_sf() |>
+  st_transform(crs(baseRaster)) |> 
+  vect() |>
+  terra::rasterize(baseRaster, FUN = "mode") 
 
 ###---------------------###
 ### 2. crop covariates ####
@@ -113,8 +119,9 @@ parameterList <- lapply(parameterList, function(cov) {
         cov <- cov[[which.min(abs(time(cov) - timePeriod[1]))]]
       }
     } else {
-      # select first time(cov) that's > timePeriod[2]
-      xid <- which(time(cov) >= timePeriod[2])
+      # select first time(cov) that's > timePeriod[2] or last time slice
+      xid <- min(which(time(cov) >= timePeriod[2]))
+      xid <- ifelse(is.infinite(xid), length(time(cov)), xid)
       if (length(xid)) {
         cov[[min(xid)]]
       } else {
@@ -122,6 +129,8 @@ parameterList <- lapply(parameterList, function(cov) {
         cov[[nlyr(cov)]]
       }
     }
+  } else {
+    cov
   }
 })
 # cov <- rast("C:/Users/rtogunov/Downloads/land_cover_corine_EPSG3035_X9e+05_7400000_Y9e+05_5500000 - Copy - Copy.tiff")
@@ -323,6 +332,15 @@ final_params <- lapply(names(parametersCropped), function(par) {
       typeof = r_type
     )
   }) |> setNames(names(parametersCropped))
+
+# Summarise categorical expansions
+cat_expansion_summary <- lapply(names(contList), function(par) {
+  list(
+    source_parameter = par,
+    expanded_categories = names(contList[[par]]),
+    n_categories = length(contList[[par]])
+  )
+}) |> setNames(names(contList))
 
 json_ls$step_2b <- list(
   processing_steps = list(

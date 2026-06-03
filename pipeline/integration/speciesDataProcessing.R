@@ -54,7 +54,7 @@ if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
 }
 
 # Import datasets
-speciesData <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))
+speciesData <- read_sf(file.path(extFolderName, "speciesDataImported.gpkg"))
 
 # Import taxa list and data types for processing
 focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -211,7 +211,24 @@ if (maskCityData) {
 }
 
 maskedData <- maskedData[lapply(maskedData,nrow)>0]
-qsave(maskedData, paste0(folderName, "/speciesDataProcessed.qs"))
+
+###----------------------------------------------------------###
+### 5. Remove species with less than requisite observations ####
+###----------------------------------------------------------###
+
+countedData <- do.call(rbind, lapply(maskedData, FUN = function(x) {
+  if ("individualCount" %in% colnames(x)) {
+     ds <- st_drop_geometry(x[x$individualCount > 0, "simpleScientificName"])
+  } else {ds <- st_drop_geometry(x[,"simpleScientificName"])}
+  ds
+})) %>% group_by(simpleScientificName) %>% tally() %>% filter(n > speciesOccurrenceThreshold)
+countedData2 <- lapply(maskedData, FUN = function(x2) {
+  ds <- x2[x2$simpleScientificName %in% countedData$simpleScientificName,]
+  ds
+})
+countedData2 <- countedData2[lapply(countedData2,nrow)>0]
+
+qsave(countedData2, paste0(folderName, "/speciesDataProcessed.qs"))
 #saveRDS(maskedData, paste0(folderName, "/speciesDataProcessed.RDS"))
 
 
@@ -220,9 +237,9 @@ qsave(maskedData, paste0(folderName, "/speciesDataProcessed.qs"))
 ###--------------------------------###
 
 # Edit data frames to have the same number of columns
-processedDataCompiled <- do.call(rbind, lapply(1:length(maskedData), FUN = function(x) {
-  dataset <- maskedData[[x]]
-  datasetName <- names(maskedData)[x]
+processedDataCompiled <- do.call(rbind, lapply(1:length(countedData2), FUN = function(x) {
+  dataset <- countedData2[[x]]
+  datasetName <- names(countedData2)[x]
   datasetType <- unique(dataset$dataType)
   if (!("individualCount" %in% colnames(dataset))) {
     dataset$individualCount <- 1
@@ -243,7 +260,7 @@ finalDataSummary <- st_drop_geometry(processedDataCompiled) %>%
   group_by(dsName, taxa) %>%
   summarise(totalObs = n(),
             totalRec = sum(individualCount > 0),
-            totalSpecies = n_distinct(acceptedScientificName)) %>%
+            totalSpecies = n_distinct(simpleScientificName)) %>%
   as.data.frame()
 
 finalDataSummary2 <- st_drop_geometry(processedDataCompiled) %>%
@@ -261,17 +278,17 @@ finalDataSummary2$processingScript <- ifelse(finalDataSummary2$processing == "pr
                                              paste0("https://github.com/gjearevoll/BioDivMapping/blob/main/functions/process",firstup(finalDataSummary2$processing),".R"))
 
 # read existing json
-json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
+json_ls <- jsonlite::fromJSON(file.path(extFolderName, "metadata.json"))
 
 # define json content
 json_ls$step_1b <- list(
-  n_datasets = length(maskedData),
+  n_datasets = length(countedData2),
   n_total_obs = nrow(processedDataCompiled[processedDataCompiled$individualCount > 0,]),
   n_total_rec = nrow(processedDataCompiled),
-  n_total_species = length(unique(processedDataCompiled$acceptedScientificName)),
+  n_total_species = length(unique(processedDataCompiled$simpleScientificName)),
   n_total_redlist_obs = nrow(processedDataCompiled[processedDataCompiled$individualCount > 0 & !is.na(processedDataCompiled$redListStatus),]),
   n_total_redlist_rec = nrow(processedDataCompiled[!is.na(processedDataCompiled$redListStatus),]),
-  n_total_redlist_species =  length(unique(processedDataCompiled$acceptedScientificName[!is.na(processedDataCompiled$redListStatus)])),
+  n_total_redlist_species =  length(unique(processedDataCompiled$simpleScientificName[!is.na(processedDataCompiled$redListStatus)])),
   dataset_summary = list(
     dataset = finalDataSummary$dsName,
     taxa = finalDataSummary$taxa,
@@ -293,42 +310,4 @@ jsonlite:::write_json(json_ls,
                       file.path(extFolderName, "metadata.json"), 
                       pretty = TRUE)
 
-
-# Remove absences, combine into one data frame and add date accessed
-processedPresenceData <- processedDataCompiled[processedDataCompiled$individualCount > 0,]
-processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
-#saveRDS(processedPresenceData, paste0(folderName, "/processedPresenceData.RDS"))
-qsave(processedPresenceData, paste0(folderName, "/processedPresenceData.qs"))
-
-
-# ###----------------------------###
-# ### 6. Produce red list check ####
-# ###----------------------------###
-# 
-# Here we see which species have sufficient presence/count data to actually run an individual species model
-redListSpecies <- filterByRedList(redList$GBIFName, processedPresenceData, 50)
-redList$valid <- redList$GBIFName %in% redListSpecies$validSpecies
-saveRDS(redList, paste0(folderName, "/redList.RDS"))
-
-###-----------------------------------###
-### 7. Produce species richness data ####
-###-----------------------------------###
-
-# create template raster 
-allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, baseRaster)
-writeRaster(allSpeciesRichness$rasters, paste0(folderName, "/speciesRichnessData.tiff"), overwrite=TRUE)
-saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))
-
-if(nrow(processedRedListPresenceData) > 0){
-  redListRichness <- speciesRichnessConverter(regionGeometry, processedRedListPresenceData, baseRaster)
-  writeRaster(redListRichness$rasters, paste0(folderName, "/redListRichnessData.tiff"), overwrite=TRUE)
-  saveRDS(redListRichness$richness, paste0(folderName, "/redListRichnessData.RDS"))
-}
-
-###----------------------###
-### 8. Produce metadata ####
-###----------------------###
-
-# To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
-rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
 

@@ -5,7 +5,7 @@
 
 library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
 library(stringr)
-
+library(sf)
 
 args <- commandArgs(TRUE)
 
@@ -37,6 +37,12 @@ segmentList <- readRDS(file.path(folderName, "segmentList.RDS"))
 modelNameList <- list.files(modelFolderName, full.names = TRUE, recursive = TRUE, pattern = "richnessModel.qs")
 timeTakenFiles <- list.files(modelFolderName, "timeTaken", recursive = T, full.names = T)
 
+
+###--------------------------###
+### 1. Start model analyses ####
+###--------------------------###
+
+
 # Get valid model names
 taxaLists <- lapply(taxaToCompile[1], FUN = function(x) {
   modelNameListTaxa <- grep(paste0("/", x), modelNameList, value = TRUE)
@@ -47,14 +53,13 @@ taxaLists <- lapply(taxaToCompile[1], FUN = function(x) {
   # Get predictor species
   predictorSpecies <- focalTaxa$predictorSpecies[grep(x, focalTaxa$taxa)]
   
-  # Import model for json use
-  richnessModel <-  qread(modelNameListTaxa[1])
-  
-  # Import model
+  # Start lists for inserting mdoel info
   biasEffects <- list()
   fixedEffects <- list()
   hyperParams <- list()
   responseDataList <- list()
+  
+  # Commence model import loops
   for (mod in seq_along(modelNameListTaxa)) {
     print(modelNameListTaxa[mod])
     importedModel <- qread(modelNameListTaxa[mod])
@@ -68,35 +73,54 @@ taxaLists <- lapply(taxaToCompile[1], FUN = function(x) {
     # Compile model data
     modelData <- importedModel$bru_info$lhoods
     
-    # Exclude predictor species if it's not the first model
-    if (mod != 1) {modelData <- modelData[names(modelData)[!grepl(predictorSpecies, names(modelData))]]}
+    # Exclude predictor species if it's not the first model. If it is the first model, create the integration points
+    if (mod != 1) {
+      modelData <- modelData[names(modelData)[!grepl(predictorSpecies, names(modelData))]]
+    } 
     presenceOnlyData <- names(modelData)[grep("mergedDatasetPO", names(modelData))]
-    integrationPoints <- modelData[[presenceOnlyData[1]]]$data[is.na(modelData[[presenceOnlyData[1]]]$data$poresp),]
-    integrationPoints$pointType <- "integration"
+    
+    # Create integration points data frame if it's the first model
+    if (mod == 1) {
+      integrationPoints <- modelData[[presenceOnlyData[1]]]$data[is.na(modelData[[presenceOnlyData[1]]]$data$poresp),]
+      integrationPoints$dataset <- integrationPoints$speciesNameINDEX_VAR <- integrationPoints$pointType <- "integration"
+      integrationPoints$presenceOnly <- NA
+      integrationPoints$occurrenceStatus <- NA
+    }
+    
+    # Import and standardise response data
     speciesResponseData <- lapply(names(modelData), FUN = function(x2) {
       ds <- modelData[[x2]]$data
+      dsName <- gsub(paste0("_",unique(ds$speciesNameINDEX_VAR)), "", x2)
+      dsName <- gsub("_occurrenceStatus", "", gsub("_geometry", "", dsName))
+      
+      # If PO data, 
       if ("poresp" %in% colnames(ds)) {
         ds <- ds[!is.na(ds$poresp),]
-        chooseColumns <- colnames(ds)[!(colnames(ds) %in% c("speciesName","._dataset_index_var_.","speciesSpatialGroup",
+        chooseColumns <- colnames(ds)[!(colnames(ds) %in% c("poresp", "speciesName","._dataset_index_var_.","speciesSpatialGroup",
                                                             "BRU_aggregate","BRU_point_weights",".block","weight"))]
         ds <- ds[,chooseColumns]
+        ds$occurrenceStatus <- 1
+        ds$presenceOnly <- TRUE
       } else {
-        chooseColumns <- colnames(ds)[!(colnames(ds) %in% c("occurrenceStatus","speciesName","._dataset_index_var_.","speciesSpatialGroup",
+        chooseColumns <- colnames(ds)[!(colnames(ds) %in% c("speciesName","._dataset_index_var_.","speciesSpatialGroup",
                                                             "BRU_aggregate","BRU_point_weights",".block"))]
         ds <- ds[,chooseColumns]
-        ds$poresp <- 1
+        ds$presenceOnly <- FALSE
       }
       ds$pointType <- "occurrence"
+      ds$dataset <- dsName
       return(ds)
     })
+    
+    # Compile response data
     responseData <- do.call(rbind, speciesResponseData)
-    responesData2 <- rbind(responseData, integrationPoints[,colnames(responseData)])
     
     responseDataList[[mod]] <- responseData
     
   }
-  speciesResponseDataTotal <- do.call(rbind, responseDataList)
+  speciesResponseDataTotal <- rbind(integrationPoints[,colnames(responseDataList[[1]])], do.call(rbind, responseDataList))
   
+  # Compile covariate effects
   hyperDF <- do.call(rbind, hyperParams)
   biasDF <- do.call(rbind, biasEffects)
   fixedDF <- do.call(rbind, fixedEffects)
@@ -105,14 +129,13 @@ taxaLists <- lapply(taxaToCompile[1], FUN = function(x) {
   row.names(fixedDF) <- NULL
   effectsList <- list(fixedEffects = fixedDF, biasEffects = biasDF, hyperEffects = hyperDF)
   
-  
   # Get model links 
-  modelLinks <- setNames(sapply(richnessModel$.args$control.family, function(x) x$link), richnessModel$source)
+  modelLinks <- setNames(sapply(importedModel$.args$control.family, function(x) x$link), importedModel$source)
   modelLinksUnique <- modelLinks[names(modelLinks)[!duplicated(names(modelLinks))]]
   
   # Isolate model formulas
-  modelFormulasForUse <-  names(richnessModel$bru_info$lhoods)[grep(predictorSpecies, names(richnessModel$bru_info$lhoods))]
-  modelFormulas <-  sapply(richnessModel$bru_info$lhoods[modelFormulasForUse],
+  modelFormulasForUse <-  names(importedModel$bru_info$lhoods)[grep(predictorSpecies, names(importedModel$bru_info$lhoods))]
+  modelFormulas <-  sapply(importedModel$bru_info$lhoods[modelFormulasForUse],
                            FUN = function(x) {update.formula(x$formula,
                                                              new = formula(paste('. ~',
                                                                                  paste0(x$used$effect,
@@ -160,13 +183,23 @@ taxaLists <- lapply(taxaToCompile[1], FUN = function(x) {
       return(as.double(ttFile))}
   }
   ))
-  json_model_diagnostics <- list(
-      n_models_run = length(modelNameListTaxa),
-      n_models_attempted = length(relevantWorkflows),
-      n_species_run = length(unique(effectsList$fixedEffects$species)),
-      average_time_run = mean(timeTakenRelevant)
-    )
   
+  # # Construct metadata for modeldiagnostics metadata
+  # metadataSummaries <- st_drop_geometry(speciesResponseDataTotal) %>%
+  #   filter(pointType != "integration")
+  
+  json_model_diagnostics <- list(
+    n_models_run = length(modelNameListTaxa),
+    n_models_attempted = length(relevantWorkflows),
+    n_species_run = length(unique(effectsList$fixedEffects$species)),
+    average_time_run = mean(timeTakenRelevant),
+    n_integration_points = nrow(speciesResponseDataTotal[speciesResponseDataTotal$pointType == "integration",]),
+    n_species_points = nrow(speciesResponseDataTotal[speciesResponseDataTotal$pointType != "integration",]),
+    n_species = length(unique(speciesResponseDataTotal$speciesNameINDEX_VAR)),
+    n_datasets = length(unique(speciesResponseDataTotal$dataset)) - 1,
+    n_segments = length(modelNameListTaxa),
+    file_list = list(file_names = modelNameListTaxa)
+  )
   
   
   returnedData <- list(effects = effectsList, modelData = speciesResponseDataTotal, json = json_taxa, diagnostics = json_model_diagnostics)
@@ -183,13 +216,14 @@ saveRDS(effectsLists, paste0(modelFolderName, "/covAnalysis.RDS"))
 
 # Model data object
 modelDataFull <- do.call(rbind, lapply(taxaLists, FUN = function(x) x$modelData))
-write_sf(modelDataFull, file.path(extFolderName, "speciesDataModelled.gpkg"))
+write_sf(modelDataFull, file.path(extFolderName, "speciesDataModelled.gpkg"), append = T)
 
 # Now ssave metadata - read existing json
 json_ls <- jsonlite::fromJSON(file.path(extFolderName, "metadata.json"))
 
 # Now model diagnostics
 json_ls$step_3a <- lapply(taxaLists, FUN = function(x) x$diagnostics) |> setNames(taxaToCompile[1])
+json_ls$step_3a$file <- file.path(extFolderName, "speciesDataModelled.gpkg")
 
 # Model description
 json_ls$step_3b <- lapply(taxaLists, FUN = function(x) x$json) |> setNames(taxaToCompile[1])

@@ -153,7 +153,7 @@ occurrences$redListStatus <- redList$status[match(occurrences$acceptedScientific
 datasetSummaries <- occurrences %>%
   group_by(taxa, name) %>%
   summarise(totalObs = n(),
-            totalRedListObs = sum(!is.na(redList)),
+            totalRedListObs = sum(!is.na(redListStatus)),
             totalSpecies = n_distinct(acceptedScientificName),
             totalRedListSpecies = n_distinct(acceptedScientificName[!is.na(redListStatus)]))
 

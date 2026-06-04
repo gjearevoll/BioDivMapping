@@ -24,7 +24,7 @@ folderName <- paste0("data/run_", dateAccessed)
 tempFolderName <- paste0(folderName, "/temp")
 
 # load the control parameters
-readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
+readRDS(paste0(folderName,"/controlPars.RDS")) %>%
   list2env(envir = .GlobalEnv)
 
 # get segment number
@@ -84,13 +84,22 @@ cat("\nAll data loaded.", length(speciesData), "species datasets successfully lo
 
 # Import bird data from TOV and remove all no-relevant birds from other datasets
 if ("birds" %in% focalTaxa$taxa) {
-  speciesData[["TOVData"]] <- st_transform(readRDS("data/temp/birdDataTOV.RDS"), st_crs(speciesData[[1]])) |>
+  TOVData <- st_transform(readRDS("data/temp/birdDataTOV.RDS"), st_crs(speciesData[[1]])) |>
     st_crop(st_transform(regionGeometry, st_crs(speciesData[[1]])))
+  # filter only birds imported from other datasets
+  if (!"Aves" %in% focalTaxa$scientificName) {
+    speciesData[["TOVData"]] <- TOVData[TOVData$simpleScientificName %in%
+              unique(bind_rows(speciesData)$simpleScientificName),]
+  } else {
+    speciesData[["TOVData"]] <- TOVData
+  }
+
   focalTaxa$predictionDataset[focalTaxa$taxa %in% c("birds", "groundNestingBirds", "woodpeckers")] <- "TOVData"
   speciesData <- lapply(speciesData, FUN = function(x) {
     x <- x[!(x$taxa %in% c("birds", "woodpeckers", "groundNestingBirds") &
                !(x$acceptedScientificName %in% unique(speciesData$TOVData$acceptedScientificName))),]
   })
+
   cat("Birds data filtered on TOV species.")
 }
 
@@ -106,23 +115,23 @@ listSegments <- list()
 # Prepare models
 for(iter in 1:nrow(focalTaxa)){
   predictorSpecies <- focalTaxa$predictorSpecies[iter]
-  workflowList <- modelPreparation(focalTaxa[iter, ], focalCovariates, speciesData, 
+  workflowList <- modelPreparation(focalTaxa[iter, ], focalCovariates, speciesData,
                                    regionGeometry = regionGeometry,
-                                   modelFolderName = modelFolderName, 
-                                   environmentalDataList = environmentalDataList, 
-                                   crs = crs, 
+                                   modelFolderName = modelFolderName,
+                                   environmentalDataList = environmentalDataList,
+                                   crs = crs,
                                    segmentation = TRUE,
                                    nSegment = nSegment,
                                    speciesOccurrenceThreshold = speciesOccurrenceThreshold,
-                                   datasetOccurrenceThreshold = datasetOccurrenceThreshold, 
+                                   datasetOccurrenceThreshold = datasetOccurrenceThreshold,
                                    mergeAllDatasets = TRUE,
                                    richness = TRUE, predictorSpecies = predictorSpecies)
   focalTaxaRun <- names(workflowList)
-  
-  
+
+
   cat("Finished creating workflows.")
-  
-  
+
+
   # Get bias fields
   if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
     dataTypes <- read.csv(paste0(folderName, "/metadataSummary.csv"))
@@ -130,10 +139,10 @@ for(iter in 1:nrow(focalTaxa)){
   } else {
     biasFieldList <- rep(list(NULL), length(focalTaxaRun))
   }
-  
-  
+
+
   modelOutputs <- "Richness"
-  
+
   listSegments[[iter]] <- focalTaxaRun
   if (grepl("vascularPlants", focalTaxa$taxa[iter])) {saveRDS(focalTaxaRun, paste0(folderName, "/segmentList", focalTaxa$taxa[iter] ,".RDS"))}
   save.image(file = paste0(folderName,"/workspaces/",  focalTaxa[iter, "taxa"], "workflowWorkspace.RData"))
@@ -141,4 +150,6 @@ for(iter in 1:nrow(focalTaxa)){
 
 saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))
 
-sink()
+
+
+# Combination of response and environmental variables

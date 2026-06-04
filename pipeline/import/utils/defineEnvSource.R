@@ -7,8 +7,8 @@
 # https://github.com/gjearevoll/BioDivMapping/tree/main/data/temp 
 
 
-if(inherits(regionGeometryBuffer, c("sf", "sfc"))){
-  regionGeometryBuffer <- terra::vect(regionGeometryBuffer)
+if(inherits(baseRaster, c("sf", "sfc"))){
+  baseRaster <- terra::vect(baseRaster)
 }
 
 ### 1. geonorge ####
@@ -16,7 +16,7 @@ if (dataSource == "geonorge") {
   
   if (focalParameter %in% c("slope", "aspect", "elevation")) {
     # check if encompassing corine alreadydownloaded
-    elevation <- checkAndImportRast("elevation", regionGeometryBuffer, dataPath)
+    elevation <- checkAndImportRast("elevation", baseRaster, dataPath)
     # download and save if missing
     if(is.null(elevation)){
       # download
@@ -75,7 +75,7 @@ if (dataSource == "geonorge") {
   var <- recode_vector[focalParameter]
   
   # download
-  annualStack <- get_worldclim(regionGeometryBuffer, var, 0.5)
+  annualStack <- get_worldclim(baseRaster, var, 0.5)
   
   # average
   rasterisedVersion <- mean(annualStack)
@@ -91,8 +91,8 @@ if (dataSource == "geonorge") {
 ### 5. CORINE ###  
 } else if (dataSource == "corine") {
   # check if encompassing corine alreadydownloaded
-  rasterisedVersion <- checkAndImportRast("land_cover_corine", regionGeometryBuffer, dataPath, quiet = TRUE, temporalFactor, yearInterval)
-  # rasterisedVersion <- terra::crop(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion))
+  rasterisedVersion <- checkAndImportRast("land_cover_corine", baseRaster, dataPath, quiet = TRUE, temporalFactor, yearInterval)
+  # rasterisedVersion <- terra::crop(rasterisedVersion, terra::project(baseRaster, rasterisedVersion))
   # download and save if missing
   if(is.null(rasterisedVersion)){
     # download
@@ -113,7 +113,7 @@ if (dataSource == "geonorge") {
     rasterisedVersion <- round(rasterisedVersion/10)*10
   } else if (focalParameter == "habitat_heterogeneity") {
     message("Calculating heterogeneity based on raster data.")
-    croppedRaster <- crop(rasterisedVersion, ext(terra::project(regionGeometryBuffer, rasterisedVersion)))
+    croppedRaster <- crop(rasterisedVersion, ext(terra::project(baseRaster, rasterisedVersion)))
     library(rasterdiv)
     cropFactor <- ifelse(res > 1000, 3, ifelse(res <= 100, 9, 5))
     rasterisedVersion <- Shannon(croppedRaster, window = cropFactor)
@@ -125,7 +125,7 @@ if (dataSource == "geonorge") {
   
 ### 7. NIBIO ###
 } else if (dataSource == "nibio") {
-  rasterisedVersion <- get_nibio(regionGeometryBuffer)
+  rasterisedVersion <- get_nibio(baseRaster)
   
 ### 8. Artsdatabanken ###
 } else if (dataSource == "artsdatabanken") {
@@ -143,10 +143,12 @@ if (dataSource == "geonorge") {
 } else if (dataSource == "gbif") {
   citizenDatasets <- c("Norwegian Species Observation Service", "iNaturalist Research-grade Observations")
   rasterisedVersion <- get_cs_density(dateAccessed, regionGeometry, citizenDatasets, yearInterval, crs)
+  rasterisedVersion <- if (!temporal) app(rasterisedVersion, "mean") |> 
+    setNames("cs_density")
 }  
 
 ### merge with requested download area to make missing data explicit
-rasterisedVersion <- extend(rasterisedVersion, terra::project(regionGeometryBuffer, rasterisedVersion), snap = "out")
+rasterisedVersion <- extend(rasterisedVersion, terra::project(baseRaster, rasterisedVersion), snap = "out")
 
 ### generate descriptive file name and save
 if (focalParameter != "cs_density") {

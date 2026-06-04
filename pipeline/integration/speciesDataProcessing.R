@@ -54,15 +54,9 @@ if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
 }
 
 # Import datasets
-speciesDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))
-speciesData <- speciesDataList[["species"]]
-redList <- speciesDataList[["redList"]]
-metadata <- speciesDataList$metadata$metadata
-region <- attr(speciesDataList, "region")
-level <- attr(speciesDataList, "level")
-rm("speciesDataList")
+speciesData <- read_sf(file.path(extFolderName, "speciesDataImported.gpkg"))
 
-# Import taxa list and polyphyletic species
+# Import taxa list and data types for processing
 focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
 focalTaxon <- focalTaxon[focalTaxon$include,]
 
@@ -70,6 +64,34 @@ focalTaxon <- focalTaxon[focalTaxon$include,]
 if(file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
   polyphyleticSpecies <- read.csv(paste0(folderName, "/polyphyleticSpecies.csv"), header = T)
 } 
+
+# import baseRaster
+baseRaster <- rast(file.path(folderName, "baseRaster.tiff"))
+
+###------------------------------###
+### 3. Preparing for processing ####
+###------------------------------###
+
+# Import metadata summary
+if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
+  dataTypes <- read.csv(paste0(folderName, "/metadataSummary.csv"))
+  speciesData$processing <- dataTypes$processing[match(speciesData$datasetKey, dataTypes$datasetKey)]
+} else {
+  speciesData$processing <- "presenceOnly"  
+}
+speciesData <- speciesData[!is.na(speciesData$processing),]
+
+# Narrow down to known data types and split into data frames
+projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+speciesData2 <- lapply(unique(speciesData$name), FUN  = function(x) {
+  GBIFItem <- speciesData[speciesData$name == x,]
+  GBIFItem <- st_as_sf(GBIFItem,                         
+                       coords = c("decimalLongitude", "decimalLatitude"),
+                       crs = projcrs)
+  GBIFcropped <- st_intersection(GBIFItem, st_transform(regionGeometry, crs = projcrs))
+  GBIFcropped
+})
+names(speciesData2) <- unique(speciesData$name)
 
 ###----------------###
 ### 2. Processing ####
@@ -84,8 +106,8 @@ if(file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
 # Start a processed data list
 processedData <- list()
 namesProcessedData <- c()
-for (ds in seq_along(speciesData)) {
-  focalData <- speciesData[[ds]]
+for (ds in seq_along(speciesData2)) {
+  focalData <- speciesData2[[ds]]
   
   # Remove invalid months if we have bird data
   if ("birds" %in% focalData$taxa) {
@@ -96,7 +118,7 @@ for (ds in seq_along(speciesData)) {
   if (nrow(focalData) == 0) next
   
   dataType <- unique(focalData$processing)
-  datasetName <- names(speciesData)[ds]
+  datasetName <- names(speciesData2)[ds]
   newDataset <- NULL
   
   cat("Currently processing dataset '", datasetName,"' \n", sep = "")
@@ -112,10 +134,7 @@ for (ds in seq_along(speciesData)) {
   if ("acceptedScientificName" %in% colnames(newDataset)) {
     newDataset <- newDataset %>%
       mutate(
-        simpleScientificName = coalesce(
-          redList$species[match(acceptedScientificName, redList$GBIFName)],  # Match redList species
-          str_extract(acceptedScientificName, "^[A-Za-z]+\\s+[a-z]+")        # Extract binomial name
-        ),
+        simpleScientificName =  str_extract(acceptedScientificName, "^[A-Za-z]+\\s+[a-z]+") ,
         # Replace space with underscore in simpleScientificName
         simpleScientificName = gsub("-", "", gsub("×","", gsub(" ", "_", simpleScientificName)))
       )} else {
@@ -152,10 +171,14 @@ processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 ###------------------------------------###
 
 alienSpeciesList <- readRDS("data/external/alienSpeciesList.RDS")
-processedData <- lapply(processedData, FUN = function(ds) {
-  ds[!(ds$simpleScientificName %in% alienSpeciesList$simpleScientificName),]
+processedDataNative <- lapply(1:length(processedData), FUN = function(ds) {
+  focalDataset <- processedData[[ds]]
+  startingRows <- nrow(focalDataset)
+  noAliens <- focalDataset[!(focalDataset$simpleScientificName %in% alienSpeciesList$simpleScientificName),]
+  cat("Removed",startingRows - nrow(noAliens),"observations of alien species from", names(processedData)[ds],"\n")
+  noAliens
 })
-
+names(processedDataNative) <- namesProcessedData
 
 ###-------------------------###
 ### 4. Mask lake/city data ####
@@ -184,11 +207,28 @@ if (maskCityData) {
     return(newDatasetMasked2)
   })
 } else {
-  maskedData <- processedData
+  maskedData <- processedDataNative
 }
 
 maskedData <- maskedData[lapply(maskedData,nrow)>0]
-qsave(maskedData, paste0(folderName, "/speciesDataProcessed.qs"))
+
+###----------------------------------------------------------###
+### 5. Remove species with less than requisite observations ####
+###----------------------------------------------------------###
+
+countedData <- do.call(rbind, lapply(maskedData, FUN = function(x) {
+  if ("individualCount" %in% colnames(x)) {
+     ds <- st_drop_geometry(x[x$individualCount > 0, "simpleScientificName"])
+  } else {ds <- st_drop_geometry(x[,"simpleScientificName"])}
+  ds
+})) %>% group_by(simpleScientificName) %>% tally() %>% filter(n > speciesOccurrenceThreshold)
+countedData2 <- lapply(maskedData, FUN = function(x2) {
+  ds <- x2[x2$simpleScientificName %in% countedData$simpleScientificName,]
+  ds
+})
+countedData2 <- countedData2[lapply(countedData2,nrow)>0]
+
+qsave(countedData2, paste0(folderName, "/speciesDataProcessed.qs"))
 #saveRDS(maskedData, paste0(folderName, "/speciesDataProcessed.RDS"))
 
 
@@ -197,58 +237,77 @@ qsave(maskedData, paste0(folderName, "/speciesDataProcessed.qs"))
 ###--------------------------------###
 
 # Edit data frames to have the same number of columns
-processedDataCompiled <- do.call(rbind, lapply(1:length(maskedData), FUN = function(x) {
-  dataset <- maskedData[[x]]
-  datasetName <- names(maskedData)[x]
+processedDataCompiled <- do.call(rbind, lapply(1:length(countedData2), FUN = function(x) {
+  dataset <- countedData2[[x]]
+  datasetName <- names(countedData2)[x]
   datasetType <- unique(dataset$dataType)
   if (!("individualCount" %in% colnames(dataset))) {
     dataset$individualCount <- 1
   }
   datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType", 
-                              "taxonKeyProject", "simpleScientificName")]
+                              "taxonKeyProject", "simpleScientificName", "redListStatus")]
   datasetShort$dsName <- datasetName
   datasetShort
 }))
-
-# Remove absences, combine into one data frame and add date accessed
-processedPresenceData <- processedDataCompiled[processedDataCompiled$individualCount > 0,]
-processedRedListPresenceData <- processedPresenceData[processedPresenceData$acceptedScientificName %in% redList$GBIFName,]
-#saveRDS(processedPresenceData, paste0(folderName, "/processedPresenceData.RDS"))
-qsave(processedPresenceData, paste0(folderName, "/processedPresenceData.qs"))
+write_sf(processedDataCompiled, file.path(extFolderName, "speciesDataProcessed.gpkg"), append = FALSE)
 
 
-# ###----------------------------###
-# ### 6. Produce red list check ####
-# ###----------------------------###
-# 
-# Here we see which species have sufficient presence/count data to actually run an individual species model
-redListSpecies <- filterByRedList(redList$GBIFName, processedPresenceData, 50)
-redList$valid <- redList$GBIFName %in% redListSpecies$validSpecies
-saveRDS(redList, paste0(folderName, "/redList.RDS"))
+###--------------------###
+### 9. update JSON    ####
+###--------------------###
 
-###-----------------------------------###
-### 7. Produce species richness data ####
-###-----------------------------------###
+finalDataSummary <- st_drop_geometry(processedDataCompiled) %>%
+  group_by(dsName, taxa) %>%
+  summarise(totalObs = n(),
+            totalRec = sum(individualCount > 0),
+            totalSpecies = n_distinct(simpleScientificName)) %>%
+  as.data.frame()
 
-# Provide empty raster
-envImport <- if (temporal) unwrap(readRDS(paste0(folderName, "/environmentalDataImported.RDS"))[[1]]) else 
-  rast(paste0(folderName, "/environmentalDataImported.tiff"))
-blankRaster <- terra::project(envImport[[1]], paste0("EPSG:",crs))
-allSpeciesRichness <- speciesRichnessConverter(regionGeometry, processedPresenceData, blankRaster)
-writeRaster(allSpeciesRichness$rasters, paste0(folderName, "/speciesRichnessData.tiff"), overwrite=TRUE)
-saveRDS(allSpeciesRichness$richness, paste0(folderName, "/speciesRichnessData.RDS"))
+finalDataSummary2 <- st_drop_geometry(processedDataCompiled) %>%
+  group_by(dsName, dataType) %>%
+  tally()
+finalDataSummary2$processing <- unlist(lapply(finalDataSummary2$dsName, FUN = function(x) {
+  unique(speciesData$processing[speciesData$name == x])
+}))
 
-if(nrow(processedRedListPresenceData) > 0){
-  redListRichness <- speciesRichnessConverter(regionGeometry, processedRedListPresenceData, blankRaster)
-  writeRaster(redListRichness$rasters, paste0(folderName, "/redListRichnessData.tiff"), overwrite=TRUE)
-  saveRDS(redListRichness$richness, paste0(folderName, "/redListRichnessData.RDS"))
+firstup <- function(x) {
+  substr(x, 1, 1) <- toupper(substr(x, 1, 1))
+  x
 }
+finalDataSummary2$processingScript <- ifelse(finalDataSummary2$processing == "presenceOnly", NA,
+                                             paste0("https://github.com/gjearevoll/BioDivMapping/blob/main/functions/process",firstup(finalDataSummary2$processing),".R"))
 
-###----------------------###
-### 8. Produce metadata ####
-###----------------------###
+# read existing json
+json_ls <- jsonlite::fromJSON(file.path(extFolderName, "metadata.json"))
 
-# To add metadata we need to reformat the data as one data frame, as opposed to the list format it is currently in.
-rmarkdown::render("pipeline/integration/utils/metadataProduction.Rmd", output_file = paste0("../../../",folderName, "/speciesMetadata.html"))
+# define json content
+json_ls$step_1b <- list(
+  n_datasets = length(countedData2),
+  n_total_obs = nrow(processedDataCompiled[processedDataCompiled$individualCount > 0,]),
+  n_total_rec = nrow(processedDataCompiled),
+  n_total_species = length(unique(processedDataCompiled$simpleScientificName)),
+  n_total_redlist_obs = nrow(processedDataCompiled[processedDataCompiled$individualCount > 0 & !is.na(processedDataCompiled$redListStatus),]),
+  n_total_redlist_rec = nrow(processedDataCompiled[!is.na(processedDataCompiled$redListStatus),]),
+  n_total_redlist_species =  length(unique(processedDataCompiled$simpleScientificName[!is.na(processedDataCompiled$redListStatus)])),
+  dataset_summary = list(
+    dataset = finalDataSummary$dsName,
+    taxa = finalDataSummary$taxa,
+    n_total_obs = finalDataSummary$totalObs,
+    n_total_rec = finalDataSummary$totalRec,
+    n_total_species = finalDataSummary$totalSpecies
+  ),
+  dataset_processing = list(
+    dataset = finalDataSummary2$dsName,
+    dataset_category = finalDataSummary2$dataType,
+    dataset_processing = finalDataSummary2$processingScript
+    
+  )
+  
+)
+
+# write json
+jsonlite:::write_json(json_ls,
+                      file.path(extFolderName, "metadata.json"), 
+                      pretty = TRUE)
 
 

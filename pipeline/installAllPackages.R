@@ -21,7 +21,8 @@ necessaryPackages <- c("rgbif", "sf", "stringr", "dplyr", "rinat", "raster", "cs
                        "fasterize", "httr", "jsonlite",
                        "tidyterra", "MODISTools", "MODIStsp", 
                        "qs", "spatstat",
-                       "concaveman","cartogramR")
+                       "concaveman","cartogramR",
+                       "kableExtra", "ncdf4")
 uninstalledPackages <- necessaryPackages[!(necessaryPackages %in% row.names(installedPackages))]
 if("MODIStsp" %in% uninstalledPackages) devtools::install_github("ropensci/MODIStsp")
 install.packages(uninstalledPackages)

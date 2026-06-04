@@ -33,11 +33,12 @@ region <- "Norway"
 # coordinate reference system to use for project. as accepted by sf::st_crs()
 crs <- 25833 
 # resolution in units of CRS (eg m in UTM, or degrees in lat/long)
-res <- 1000        # Resolution that covariates should be modelled at
+res <- 500        # Resolution that covariates should be modelled at
 # Coordinate uncertainty to filter to in GBIF
 coordUncertainty <- 250
+issuesToFlag <- c("ZERO_COORDINATE|COORDINATE_OUT_OF_RANGE|COORDINATE_INVALID|COORDINATE_PRECISION_INVALID|COORDINATE_UNCERTAINTY_METRES_INVALID")
 # Give first year data can be taken from
-yearToStart <- 2000
+yearToStart <- 2018
 # Parameters to define mesh for random fields
 myMesh <- list(cutoff = 3*1000, max.edge=c(50, 300) * 1000, offset= c(20, 100) * 1000)
 # whether to use schedule download for GBIF data
@@ -57,7 +58,8 @@ prior.sigma <- c(0.8, 0.01)
 parallelisation <- FALSE
 # Indicates whether model should be temporal, and which time intervals we use
 temporal <- TRUE
-yearInterval <- c(2000, 2006, 2012, 2018)
+yearInterval <- NA
+yearInterval <- 2012:2018
 maskCityData <- TRUE
 
 # Indicates whether we want to download the ANOData or use the data from file
@@ -92,16 +94,16 @@ source("pipeline/import/defineRegionGeometry.R")
 # and enable handling of much larger datasets. If you're playing around with a small dataset, you can probably hit 
 # FALSE above, at line 40.
 
-source("pipeline/import/taxaImport.R")
-
-# Next we run the environmental import script, which brings in a set of rasters that apply to the region
-# we defined in the last step.
-
-source("pipeline/import/environmentalImport.R")
+source("pipeline/import/speciesDataImport.R")
 
 # Next we start on data processing, which adds extra information to our datasets.
 
 source("pipeline/integration/speciesDataProcessing.R")
+
+# Next we run the environmental import script, which brings in a set of rasters that apply to the region
+# we defined in the last step.
+source("pipeline/import/environmentalImport.R")
+source("pipeline/integration/environmentalProcessing.R")
 
 # We then run our models. NOTE: This is the point where defining a Mesh becomes important. You can read
 # more about what a Mesh is, and how it works in the README.md file in the head of the repository, or in the
@@ -111,7 +113,7 @@ myMesh <- list(cutoff = 3*1000, max.edge=c(50, 300) * 1000, offset= c(20, 100) *
 meshTest(myMesh, regionGeometry, print = TRUE, crs = crs)
 
 # If you find a mesh that is more suitable, you can update the mesh in your controlPars using the following function:
-updateModel(dateAccessed, object = "myMesh", newValue = myMesh)
+updateModel(dateAccessed, issuesToFlag = c("ZERO_COORDINATE|COORDINATE_OUT_OF_RANGE|COORDINATE_INVALID|COORDINATE_PRECISION_INVALID|COORDINATE_UNCERTAINTY_METRES_INVALID"))
 
 # Once you've figured that out, you can start running the models. Remember that this stage will be the longest.
 # If you are running this for all of Norway, at this point automation is unfortunately not an option, and you

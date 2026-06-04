@@ -129,12 +129,15 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   # Get rid of data before 1991
   eventTableWithOccurrences <- eventTableWithOccurrences[eventTableWithOccurrences$year >= yearToStart,]
   
+  # Add red list status back in
+  eventTableWithOccurrences$redListStatus <- focalData$redListStatus[match(eventTableWithOccurrences$acceptedScientificName, 
+                                                                           focalData$acceptedScientificName)]
   
   # New dataset is ready!
   newDataset <- st_as_sf(eventTableWithOccurrences,          
                          crs = crs)
   newDataset <- newDataset %>%
-    dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject, eventID) %>%
+    dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject, eventID, redListStatus) %>%
     filter(!is.na(acceptedScientificName))
  
   saveRDS(newDataset, paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS"))

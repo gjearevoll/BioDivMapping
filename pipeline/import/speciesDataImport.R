@@ -11,6 +11,7 @@ library(sf)
 library(stringr)
 library(dplyr)
 library(rinat)
+library(jsonlite)
 
 # Import local functions
 sapply(list.files("functions", full.names = TRUE), source)
@@ -72,11 +73,6 @@ if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
   stop("Please source defineRegionGeometry.R first.")
 }
 
-# Import metadata information
-if(file.exists(paste0(folderName, "/metadataSummary.csv"))){
-  dataTypes <- read.csv(paste0(folderName, "/metadataSummary.csv"))
-} 
-
 ###---------------------###
 ### 2. Filter Red list ####
 ###---------------------###
@@ -95,7 +91,6 @@ redList$taxa <- ifelse(redList$GBIFName %in% polyphyleticSpecies$acceptedScienti
 
 # Cut out NAs and save redList
 redList <- redList[!is.na(redList$taxa),]
-
 
 ###-----------------###
 ### 3. GBIF Import ####
@@ -142,47 +137,37 @@ if (scheduledDownload) {
   occurrences <- do.call(rbind, gbifImportsPerTaxa)
 }
 
-###------------------------------###
-### 3. Attach relevant metadata ####
-###------------------------------###
+### Attach metadata
 
 # Now we import metadata related to GBIF data
 metadataList <- metadataPrep(occurrences, metaSummary = TRUE)
 
 # Import dataset type based on dataset name. If no dataset information is provided, all data will be downloaded and assumed to
 # be presence only data
-GBIFImportCompiled <- merge(occurrences, metadataList$metadata, all.x=TRUE, by = "datasetKey")
+occurrences <- merge(occurrences, metadataList$metadata, all.x=TRUE, by = "datasetKey")
 
-# Import relevant datasets
-if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
-  GBIFImportCompiled$processing <- dataTypes$processing[match(GBIFImportCompiled$datasetKey, dataTypes$datasetKey)]
-} else {
-  GBIFImportCompiled$processing <- "presenceOnly"  
-}
-GBIFImportCompiled <- GBIFImportCompiled[!is.na(GBIFImportCompiled$processing),]
+# Include red list
+occurrences$redListStatus <- redList$status[match(occurrences$acceptedScientificName, redList$GBIFName)]
 
-# Narrow down to known data types and split into data frames
-projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
-GBIFLists <- lapply(unique(GBIFImportCompiled$name), FUN  = function(x) {
-  GBIFItem <- GBIFImportCompiled[GBIFImportCompiled$name == x,]
-  GBIFItem <- st_as_sf(GBIFItem,                         
-                       coords = c("decimalLongitude", "decimalLatitude"),
-                       crs = projcrs)
-  GBIFcropped <- st_intersection(GBIFItem, st_transform(regionGeometry, crs = projcrs))
-  GBIFcropped
-})
+# Get basic data summary
+datasetSummaries <- occurrences %>%
+  group_by(taxa, name) %>%
+  summarise(totalObs = n(),
+            totalRedListObs = sum(!is.na(redListStatus)),
+            totalSpecies = n_distinct(acceptedScientificName),
+            totalRedListSpecies = n_distinct(acceptedScientificName[!is.na(redListStatus)]))
 
-names(GBIFLists) <- unique(GBIFImportCompiled$name)
 
 ###----------------###
 ### 4. ANO Import ####
 ###----------------###
 
-# Import data from external sources using specialised scripts. For now, the only external data imported
-# is from ANO.
-if ("vascularPlants" %in% focalTaxon$taxa) {
-  GBIFLists[["ANOData"]] <- importANOData(tempFolderName, regionGeometry, focalTaxon, download = downloadANOData)
-}
+# # Import data from external sources using specialised scripts. For now, the only external data imported
+# # is from ANO.
+# if ("vascularPlants" %in% focalTaxon$taxa) {
+#   ANOImport <- importANOData(tempFolderName, regionGeometry, focalTaxon, download = downloadANOData)
+# }
+
 
 ###--------------------###
 ### 5. Dataset Upload ####
@@ -190,7 +175,31 @@ if ("vascularPlants" %in% focalTaxon$taxa) {
 
 # For now we're just doing this to the data/temp folder, later this will go to Wallace. A version also needs to be saved in
 # the visualisation folder though, as this will go into the occurrence mapping.
-dataList <- list(species = GBIFLists, redList = redList, metadata = metadataList, projcrs = projcrs)
-attr(dataList, "level") <- attr(regionGeometry, "level")
-attr(dataList, "region") <- attr(regionGeometry, "region")
-saveRDS(dataList, paste0(folderName, "/temp/speciesDataImported.RDS"))
+write_sf(occurrences, file.path(extFolderName, "speciesDataImported.gpkg"), append = FALSE)
+
+###--------------------###
+### 6. Update JSON    ####
+###--------------------###
+
+# read existing json
+json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
+
+# define json content
+json_ls$step_1a <- list(
+  doi =  gbif_citation(downloadKey$key)$download,
+  n_datasets = length(unique(occurrences$datasetKey)),
+  n_species = length(unique(occurrences$acceptedScientificName)),
+  n_observations = nrow(occurrences),
+  datasetSummaries = list(taxa = datasetSummaries$taxa,
+              dataset = datasetSummaries$name,
+              n_observations = datasetSummaries$totalObs,
+              n_redlist_observations = datasetSummaries$totalRedListObs,
+              n_species = datasetSummaries$totalSpecies,
+              n_redlist_species = datasetSummaries$totalRedListSpecies)
+)
+
+# write json
+jsonlite:::write_json(json_ls,
+                      file.path(extFolderName, "metadata.json"), 
+                      pretty = TRUE)
+

@@ -40,7 +40,16 @@ if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed
 
 # Specify folders for storage of all run data
 folderName <- paste0("data/run_", dateAccessed)
-tempFolderName <- paste0(folderName, "/temp")
+# define tempFolderName
+if (exists("tempFolderName")){
+  if (is.null(tempFolderName)) {
+    # create if defined as NULL
+    tempFolderName <- paste0(folderName, "/temp")
+  }
+} else {
+  # create if it is not defined
+  tempFolderName <- paste0(folderName, "/temp")
+}
 
 # model output folder
 modelFolderName <- paste0(folderName, "/modelOutputs")
@@ -56,7 +65,7 @@ redList <- readRDS(paste0(folderName, "/redList.RDS"))
 # Import datasets
 regionGeometry <- readRDS(paste0(folderName, "/regionGeometry.RDS"))
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
-environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
+environmentalDataList <- rast(paste0(extFolderName, "/environmentalDataImported.tiff"))
 speciesData <- readRDS(paste0(folderName, "/speciesDataProcessed.RDS"))
 projCRS <- readRDS(paste0(tempFolderName,"/projCRS.RDS"))
 
@@ -167,3 +176,41 @@ for (i in seq_along(workflowList)) {
 
 
 
+###--------------------###
+### 3. update JSON    ####
+###--------------------###
+
+# read existing json
+json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
+
+# define json content
+json_ls$step_3b <- list(
+ 
+)
+
+# write json
+jsonlite:::write_json(json_ls,
+                      file.path(extFolderName, "metadata.json"), 
+                      pretty = TRUE)
+
+
+
+# programing language (eg. R, python )
+# modelling framework ()
+## pointprocess integrated SDM
+## eg INLA
+## statistical type: Beyesian 
+# modelling library  (eg, intSDM, pointDSDM, inlabru, INLA, baseR)
+# library citation 
+
+# library-spceficic definitions
+## nSegment <- 10  # number of spp per segment
+## mesh
+## model priors
+### prior.range <- c(15 * 1000, 0.01)
+### prior.sigma <- c(0.8, 0.01)
+## speciesSpatial = 'replicate', 
+## kFoldCV
+### type (eg dataset, blocked)
+### <arguments/definition># (eg number of segments) 
+## ... # (other eg. hierarchical)

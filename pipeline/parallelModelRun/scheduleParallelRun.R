@@ -190,3 +190,62 @@ end <- Sys.time()
 timeTaken <- end - start
 print(timeTaken)
 saveRDS(nThreads * timeTaken, paste0(folderName, "/modelOutputs/", focalGroup, "/timeTaken.RDS"))
+
+
+###--------------------###
+### 2. update JSON    ####
+###--------------------###
+
+# read existing json
+json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
+
+# define json content
+json_ls$step_3a <- list(
+
+  #Information about the model
+  modelInformation = list(
+  modelFramework = 'Point process',
+  modelType = 'Integrated species distribution model',
+  modelMethod = 'Integrated nested Laplace approximation',
+  statisticalMethodology = 'Bayesian',
+  RVersion = R.version.string,
+  packageCitations = c(INLA = citation('INLA')$doi,
+                       inlabru = citation('inlabru')$doi,
+                       PointedSDMs = citation('PointedSDMs')$doi,
+                       intSDM = citation('intSDM')$doi),
+  packageVersions = c(INLA = packageVersion('INLA'),
+                      inlabru = packageVersion('inlabru'),
+                      PointedSDMs = packageVersion('PointedSDMs'),
+                      intSDM = packageVersion('intSDM'))
+  )
+  ,
+  #Model outputs
+  modelDefinition = list(
+  modelPriors = INLA:::inla.priors.used(richnessModel), ## Won’t work nicely for PC priors
+  inlabruComponents = richnessModel$componentsJoint,
+  modelFamilies = sapply(richnessModel$bru_info$lhoods, function(x) x$family),
+  modelLink = setNames(sapply(richnessModel$.args$control.family, function(x) x$link), richnessModel$source),
+  modelFormulas = sapply(richnessModel$bru_info$lhoods,
+                         function(x) update.formula(x$formula,
+                                                    new = formula(paste('. ~',
+                                                           paste0(x$used$effect,
+                                                                  collapse = ' + ')))))
+  )
+)
+# write json
+jsonlite:::write_json(json_ls,
+                      file.path(extFolderName, "metadata.json"),
+                      pretty = TRUE)
+
+#obj_size(richnessModel)
+reducedModel <- reset_environments(richnessModel)
+qsave(reducedModel, paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.qs"))
+file.remove(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.rds"))
+
+print(folderName)
+print(focalGroup)
+
+end <- Sys.time()
+timeTaken <- end - start
+print(timeTaken)
+saveRDS(nThreads * timeTaken, paste0(folderName, "/modelOutputs/", focalGroup, "/timeTaken.RDS"))

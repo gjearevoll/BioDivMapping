@@ -128,11 +128,7 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   
   # Get rid of data before 1991
   eventTableWithOccurrences <- eventTableWithOccurrences[eventTableWithOccurrences$year >= yearToStart,]
-  
-  # Add red list status back in
-  eventTableWithOccurrences$redListStatus <- focalData$redListStatus[match(eventTableWithOccurrences$acceptedScientificName, 
-                                                                           focalData$acceptedScientificName)]
-  
+
   # New dataset is ready!
   newDataset <- st_as_sf(eventTableWithOccurrences,          
                          crs = crs)

@@ -62,8 +62,6 @@ yearInterval <- NA
 yearInterval <- 2012:2018
 maskCityData <- TRUE
 
-# Indicates whether we want to download the ANOData or use the data from file
-downloadANOData <- FALSE
 
 # If we have already run some code with the same dateAccessed and we want to 
 # re-start the initialisation process:

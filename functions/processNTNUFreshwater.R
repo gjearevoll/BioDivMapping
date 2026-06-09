@@ -14,7 +14,7 @@
 #' @import sf
 #' 
 #' 
-processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon,
+processNTNUFreshwater <- function(focalEndpoint, tempFolderName, datasetName, regionGeometry, focalTaxon,
                                    crs, coordUncertainty, yearToStart) {
   
   # Get the relevant endpoint
@@ -62,7 +62,7 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   # Find only eventIDs within our regionGeometry
   eventLocations <- events %>%
     filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) %>%
-    dplyr::select(decimalLatitude, decimalLongitude, eventID, coordinateUncertaintyInMeters) %>%
+    dplyr::select(decimalLatitude, decimalLongitude, eventID, coordinateUncertaintyInMeters, samplingProtocol) %>%
     distinct()
   eventLocationsSF <- st_as_sf(eventLocations,                         
                                coords = c("decimalLongitude", "decimalLatitude"),
@@ -83,42 +83,42 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
     dplyr::select(year, eventID) %>%
     distinct()
   
-  # # Find species found each year FOR LATER
-  # speciesDates <- occurrence %>%
-  #   dplyr::select(eventID, scientificName) %>%
-  #   distinct()
-  # speciesDates$year <- eventDates$year[match(speciesDates$eventID, eventDates$eventID)]
-  # speciesDates <- speciesDates[,c("scientificName", "year")] %>%
-  #   distinct()
-  
   # Build a species table
   speciesLegend <- data.frame(surveyedSpecies = surveyedSpecies, 
                               acceptedScientificName = sapply(surveyedSpecies, FUN = findGBIFName),
                               taxonKey = sapply(surveyedSpecies, FUN = function(x) {taxaCheck(x, focalTaxon$key)})) %>%
-    filter(!is.na(taxonKey))
+    filter(!is.na(taxonKey) & !is.na(acceptedScientificName))
   if (nrow(speciesLegend) == 0) {return(NULL)}
   
-  # Create table with all data combinations that we can match to
-  eventTable <- expand.grid(species = speciesLegend$surveyedSpecies, eventID = unique(eventLocationsSF$eventID))
-  eventTable <- merge(eventTable, eventDates, all.x = TRUE, by = "eventID")
   
-  # # Create table with all data combinations that we can match to FOR LATER
-  ## Note that later (line 109) you'll need to add to merge by year too
-  # eventTable <- do.call(rbind, lapply(unique(speciesDates$year), FUN = function(y) {
-  #   yearSpecies <- speciesDates$scientificName[speciesDates$year == y]
-  #   yearEvents <- eventDates$eventID[eventDates$year == y]
-  #   expand.grid(species = yearSpecies, eventID = yearEvents, year = y)
-  # }))
+  # Start constructing table- do this per sampling protocol
+  samplingProtocols <- unique(eventLocationsSF$samplingProtocol)
+  eventList <- lapply(samplingProtocols, FUN = function(sp) {
+    speciesSampled <- unique(occurrence$scientificName[occurrence$samplingProtocol == sp])
+    speciesSampled2 <- speciesSampled[speciesSampled %in% speciesLegend$surveyedSpecies]
+    eventIDsUsed <- unique(eventLocationsSF$eventID[eventLocationsSF$samplingProtocol == sp])
+    if (length(speciesSampled2) == 0) {
+      return(NA)
+    } else {
+      return(expand.grid(scientificName = speciesSampled2, eventID = eventIDsUsed))
+    }
+  })
+  
+  # Remove empty events
+  eventList2 <- eventList[unlist(lapply(eventList, FUN = function(x) {!is.null(nrow(x))}))]
+  
+  eventTable <- do.call(rbind, eventList2)
+  eventTable <- merge(eventTable, eventDates, all.x = TRUE, by = "eventID")
   
   # Create an individual count 
   occurrence$individualCount <- 1
   
   # Add in occurrence data, an NA in individualCount column means the species was NOT found in the survey
   eventTableWithOccurrences <- merge(eventTable, occurrence[,c("eventID", "scientificName", "individualCount")], all.x = TRUE,
-                                     by.x = c("species", "eventID"), by.y = c("scientificName", "eventID"))
+                                     by.x = c("scientificName", "eventID"), by.y = c("scientificName", "eventID"))
   eventTableWithOccurrences$individualCount[is.na(eventTableWithOccurrences$individualCount)] <- 0
   eventTableWithOccurrences$geometry <- eventLocationsSF$geometry[match(eventTableWithOccurrences$eventID, eventLocationsSF$eventID)]
-  eventTableWithOccurrences$acceptedScientificName <- speciesLegend$acceptedScientificName[match(eventTableWithOccurrences$species, speciesLegend$surveyedSpecies)]
+  eventTableWithOccurrences$acceptedScientificName <- speciesLegend$acceptedScientificName[match(eventTableWithOccurrences$scientificName, speciesLegend$surveyedSpecies)]
   
   # Add final columns
   eventTableWithOccurrences$dataType <- "PA"
@@ -128,14 +128,18 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   
   # Get rid of data before 1991
   eventTableWithOccurrences <- eventTableWithOccurrences[eventTableWithOccurrences$year >= yearToStart,]
-
+  
+  
   # New dataset is ready!
   newDataset <- st_as_sf(eventTableWithOccurrences,          
                          crs = crs)
   newDataset <- newDataset %>%
     dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject, eventID) %>%
-    filter(!is.na(acceptedScientificName))
- 
-  saveRDS(newDataset, paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS"))
-  return(newDataset)
+    filter(!is.na(acceptedScientificName)) %>% arrange(desc(individualCount))
+  
+  # Remove any duplicates (species repeatedly sampled at the same event using different protocols)
+  newDataset2 <- newDataset[!duplicated(newDataset[,c("geometry", "acceptedScientificName", "individualCount")]),]
+  
+  saveRDS(newDataset2, paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS"))
+  return(newDataset2)
 }

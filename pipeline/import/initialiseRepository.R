@@ -103,7 +103,6 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
                       prior.range = prior.range,
                       prior.sigma = prior.sigma,
                       nSegment = nSegment,
-                      downloadANOData = downloadANOData,
                       speciesOccurrenceThreshold = speciesOccurrenceThreshold,
                       datasetOccurrenceThreshold = datasetOccurrenceThreshold,
                       temporal = temporal,

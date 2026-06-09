@@ -28,9 +28,9 @@ e4deab67-0998-4140-b573-0ba1f624eb3e,"Fungarium, Oslo (O) UiO",presenceOnly,FALS
 d0aa984e-c6d3-45ee-8fc0-df1df8f4126b,"Vascular plant herbarium, The Arctic University Museum of Norway (TROM)",presenceOnly,FALSE
 88ea9eca-96ad-4a5a-8a01-99a4acabe050,"Vascular Plants, Observations, Oslo (O)",fieldNotesOslo,FALSE
 30bc94f2-50aa-4688-8e87-a8e11d3d69ff,Vascular plant herbarium (KMN) UiA,presenceOnly,FALSE
-33591b80-0e31-480c-82ce-2f57211b10e6,Freshwater benthic invertebrates ecological collection NTNU University Museum,fieldNotesEvent,FALSE
+33591b80-0e31-480c-82ce-2f57211b10e6,Freshwater benthic invertebrates ecological collection NTNU University Museum,NTNUFreshwater,FALSE
 6ce9819a-d82b-41e1-9059-0dd201f15993,"Entomological collections, UiB",presenceOnly,FALSE
-edd9b710-f3bb-4c49-9fa5-724cd4ecfc7d,Freshwater pelagic invertebrates ecological collection NTNU University Museum,fieldNotesEvent,FALSE
+edd9b710-f3bb-4c49-9fa5-724cd4ecfc7d,Freshwater pelagic invertebrates ecological collection NTNU University Museum,NTNUFreshwater,FALSE
 c5fe763f-6851-4610-bdc3-67143540be67,Effects of vegetation clearing and dead wood on beetles in power line clearings southeast Norway,fieldNotesEvent,FALSE
 67780c67-2157-4809-8b51-0b47a7ae8d3b,Beetles from Old Spruce Forests in Southern Norway 2019,NA,FALSE
 fbcbdda3-abc2-47ae-9b8e-b75ab1128d54,Saproxylic and herbivorous beetle species in old near-natural and old managed forests in south-eastern Norway,fieldNotesEvent,FALSE
@@ -135,4 +135,8 @@ ed391b37-d3d3-4efd-9419-1583c39c0c87,NHMO DNA Bank Fungi and Lichens collection,
 ea0bb0f7-84cc-4541-96a2-837003f31d99,Norwegian freshwater lake fish inventory,"freshwaterFishInventory",FALSE
 f372a689-31ef-46af-9552-78f90cab9a9a,Salmonidae in streams,"presenceOnly",FALSE
 df12ca07-f133-4550-ab3b-fde13f0e76ba,"Notebook, general observations","presenceOnly",FALSE
-46293000-ddd1-4c32-a1e7-b5e793223ecd,"Vannmiljø - artsforekomster","presenceOnly",FALSE
+46293000-ddd1-4c32-a1e7-b5e793223ecd,"Vannmiljø - artsforekomster","vannmiljo",FALSE
+"9e404d5d-64ce-4887-a0ae-150298c9a562","Polliland - Bees in semi-natural grasslands","presenceOnly",FALSE
+"7e380070-f762-11e1-a439-00145eb45e9a","Natural History Museum (London) Collection Specimens","presenceOnly",FALSE
+"66276aee-900b-4259-bc7a-bcfbcb6d56b8","NHMO DNA Bank Arthropod collection","presenceOnly",FALSE
+"edb656a0-71ad-418d-afb1-c5584283ba47","Arealrepresentativ naturovervåkning (ANO)","ANOData",FALSE

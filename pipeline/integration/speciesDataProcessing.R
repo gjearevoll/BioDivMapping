@@ -81,7 +81,7 @@ if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
 }
 speciesData <- speciesData[!is.na(speciesData$processing),]
 
-# Narrow down to known data types and split into data frames
+# Reproject datasets and narrow down to focal region
 projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 speciesData2 <- lapply(unique(speciesData$name), FUN  = function(x) {
   GBIFItem <- speciesData[speciesData$name == x,]
@@ -148,7 +148,6 @@ for (ds in seq_along(speciesData2)) {
                               polyphyleticSpecies$taxa[match(newDataset$acceptedScientificName, polyphyleticSpecies$acceptedScientificName)], 
                               newDataset$taxa)
   } 
-  
   
   # convert year to numeric
   newDataset$year <- as.numeric(newDataset$year)
@@ -221,9 +220,14 @@ countedData <- do.call(rbind, lapply(maskedData, FUN = function(x) {
      ds <- st_drop_geometry(x[x$individualCount > 0, "simpleScientificName"])
   } else {ds <- st_drop_geometry(x[,"simpleScientificName"])}
   ds
-})) %>% group_by(simpleScientificName) %>% tally() %>% filter(n > speciesOccurrenceThreshold)
+})) %>% group_by(simpleScientificName) %>% tally()
+
+# Identify species to keep
+speciesToKeep <- countedData[countedData$n > speciesOccurrenceThreshold,"simpleScientificName"]
+nSpeciesRemoved <- nrow(countedData) - nrow(speciesToKeep)
+cat("Removing", nSpeciesRemoved,"species with too few notifications")
 countedData2 <- lapply(maskedData, FUN = function(x2) {
-  ds <- x2[x2$simpleScientificName %in% countedData$simpleScientificName,]
+  ds <- x2[x2$simpleScientificName %in% speciesToKeep$simpleScientificName,]
   ds
 })
 countedData2 <- countedData2[lapply(countedData2,nrow)>0]

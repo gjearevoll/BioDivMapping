@@ -133,7 +133,7 @@ processFieldNotesEvent <- function(focalEndpoint, tempFolderName, datasetName, r
   newDataset <- st_as_sf(eventTableWithOccurrences,          
                          crs = crs)
   newDataset <- newDataset %>%
-    dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject, eventID, redListStatus) %>%
+    dplyr::select(acceptedScientificName, individualCount, geometry, dataType, taxa, year, taxonKeyProject, eventID) %>%
     filter(!is.na(acceptedScientificName))
  
   saveRDS(newDataset, paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS"))

@@ -113,7 +113,8 @@ if (dataSource == "geonorge") {
     rasterisedVersion <- round(rasterisedVersion/10)*10
   } else if (focalParameter == "habitat_heterogeneity") {
     message("Calculating heterogeneity based on raster data.")
-    croppedRaster <- crop(rasterisedVersion, ext(terra::project(baseRaster, rasterisedVersion)))
+    croppedRaster <- crop(rasterisedVersion, ext(terra::project(
+      vect(ext(baseRaster), crs = crs(baseRaster)), rasterisedVersion)))
     library(rasterdiv)
     cropFactor <- ifelse(res > 1000, 3, ifelse(res <= 100, 9, 5))
     rasterisedVersion <- Shannon(croppedRaster, window = cropFactor)
@@ -148,10 +149,10 @@ if (dataSource == "geonorge") {
 }  
 
 ### merge with requested download area to make missing data explicit
-rasterisedVersion <- extend(rasterisedVersion, terra::project(baseRaster, rasterisedVersion), snap = "out")
+rasterisedVersion <- extend(rasterisedVersion, project(vect(ext(baseRaster), crs = crs(baseRaster)), rasterisedVersion), snap = "out")
 
 ### generate descriptive file name and save
 if (focalParameter != "cs_density") {
   file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
-  writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
+  rasterisedVersion <- writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
 }

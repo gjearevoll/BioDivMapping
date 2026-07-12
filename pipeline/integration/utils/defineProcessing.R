@@ -13,11 +13,11 @@ if (file.exists(dataFileName)) {
   
   # 1. The national insect Monitoring in Norway dataset
 } else if (dataType == "insectMonitoring") {
-  newDataset <- processNationalInsectMonitoring(focalData, focalEndpoint, tempFolderName, crs, coordUncertainty)
+  newDataset <- processInsectMonitoring(focalData, focalEndpoint, tempFolderName, crs, coordUncertainty)
   
   # 1b. The national insect Monitoring in Norway dataset sturcture, but for other similar datasets
 } else if (dataType == "insectMonitoringStandard") {
-  newDataset <- processInsectMonitoring(focalData, focalEndpoint, tempFolderName, crs, coordUncertainty)
+  newDataset <- processInsectMonitoringStandard(focalData, focalEndpoint, tempFolderName, crs, coordUncertainty)
   
   # 2. ANO Data
 } else if (dataType == "ANOData") {

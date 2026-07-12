@@ -15,15 +15,23 @@
 
 processInsectMonitoring <- function(focalData, endpoint, tempFolderName, crs, coordUncertainty) {
   
-  # Download and unzip file in temp folder
-  #ptions(timeout=100)
-  download.file(focalEndpoint, paste0(tempFolderName,"/", datasetName ,".zip"), mode = "wb")
-  unzip(paste0(tempFolderName,"/", datasetName ,".zip"), exdir = paste0(tempFolderName,"/",  datasetName))
+  dataFileName <- paste0(tempFolderName,"/NationalInsectMonitoring/processedDataset.RDS")
+  if (file.exists(dataFileName)) {
+    cat("\tPre-processed version used\n")
+    newDataset <- readRDS(dataFileName)
+    return(newDataset)
+  }
   
-  # Load in event and occurrence data
-  events <- read.delim(paste0(tempFolderName,"/", datasetName ,"/event.txt")) %>%
-    filter(coordinateUncertaintyInMeters < coordUncertainty)
-  occurrence <- read.delim(paste0(tempFolderName,"/", datasetName ,"/occurrence.txt"))
+  # Download and unzip file in temp folder
+  options(timeout=100)
+  zippedDownload <- paste0(tempFolderName,"/NationalInsectMonitoring.zip")
+  download.file(endpoint, zippedDownload, mode = "wb")
+  unzip(paste0(tempFolderName,"/NationalInsectMonitoring.zip"), exdir = paste0(tempFolderName,"/NationalInsectMonitoring"))
+  
+  # Read in occurrence and event data
+  events <- read.delim(paste0(tempFolderName, "/NationalInsectMonitoring/event.txt"))
+  events <- events[events$coordinateUncertaintyInMeters <= coordUncertainty,]
+  occurrence <- read.delim(paste0(tempFolderName,"/NationalInsectMonitoring/occurrence.txt"))
   
   # There are four levels to this thing. Level 1 events are linked to level 2 by their parent ID and so forth.
   # Level 1 - Identification of an insect in a trap
@@ -76,9 +84,14 @@ processInsectMonitoring <- function(focalData, endpoint, tempFolderName, crs, co
   locations <- distinct(occurrencesWithEvent[,c("locationID", "decimalLatitude", "decimalLongitude")])
   ourDatasetLocated <- merge(ourDatasetAbundance, locations, all.x = TRUE, by = "locationID")
   
-  # Convert all NAs to 0, and all numbers above 0 to 1
+  # Convert all NAs to 0
   ourDatasetLocated$organismQuantity[is.na(ourDatasetLocated$organismQuantity)] <- 0
-  ourDatasetLocated$organismQuantity[ourDatasetLocated$organismQuantity > 1] <- 1
+
+  # replace count by dense rank  (eg, counts c(0,5,5,1) becomes c(0,2,2,1))
+  positive <- ourDatasetLocated$organismQuantity > 0
+  ourDatasetLocated$organismQuantity[positive] <-
+    match(ourDatasetLocated$organismQuantity[positive],
+          sort(unique(ourDatasetLocated$organismQuantity[positive])))
   
   # Convert this into an sf object
   newDataset <- st_as_sf(ourDatasetLocated, coords = c("decimalLongitude", "decimalLatitude"),
@@ -91,14 +104,14 @@ processInsectMonitoring <- function(focalData, endpoint, tempFolderName, crs, co
   # Crop to relevant region
   newDataset <- st_transform(newDataset, crs = crs)
   newDataset <- st_intersection(newDataset, regionGeometry)
-  newDataset$dataType <- "PA"
+  newDataset$dataType <- "Counts"
   
   taxaLegend <- distinct(st_drop_geometry(focalData[,c("taxa", "acceptedScientificName", "taxonKeyProject")]))
   
   newDataset$taxa <- taxaLegend$taxa[match(newDataset$acceptedScientificName, taxaLegend$acceptedScientificName)]
   newDataset$taxonKeyProject <- taxaLegend$taxonKeyProject[match(newDataset$acceptedScientificName, taxaLegend$acceptedScientificName)]
+  saveRDS(newDataset, paste0(tempFolderName,"/NationalInsectMonitoring/processedDataset.RDS"))
   
-  saveRDS(newDataset, paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS"))
   return(newDataset)
   
   

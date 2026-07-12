@@ -84,14 +84,9 @@ processInsectMonitoring <- function(focalData, endpoint, tempFolderName, crs, co
   locations <- distinct(occurrencesWithEvent[,c("locationID", "decimalLatitude", "decimalLongitude")])
   ourDatasetLocated <- merge(ourDatasetAbundance, locations, all.x = TRUE, by = "locationID")
   
-  # Convert all NAs to 0
+  # Convert all NAs to 0, and all numbers above 0 to 1
   ourDatasetLocated$organismQuantity[is.na(ourDatasetLocated$organismQuantity)] <- 0
-
-  # replace count by dense rank  (eg, counts c(0,5,5,1) becomes c(0,2,2,1))
-  positive <- ourDatasetLocated$organismQuantity > 0
-  ourDatasetLocated$organismQuantity[positive] <-
-    match(ourDatasetLocated$organismQuantity[positive],
-          sort(unique(ourDatasetLocated$organismQuantity[positive])))
+  ourDatasetLocated$organismQuantity[ourDatasetLocated$organismQuantity > 1] <- 1
   
   # Convert this into an sf object
   newDataset <- st_as_sf(ourDatasetLocated, coords = c("decimalLongitude", "decimalLatitude"),
@@ -104,7 +99,7 @@ processInsectMonitoring <- function(focalData, endpoint, tempFolderName, crs, co
   # Crop to relevant region
   newDataset <- st_transform(newDataset, crs = crs)
   newDataset <- st_intersection(newDataset, regionGeometry)
-  newDataset$dataType <- "Counts"
+  newDataset$dataType <- "PA"
   
   taxaLegend <- distinct(st_drop_geometry(focalData[,c("taxa", "acceptedScientificName", "taxonKeyProject")]))
   

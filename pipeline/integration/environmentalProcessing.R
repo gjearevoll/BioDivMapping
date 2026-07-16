@@ -1,7 +1,6 @@
 #### ENVIRONMENTAL DATA PROCESSINg ####
 
 
-library(raster)
 library(terra)
 library(sf)
 library(fasterize)

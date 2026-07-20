@@ -15,15 +15,23 @@
 
 processInsectMonitoring <- function(focalData, endpoint, tempFolderName, crs, coordUncertainty) {
   
-  # Download and unzip file in temp folder
-  #ptions(timeout=100)
-  download.file(focalEndpoint, paste0(tempFolderName,"/", datasetName ,".zip"), mode = "wb")
-  unzip(paste0(tempFolderName,"/", datasetName ,".zip"), exdir = paste0(tempFolderName,"/",  datasetName))
+  dataFileName <- paste0(tempFolderName,"/NationalInsectMonitoring/processedDataset.RDS")
+  if (file.exists(dataFileName)) {
+    cat("\tPre-processed version used\n")
+    newDataset <- readRDS(dataFileName)
+    return(newDataset)
+  }
   
-  # Load in event and occurrence data
-  events <- read.delim(paste0(tempFolderName,"/", datasetName ,"/event.txt")) %>%
-    filter(coordinateUncertaintyInMeters < coordUncertainty)
-  occurrence <- read.delim(paste0(tempFolderName,"/", datasetName ,"/occurrence.txt"))
+  # Download and unzip file in temp folder
+  options(timeout=100)
+  zippedDownload <- paste0(tempFolderName,"/NationalInsectMonitoring.zip")
+  download.file(endpoint, zippedDownload, mode = "wb")
+  unzip(paste0(tempFolderName,"/NationalInsectMonitoring.zip"), exdir = paste0(tempFolderName,"/NationalInsectMonitoring"))
+  
+  # Read in occurrence and event data
+  events <- read.delim(paste0(tempFolderName, "/NationalInsectMonitoring/event.txt"))
+  events <- events[events$coordinateUncertaintyInMeters <= coordUncertainty,]
+  occurrence <- read.delim(paste0(tempFolderName,"/NationalInsectMonitoring/occurrence.txt"))
   
   # There are four levels to this thing. Level 1 events are linked to level 2 by their parent ID and so forth.
   # Level 1 - Identification of an insect in a trap
@@ -97,8 +105,8 @@ processInsectMonitoring <- function(focalData, endpoint, tempFolderName, crs, co
   
   newDataset$taxa <- taxaLegend$taxa[match(newDataset$acceptedScientificName, taxaLegend$acceptedScientificName)]
   newDataset$taxonKeyProject <- taxaLegend$taxonKeyProject[match(newDataset$acceptedScientificName, taxaLegend$acceptedScientificName)]
+  saveRDS(newDataset, paste0(tempFolderName,"/NationalInsectMonitoring/processedDataset.RDS"))
   
-  saveRDS(newDataset, paste0(tempFolderName,"/", datasetName ,"/processedDataset.RDS"))
   return(newDataset)
   
   

@@ -1,7 +1,7 @@
 
 # 
-library(MODISTools)
-library(MODIStsp)
+# library(MODISTools)
+# library(MODIStsp)
 
 
 get_modis <- function(regionGeometry, projCRS, focalParameter, temporalFactor, yearInterval) {
@@ -10,18 +10,18 @@ get_modis <- function(regionGeometry, projCRS, focalParameter, temporalFactor, y
   ll <- st_bbox(Noreg_si)
   ll <- ll + c(-10000, -10000, 10000, 10000)
   
-  products <- MODIStsp_get_prodnames() # just a list of the available MODIS products
+  products <- MODIStsp::MODIStsp_get_prodnames() # just a list of the available MODIS products
   
   ### 1. Net primary productivity ####
   
   if (focalParameter == "net_primary_productivity") {
     
     # To get the NPP data
-    bands <- MODIStsp_get_prodlayers("Net_PP_GapFil_Yearly_500m (M*D17A3HGF)") # The different bands in the NPP data
-    dates <- mt_dates(product = "MYD17A3HGF", lat = 42, lon = -110) # not very important, annual data all are 01.01.YYYY
+    bands <- MODIStsp::MODIStsp_get_prodlayers("Net_PP_GapFil_Yearly_500m (M*D17A3HGF)") # The different bands in the NPP data
+    dates <- MODISTools::mt_dates(product = "MYD17A3HGF", lat = 42, lon = -110) # not very important, annual data all are 01.01.YYYY
     
     if (!dir.exists("data/temp/MODIS/nppMod")) {
-      test <- MODIStsp(gui=FALSE,
+      test <- MODIStsp::MODIStsp(gui=FALSE,
                        out_folder="data/temp/MODIS",
                        out_folder_mod="data/temp/MODIS/nppMod",
                        selprod="Net_PP_GapFil_Yearly_500m (M*D17A3HGF)",
@@ -90,12 +90,12 @@ get_modis <- function(regionGeometry, projCRS, focalParameter, temporalFactor, y
   
   else if (focalParameter == "ndvi_peak") {
     # Extract NDVI for spring and summer, and get the peak value (maximum NDVI during the year)
-    bands <- MODIStsp_get_prodlayers("Vegetation Indexes_16Days_250m (M*D13Q1)")
+    bands <- MODIStsp::MODIStsp_get_prodlayers("Vegetation Indexes_16Days_250m (M*D13Q1)")
     
     # we want "250m_16_days_NDVI", fill value is -3000, scale factor = 0.0001
     # documentation: https://lpdaac.usgs.gov/products/mod13q1v061/
     if (!dir.exists("data/temp/modis/ndviMod")) {
-    test <- MODIStsp(gui=FALSE,
+    test <- MODIStsp::MODIStsp(gui=FALSE,
                      out_folder="data/temp/modis",
                      out_folder_mod="data/temp/modis/ndviMod",
                      selprod="Vegetation Indexes_16Days_250m (M*D13Q1)",

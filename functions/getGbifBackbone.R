@@ -11,10 +11,25 @@ getGbifBackbone <- function(scientificNames){
   # first character to lower-case
   ScientificNames <- stringr::str_to_sentence(scientificNames)
   
-  # match names with gbif (in batches of 1000 to avoid time-out error)
-  batches <- split(ScientificNames, ceiling(seq_along(ScientificNames)/1000))
-  speciesNamelist <- lapply(batches, function(x) as.data.frame(rgbif::name_backbone_checklist(x)))
-  speciesNameTable <- do.call(dplyr::bind_rows, speciesNamelist)
+  # match names with gbif (in batches to avoid time-out error)
+  batches <- split(ScientificNames, ceiling(seq_along(ScientificNames)/200))
+  
+  # retry up to <tries> times if gbif keeps timing out 
+  # each fail, make sleep longer and batch smaller
+  speciesNameTable <- data.frame()
+  message("Obtaining GBIF backbone")
+  
+  for (b in seq_along(batches)) {
+    for (i in seq_len(5)) {
+      message(sprintf("Batch %d/%d, try %d/5", b, length(batches), i))
+      result <- tryCatch(
+        as.data.frame(rgbif::name_backbone_checklist(batches[[b]], sleep = 2^(i - 1), bucket_size = 300 %/% i)),
+        error = function(e) NULL
+      )
+      if (!is.null(result)) break
+    }
+    speciesNameTable <- dplyr::bind_rows(speciesNameTable, result)
+  }
   
   # warning message for missing match/species
   missingMatch <- ScientificNames[speciesNameTable$matchType == "NONE"]

@@ -54,7 +54,8 @@ if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
 }
 
 # Import datasets
-speciesData <- read_sf(file.path(extFolderName, "speciesDataImported.gpkg"))
+speciesData <- read_sf(file.path(extFolderName, "speciesDataImported.gpkg")) |>
+  rename(geometry = geom)
 
 # Import taxa list and data types for processing
 focalTaxon <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -81,13 +82,10 @@ if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
 }
 speciesData <- speciesData[!is.na(speciesData$processing),]
 
-# Reproject datasets and narrow down to focal region
-projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+# datasets and narrow down to focal region 
+# & split into list of datasets
 speciesData2 <- lapply(unique(speciesData$name), FUN  = function(x) {
   GBIFItem <- speciesData[speciesData$name == x,]
-  GBIFItem <- st_as_sf(GBIFItem,                         
-                       coords = c("decimalLongitude", "decimalLatitude"),
-                       crs = projcrs)
   GBIFcropped <- st_intersection(GBIFItem, st_transform(regionGeometry, crs = projcrs))
   GBIFcropped
 })

@@ -14,7 +14,7 @@ if(inherits(baseRaster, c("sf", "sfc"))){
 ### 1. geonorge ####
 if (dataSource == "geonorge") { 
   
-  if (focalParameter %in% c("slope", "aspect", "elevation")) {
+  if (focalParameter %in% c("slope", "aspect", "elevation", "easting", "northing")) {
     # check if encompassing corine alreadydownloaded
     elevation <- checkAndImportRast("elevation", baseRaster, dataPath)
     # download and save if missing
@@ -22,15 +22,38 @@ if (dataSource == "geonorge") {
       # download
       elevation <- get_geonorge(targetDir = tempFolderName, dataFormat = "TIFF")
       # save
-      file_path <- generateRastFileName(elevation, dataSource, "elevation", dataPath)
+      file_path <- generateRastFileName(elevation, "elevation", dataPath)
       writeRaster(elevation, filename = file_path, overwrite = TRUE)
     }
     
     # Now get the raster you're actually looking for
     if (focalParameter == 'elevation') {
       rasterisedVersion <- elevation
-    } else {
+    } else if (focalParameter %in% c("slope", "aspect")){
       rasterisedVersion <- terra::terrain(elevation, v=focalParameter, unit='degrees', neighbors=8)
+      if (focalParameter == "aspect") {
+        # convert to radians (*pi/180) &
+        # convert from clock-wise from N to counter-clockwise from east (+ pi/2)
+        rasterisedVersion <- pi/2 - rasterisedVersion*pi/180
+      } 
+    } else if (focalParameter %in% c( "easting", "northing")) {
+      # get aspect 
+      aspect <- checkAndImportRast("aspect", baseRaster, dataPath)
+      if(is.null(aspect)) {
+        # calculate aspect from elevation
+        aspect <- terra::terrain(elevation, v="aspect", unit='degrees', neighbors=8)
+        # convert to radians (*pi/180) &
+        # convert from clock-wise from N to counter-clockwise from east (+ pi/2)
+        aspect <- pi/2 - aspect*pi/180
+        # save for future
+        file_path <- generateRastFileName(aspect, "aspect", dataPath)
+        writeRaster(aspect, filename = file_path, overwrite = TRUE)
+      }
+      if (focalParameter == "easting") {
+        rasterisedVersion <- cos(aspect)
+      } else {  # "northing"
+        rasterisedVersion <- sin(aspect)
+      }
     }
   } else if (focalParameter %in% c("distance_water", "distance_roads")) {
     
@@ -65,15 +88,15 @@ if (dataSource == "geonorge") {
     rasterisedVersion <- rasterize(vectorBase, baseRasterHR, background = 0)
     # smooth with kernel smoothing
     rasterisedVersion <- potential_GPU(rasterisedVersion, 
-                         alphas = dist_to_alpha(dist = 1000,
-                                                thresh = 0.05,
-                                                shape = "gaus"),
-                         shape = "gaus", device = "cpu")
+                                       alphas = dist_to_alpha(dist = 1000,
+                                                              thresh = 0.05,
+                                                              shape = "gaus"),
+                                       shape = "gaus", device = "cpu")
     # drop to original resolution
     rasterisedVersion <- terra::project(rasterisedVersion, baseRaster, method = mean)
   }
   
-### 2. worldclim ####  
+  ### 2. worldclim ####  
 } else if (dataSource == "worldclim") {
   
   print(paste0("Downloading ", focalParameter," from ", dataSource))
@@ -98,15 +121,15 @@ if (dataSource == "geonorge") {
   # average
   rasterisedVersion <- mean(annualStack)
   
-### 3. SSB ####
+  ### 3. SSB ####
 } else if (dataSource == "ssb") {
-    rasterisedVersion <- get_ssb(focalParameter)
-    
-### 4. MODIS ####    
+  rasterisedVersion <- get_ssb(focalParameter)
+  
+  ### 4. MODIS ####    
 } else if (dataSource == "modis") {
   rasterisedVersion <- get_modis(regionGeometry, projCRS, focalParameter, temporalFactor, yearInterval)
   
-### 5. CORINE ###  
+  ### 5. CORINE ###  
 } else if (dataSource == "corine") {
   # check if encompassing corine alreadydownloaded
   rasterisedVersion <- checkAndImportRast("land_cover_corine", baseRaster, dataPath, quiet = TRUE, temporalFactor, yearInterval)
@@ -136,29 +159,29 @@ if (dataSource == "geonorge") {
     library(rasterdiv)
     cropFactor <- ifelse(res > 1000, 3, ifelse(res <= 100, 9, 5))
     rasterisedVersion <- Shannon(croppedRaster, window = cropFactor)
-    }
+  }
   
-### 6. Chelsa ###  
+  ### 6. Chelsa ###  
 } else if (dataSource == "chelsa") {
   rasterisedVersion <- get_chelsa(focalParameter)
   
-### 7. NIBIO ###
+  ### 7. NIBIO ###
 } else if (dataSource == "nibio") {
   rasterisedVersion <- get_nibio(baseRaster)
   
-### 8. Artsdatabanken ###
+  ### 8. Artsdatabanken ###
 } else if (dataSource == "artsdatabanken") {
   rasterisedVersion <- get_artsdatabanken()
-
-### 9. NGU ###
+  
+  ### 9. NGU ###
 } else if (dataSource == "ngu") {
   rasterisedVersion <- get_ngu(regionGeometry, projCRS)
-
-### 10. MET ###  
+  
+  ### 10. MET ###  
 } else if (dataSource == "met") {
   rasterisedVersion <- get_met(focalParameter, dataPath)
-
-### 10. MET ###  
+  
+  ### 10. MET ###  
 } else if (dataSource == "gbif") {
   citizenDatasets <- c("Norwegian Species Observation Service", "iNaturalist Research-grade Observations")
   rasterisedVersion <- get_cs_density(dateAccessed, regionGeometry, citizenDatasets, yearInterval, crs)

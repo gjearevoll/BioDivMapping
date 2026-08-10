@@ -1,4 +1,4 @@
-parameters,external,dataSource,quadratic," ""categorical""",temporal,reclassFile
+parameters,external,dataSource,quadratic, categorical,temporal,reclassFile
 aspect,TRUE,geonorge,FALSE,FALSE,FALSE,
 elevation,TRUE,geonorge,FALSE,FALSE,FALSE,
 precipitation,FALSE,worldclim,FALSE,FALSE,FALSE,
@@ -19,3 +19,5 @@ summer_precipitation,TRUE,met,TRUE,FALSE,FALSE,
 summer_temperature,TRUE,met,TRUE,FALSE,TRUE,
 habitat_heterogeneity,TRUE,corine,FALSE,FALSE,FALSE,
 cs_density,TRUE,gbif,FALSE,FALSE,TRUE,
+density_water,TRUE,geonorge,FALSE,FALSE,FALSE,
+density_roads,TRUE,geonorge,FALSE,FALSE,FALSE,

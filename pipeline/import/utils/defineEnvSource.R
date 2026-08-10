@@ -53,6 +53,24 @@ if (dataSource == "geonorge") {
     # Calculate distance
     rasterisedVersion <- terra::distance(baseWaterRaster[[focalParameter]])
     
+  } else if (focalParameter %in% c("density_water", "density_roads")) {
+    
+    # Get relevant vector for water/roads
+    vectorBase <- get_geonorge(dataName = "N250Kartdata", targetDir = tempFolderName, dataFormat = "FGDB")
+    
+    # high res version of base raster
+    baseRasterHR <- baseRaster
+    res(baseRasterHR) <- res(baseRasterHR)/5
+    # rasterise vector to high res rasterector (NA as 0)
+    rasterisedVersion <- rasterize(vectorBase, baseRasterHR, background = 0)
+    # smooth with kernel smoothing
+    rasterisedVersion <- potential_GPU(rasterisedVersion, 
+                         alphas = dist_to_alpha(dist = 1000,
+                                                thresh = 0.05,
+                                                shape = "gaus"),
+                         shape = "gaus", device = "cpu")
+    # drop to original resolution
+    rasterisedVersion <- terra::project(rasterisedVersion, baseRaster, method = mean)
   }
   
 ### 2. worldclim ####  

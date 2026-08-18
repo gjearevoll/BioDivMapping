@@ -20,19 +20,18 @@ get_cs_density <- function(dateAccessed, regionGeometry, citizenDatasets, yearIn
   
   # define repo folder names
   folderName <- paste0("data/run_", dateAccessed)
-  tempFolderName <- paste0(folderName, "/temp")
-  
-  
-  speciesDataList <- readRDS(paste0(tempFolderName, "/speciesDataImported.RDS"))[["species"]]
+  extFolderName <- paste0(folderName, "/ext")
+
+  speciesDataList <- read_sf(file.path(extFolderName, "speciesDataImported.gpkg")) %>% 
+    rename(geometry = geom)
   
   library(spatstat)
   cityOwin <- as.owin(sf::st_as_sf(vect(regionGeometry)))
   
-  # Dictate numebr of samples to take
-  
-  
-  processedObsData <- do.call(rbind, speciesDataList[citizenDatasets]) %>%
-  sample_frac(0.05)
+  # Dictate number of samples to take
+  # Subset to citizen-science datasets from name column 
+  processedObsData <- speciesDataList[speciesDataList$name %in% citizenDatasets, ] %>%
+    sample_frac(0.05)
 
   negative_number <- function(i) i[i <=0]
   processedObsData$year <- sapply(processedObsData$year, function(x) {x + max(negative_number(yearInterval - x))})

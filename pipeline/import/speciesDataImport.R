@@ -137,6 +137,12 @@ if (scheduledDownload) {
   occurrences <- do.call(rbind, gbifImportsPerTaxa)
 }
 
+# convert occurrences to spatial data & define crs
+projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+occurrences <- st_as_sf(occurrences,                         
+         coords = c("decimalLongitude", "decimalLatitude"),
+         crs = projcrs)
+
 ### Attach metadata
 
 # Now we import metadata related to GBIF data

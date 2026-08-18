@@ -161,7 +161,8 @@ names(processedData) <- namesProcessedData
 processedData <- processedData[!(unlist(lapply(processedData,is.null)))]
 processedData <- processedData[!(unlist(lapply(processedData,FUN = function(x) {is.null(nrow(x))})))]
 processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
-
+# update namesProcessedData
+namesProcessedData <- names(processedData)
 
 ###------------------------------------###
 ### 3. Remove alien species from data ####

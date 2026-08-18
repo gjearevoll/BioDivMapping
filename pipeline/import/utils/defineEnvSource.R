@@ -15,8 +15,9 @@ if(inherits(baseRaster, c("sf", "sfc"))){
 if (dataSource == "geonorge") { 
   
   if (focalParameter %in% c("slope", "aspect", "elevation", "easting", "northing")) {
-    # check if encompassing corine alreadydownloaded
-    elevation <- checkAndImportRast("elevation", baseRaster, dataPath)
+    # check if an encompassing elevation raster has already been downloaded
+    # skip existing version if 'update' == TRUE
+    elevation <- if (isTRUE(update)) NULL else checkAndImportRast("elevation", baseRaster, dataPath)
     # download and save if missing
     if(is.null(elevation)){
       # download
@@ -37,8 +38,8 @@ if (dataSource == "geonorge") {
         rasterisedVersion <- pi/2 - rasterisedVersion*pi/180
       } 
     } else if (focalParameter %in% c( "easting", "northing")) {
-      # get aspect 
-      aspect <- checkAndImportRast("aspect", baseRaster, dataPath)
+      # get aspect ( skip existing version if 'update' == TRUE)
+      aspect <- if (isTRUE(update)) NULL else checkAndImportRast("aspect", baseRaster, dataPath)
       if(is.null(aspect)) {
         # calculate aspect from elevation
         aspect <- terra::terrain(elevation, v="aspect", unit='degrees', neighbors=8)
@@ -124,15 +125,16 @@ if (dataSource == "geonorge") {
   ### 3. SSB ####
 } else if (dataSource == "ssb") {
   rasterisedVersion <- get_ssb(focalParameter)
-  
   ### 4. MODIS ####    
 } else if (dataSource == "modis") {
   rasterisedVersion <- get_modis(regionGeometry, projCRS, focalParameter, temporalFactor, yearInterval)
   
   ### 5. CORINE ###  
 } else if (dataSource == "corine") {
-  # check if encompassing corine alreadydownloaded
-  rasterisedVersion <- checkAndImportRast("land_cover_corine", baseRaster, dataPath, quiet = TRUE, temporalFactor, yearInterval)
+  # check if an encompassing corine raster has already been downloaded
+  # (skip existing version if 'update' == TRUE)
+  rasterisedVersion <- if (isTRUE(update)) NULL else
+    checkAndImportRast("land_cover_corine", baseRaster, dataPath, quiet = TRUE, temporalFactor, yearInterval)
   # rasterisedVersion <- terra::crop(rasterisedVersion, terra::project(baseRaster, rasterisedVersion))
   # download and save if missing
   if(is.null(rasterisedVersion)){
@@ -193,7 +195,5 @@ if (dataSource == "geonorge") {
 rasterisedVersion <- extend(rasterisedVersion, project(vect(ext(baseRaster), crs = crs(baseRaster)), rasterisedVersion), snap = "out")
 
 ### generate descriptive file name and save
-if (focalParameter != "cs_density") {
-  file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
-  rasterisedVersion <- writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
-}
+file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+rasterisedVersion <- writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)

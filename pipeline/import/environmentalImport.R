@@ -109,15 +109,20 @@ for(parameter in seq_along(selectedParameters)) {
   
   if(external) {
     dataSource <- parameters$dataSource[parameters$parameters == focalParameter]
-    
+    # Should this covariate be re-downloaded 
+    # regulated with 'update' column in focalCovariates.csv.
+    update <- isTRUE(as.logical(parameters$update[parameters$parameters == focalParameter]))
+
     ### 2. Check whether we have previously downloaded a version of the external data that encompasses the area we need.
     dataPath <- file.path(downloadCovFolder, dataSource)
     if(dir.exists(dataPath)){
-      
-      if (focalParameter == "cs_density") {
+      if (update) {
+        # Force re-download (existing copy will be overwritten
+        message(sprintf("'update = TRUE' for '%s'; forcing re-download from '%s'.",
+                        focalParameter, dataSource))
         rasterisedVersion <- NULL
       } else {
-        rasterisedVersion <- checkAndImportRast(focalParameter, baseRaster, dataPath, 
+        rasterisedVersion <- checkAndImportRast(focalParameter, baseRaster, dataPath,
                                                 temporalFactor, yearInterval)
       }
       # 3. Create new temp folder to download necessary external data.
@@ -125,7 +130,7 @@ for(parameter in seq_along(selectedParameters)) {
       dir.create(dataPath)
     }
     if(is.null(rasterisedVersion)) {
-      # download file if still missing
+      # download file if still missing (or if update == TRUE)
       source(paste0("pipeline/import/utils/defineEnvSource.R"))
     }
   } else {

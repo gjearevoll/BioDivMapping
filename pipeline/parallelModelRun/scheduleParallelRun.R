@@ -120,20 +120,43 @@ env <- c(env, categoricals2)
 
 envRenamed <- gsub(" ","_",stringr::str_replace_all(env, "[[:punct:]]", "_"))
 names(environmentalDataListProj) <- gsub(" ","_",stringr::str_replace_all(names(environmentalDataListProj), "[[:punct:]]", "_"))
-#
+# Add covariates to the model
 for (e in envRenamed) {
   cat(sprintf("Adding covariate '%s' to the model.\n", e))
+  if (all(is.na(values(environmentalDataListProj[[e]])))) {
+    # drop cov from included covariates
+    envRenamed <- envRenamed[envRenamed != e]
+    cat(sprintf("Skipping covariate '%s' because all values are NA.\n", e))
+    next
+  }
   workflow$addCovariates(Object = environmentalDataListProj[[e]])
 }
 
-rm("environmentalDataList")
+# define bias formula
+## identify bias covs to be modelled
+biasCovs <- focalCovariates$parameters[focalCovariates$bias]
+biasCovs <- biasCovs[biasCovs %in% envRenamed]
+
+if (length(biasCovs) == 0) {
+  biasCovs <- NULL
+} else {
+  # add quadratic term for bias variable if applicable
+  bias_quadratics <- sprintf("%s_squared", biasCovs[biasCovs %in% focalCovariates$parameters[focalCovariates$quadratic]])
+  # combine
+  biasCovs <- c(biasCovs, bias_quadratics)
+  # Construct bias formula
+  biasFormula <- as.formula(paste("~", paste(biasCovs, collapse = " + ")))
+}
 
 # Specify formula for the model
 cat("\nSpecifying priors for the model")
 workflow$modelFormula(covariateFormula = NULL,
-                      biasFormula =  ~ distance_roads
+                      biasFormula = biasFormula
 ) 
 
+rm("environmentalDataList")
+
+# add bias field
 if (biasField) {
   workflow$biasFields(datasetName = "mergedDatasetPO", prior.range = c(5, 0.01),
                       prior.sigma = c(0.8, 0.01))

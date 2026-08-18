@@ -15,3 +15,6 @@ data/*/temp
 
 localArchive
 *.Rproj
+/data/run*
+/Togunov_functions
+/Togunov_pipeline

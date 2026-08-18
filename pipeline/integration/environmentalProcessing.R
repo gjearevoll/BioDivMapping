@@ -186,14 +186,11 @@ for (par in catParams) {
   focalCatParameter <- parameterList[[par]]
   levelTable <- levels(focalCatParameter)[[1]]
   allCats <- unique(levelTable[, 2])
-  if (par == "land_cover_corine") {
-    allCats <- allCats[(!allCats %in% c(NA, "Sclerophyllous vegetation"))]
-    #allCats <- c("Built up area", "Coniferous forest", "Transitional woodland-shrub", "Moors and heathland")
-  }
+  # Skip NA categories (blank newCat in reclass file)
+  allCats <- allCats[!is.na(allCats)]
   catList <- lapply(allCats, FUN = function(cat1) {
-    if (par == "kalkinnhold" & cat1 == "no data") {return(NA)}
     catLevels <- levelTable$value[levelTable[, 2] %in% cat1]
-    print(paste0("Aggregating: ", cat1))
+    print(sprintf("Aggregating %s: %s", par, cat1))
     catRaster <- ifel(focalCatParameter %in% catLevels, 1, 0)
     contRaster <- terra::project(catRaster, baseRaster, method = "average")
     contRaster

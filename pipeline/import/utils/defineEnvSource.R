@@ -56,45 +56,63 @@ if (dataSource == "geonorge") {
         rasterisedVersion <- sin(aspect)
       }
     }
-  } else if (focalParameter %in% c("distance_water", "distance_roads")) {
+  } else if (focalParameter %in% c("distance_water", "distance_roads", "density_water", "density_roads")) {
+    # define file path to which N250Kartdata would be downloaded
+    gdbVectorPath <- file.path(dataPath, "N250Kartdata", "Basisdata_0000_Norge_25833_N250Kartdata_FGDB.gdb")
     
-    # Get relevant vector for water/roads
-    vectorBase <- get_geonorge(dataName = "N250Kartdata", targetDir = tempFolderName, dataFormat = "FGDB")
+    # check if previously downloaded; otherwise download
+    if (!file.exists(gdbVectorPath)) {
+      gdbVectorPath <- get_geonorge(dataName = "N250Kartdata", targetDir = dataPath, dataFormat = "FGDB")
+    }
     
-    # get  base raster with expanded buffer (as closest road or lake may be over county lines)
-    baseRasterDistance <- regionGeometry |>
-      st_buffer(40000) |>
-      st_transform(projCRS) |> 
-      vect()
-    baseWaterRaster <- terra::rast(extent = ext(baseRasterDistance), res = 1000, crs = projCRS)
-    baseWaterRaster$cellId <- paste0("cell", 1:ncell(baseWaterRaster))
+    # read correct layer
+    if (focalParameter %in% c("distance_water", "density_water")) {
+      vectorData <- vect(gdbVectorPath, layer = "N250_Arealdekke_omrade")
+      # Narrow down to correct water category
+      vectorData <- terra::subset(vectorData, vectorData$objtype %in% c("Innsjø", "Elv", "InnsjøRegulert"))
+    } else if (focalParameter %in% c("distance_roads", "density_roads")){
+      vectorData <- vect(gdbVectorPath, layer = "N250_Samferdsel_senterlinje")
+      # Narrow down to correct road category
+      vectorData <- terra::subset(vectorData, vectorData$typeveg %in% "enkelBilveg")
+    } else {
+      stop("Specified 'focalParameter' for 'N250Kartdata' dataset has no corresponding layer defined in 'defineEnvSource.R'.")
+    }
     
-    # Extract vectors to a raster layer and figure out which cells have a road/wtaer body in them
-    geoVectorExtracted <- terra::extract(baseWaterRaster, vectorBase)
-    baseWaterRaster[[focalParameter]] <- 0
-    baseWaterRaster[[focalParameter]][!(baseWaterRaster$cellId %in% geoVectorExtracted$cellId)] <- NA
-    
-    # Calculate distance
-    rasterisedVersion <- terra::distance(baseWaterRaster[[focalParameter]])
-    
-  } else if (focalParameter %in% c("density_water", "density_roads")) {
-    
-    # Get relevant vector for water/roads
-    vectorBase <- get_geonorge(dataName = "N250Kartdata", targetDir = tempFolderName, dataFormat = "FGDB")
-    
-    # high res version of base raster
-    baseRasterHR <- baseRaster
-    res(baseRasterHR) <- res(baseRasterHR)/5
-    # rasterise vector to high res rasterector (NA as 0)
-    rasterisedVersion <- rasterize(vectorBase, baseRasterHR, background = 0)
-    # smooth with kernel smoothing
-    rasterisedVersion <- potential_GPU(rasterisedVersion, 
-                                       alphas = dist_to_alpha(dist = 1000,
-                                                              thresh = 0.05,
-                                                              shape = "gaus"),
-                                       shape = "gaus", device = "cpu")
-    # drop to original resolution
-    rasterisedVersion <- terra::project(rasterisedVersion, baseRaster, method = mean)
+    # rasterise as distance or density
+    if (focalParameter %in% c("distance_water", "distance_roads")) {
+      # message
+      message(sprintf("Calculating distance raster for %s 'focalParameter'; this may take several minutes.",
+                      focalParameter))
+      # get  base raster with expanded buffer (as closest road or lake may be over county lines)
+      baseRasterDistance <- regionGeometry |>
+        st_buffer(40000) |>
+        st_transform(projCRS) |> 
+        vect()
+      baseDistRaster <- terra::rast(extent = ext(baseRasterDistance), res = 1000, crs = projCRS)
+      baseDistRaster$cellId <- paste0("cell", 1:ncell(baseDistRaster))
+      
+      # Extract vectors to a raster layer and figure out which cells have a road/wtaer body in them
+      geoVectorExtracted <- terra::extract(baseDistRaster, vectorData)
+      baseDistRaster[[focalParameter]] <- 0
+      baseDistRaster[[focalParameter]][!(baseDistRaster$cellId %in% geoVectorExtracted$cellId)] <- NA
+      
+      # Calculate distance
+      rasterisedVersion <- terra::distance(baseDistRaster[[focalParameter]])
+    } else if (focalParameter %in% c("density_water", "density_roads")) {
+      # high res version of base raster
+      baseRasterHR <- baseRaster
+      res(baseRasterHR) <- res(baseRasterHR)/5
+      # rasterise vector to high res rasterector (NA as 0)
+      rasterisedVersion <- rasterize(vectorData, baseRasterHR, background = 0)
+      # smooth with kernel smoothing
+      rasterisedVersion <- potential_GPU(rasterisedVersion, 
+                                         alphas = dist_to_alpha(dist = 1000,
+                                                                thresh = 0.05,
+                                                                shape = "gaus"),
+                                         shape = "gaus", device = "cpu")
+      # drop to original resolution
+      rasterisedVersion <- terra::project(rasterisedVersion, baseRaster, method = mean)
+    }
   }
   
   ### 2. worldclim ####  

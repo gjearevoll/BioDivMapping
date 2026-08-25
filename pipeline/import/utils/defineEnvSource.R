@@ -17,7 +17,7 @@ if (dataSource == "geonorge") {
   if (focalParameter %in% c("slope", "aspect", "elevation", "easting", "northing")) {
     # check if an encompassing elevation raster has already been downloaded
     # skip existing version if 'update' == TRUE
-    elevation <- if (isTRUE(update)) NULL else checkAndImportRast("elevation", baseRaster, dataPath)
+    elevation <- if (isTRUE(update)) NULL else checkAndImportRast("elevation", baseRaster, dataPath, quiet = TRUE)
     # download and save if missing
     if(is.null(elevation)){
       # download
@@ -39,7 +39,7 @@ if (dataSource == "geonorge") {
       } 
     } else if (focalParameter %in% c( "easting", "northing")) {
       # get aspect ( skip existing version if 'update' == TRUE)
-      aspect <- if (isTRUE(update)) NULL else checkAndImportRast("aspect", baseRaster, dataPath)
+      aspect <- if (isTRUE(update)) NULL else checkAndImportRast("aspect", baseRaster, dataPath, quiet = TRUE)
       if(is.null(aspect)) {
         # calculate aspect from elevation
         aspect <- terra::terrain(elevation, v="aspect", unit='degrees', neighbors=8)

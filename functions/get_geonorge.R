@@ -19,7 +19,6 @@
 # See available data sources: https://nedlasting.geonorge.no/geonorge/Basisdata/
 
 get_geonorge <- function(repo = "Basisdata", dataName = "DTM10UTM33", targetDir, dataFormat) {
-
   # extend the target directory path with the data name
   targetDirExt <- file.path(targetDir, dataName)
   
@@ -87,17 +86,12 @@ get_geonorge <- function(repo = "Basisdata", dataName = "DTM10UTM33", targetDir,
     # List all files in the directory that match the parameter
     filePattern <- "_.*\\.gdb$"
     fileList <- dir(path = targetDirExt, pattern = filePattern, full.names = TRUE)
-    correctLayer <- ifelse(focalParameter == "distance_water", "N250_Arealdekke_omrade", "N250_Samferdsel_senterlinje")
-    vectorData <- vect(fileList, layer = correctLayer)
-    
-    # Narrow down to correct category
-    if (focalParameter == "distance_water") {
-      vectorData <- terra::subset(vectorData, vectorData$objtype %in% c("Innsjø", "Elv", "InnsjøRegulert"))
+    if (length(vector_layers(fileList)) > 1) {
+      warning("Downloaded vector data contains multiple layers. Returning file path.\nSpecify layer to import using terra::vect(x, layer = \"\")")
+      return(fileList)
     } else {
-      vectorData <- terra::subset(vectorData, vectorData$typeveg %in% "enkelBilveg")
+      return(vect(fileList))
     }
-    
-    return(vectorData)
   }
 }
 

@@ -84,6 +84,7 @@ speciesData <- speciesData[!is.na(speciesData$processing),]
 
 # datasets and narrow down to focal region 
 # & split into list of datasets
+projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 speciesData2 <- lapply(unique(speciesData$name), FUN  = function(x) {
   GBIFItem <- speciesData[speciesData$name == x,]
   GBIFcropped <- st_intersection(GBIFItem, st_transform(regionGeometry, crs = projcrs))

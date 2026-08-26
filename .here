@@ -1,0 +1,3 @@
+# This empty sentinel marks the project root for here::here().
+# It makes here() resolve to this folder on any machine (laptop, Saga, ...)
+# from any working directory inside the project - no setwd(), no per-script edits.

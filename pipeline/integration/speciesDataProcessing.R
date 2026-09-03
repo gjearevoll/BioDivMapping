@@ -66,6 +66,9 @@ if(file.exists(paste0(folderName, "/polyphyleticSpecies.csv"))){
   polyphyleticSpecies <- read.csv(paste0(folderName, "/polyphyleticSpecies.csv"), header = T)
 } 
 
+# Import subgroup list
+subGroupDF <- read.csv(paste0(folderName, "/subGroups.csv"))
+
 # import baseRaster
 baseRaster <- rast(file.path(folderName, "baseRaster.tiff"))
 
@@ -249,7 +252,7 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(countedData2), FUN = fun
     dataset$individualCount <- 1
   }
   datasetShort <- dataset[, c("acceptedScientificName", "individualCount", "geometry", "taxa", "year", "dataType", 
-                              "taxonKeyProject", "simpleScientificName", "redListStatus")]
+                              "taxonKeyProject", "simpleScientificName", "threatenedListStatus")]
   datasetShort$dsName <- datasetName
   datasetShort
 }))
@@ -274,6 +277,17 @@ finalDataSummary2$processing <- unlist(lapply(finalDataSummary2$dsName, FUN = fu
   unique(speciesData$processing[speciesData$name == x])
 }))
 
+# Add summary for subgroups
+subGroupSummary <- lapply(subGroups, FUN = function(x) {
+  firstGo <- processedDataCompiled %>% 
+    filter(acceptedScientificName %in% subGroupDF[subGroupDF[,x], "GBIFName"])
+  onlyPres <- processedDataCompiled %>% 
+    filter(acceptedScientificName %in% subGroupDF[subGroupDF[,x], "GBIFName"] & individualCount == 1)
+  list(n_rec = nrow(firstGo), n_obs = nrow(onlyPres),
+       n_species = length(unique(firstGo$acceptedScientificName)))
+}) |> setNames(subGroups)
+
+
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
   x
@@ -290,9 +304,9 @@ json_ls$step_1b <- list(
   n_total_obs = nrow(processedDataCompiled[processedDataCompiled$individualCount > 0,]),
   n_total_rec = nrow(processedDataCompiled),
   n_total_species = length(unique(processedDataCompiled$simpleScientificName)),
-  n_total_redlist_obs = nrow(processedDataCompiled[processedDataCompiled$individualCount > 0 & !is.na(processedDataCompiled$redListStatus),]),
-  n_total_redlist_rec = nrow(processedDataCompiled[!is.na(processedDataCompiled$redListStatus),]),
-  n_total_redlist_species =  length(unique(processedDataCompiled$simpleScientificName[!is.na(processedDataCompiled$redListStatus)])),
+  n_total_threatened_obs = nrow(processedDataCompiled[processedDataCompiled$individualCount > 0 & !is.na(processedDataCompiled$threatenedListStatus),]),
+  n_total_threatened_rec = nrow(processedDataCompiled[!is.na(processedDataCompiled$threatenedListStatus),]),
+  n_total_threatened_species =  length(unique(processedDataCompiled$simpleScientificName[!is.na(processedDataCompiled$threatenedListStatus)])),
   dataset_summary = list(
     dataset = finalDataSummary$dsName,
     taxa = finalDataSummary$taxa,
@@ -304,8 +318,8 @@ json_ls$step_1b <- list(
     dataset = finalDataSummary2$dsName,
     dataset_category = finalDataSummary2$dataType,
     dataset_processing = finalDataSummary2$processingScript
-    
-  )
+  ),
+  subGroupSummaries = subGroupSummary
   
 )
 

@@ -1,6 +1,6 @@
 
 produceLandscapeMask <- function(corinePath, maskedCats, regionGeometry, crs, res) {
-  corineUnclassified <- get_corine(corinePath, reclassify = FALSE)
+  corineUnclassified <- get_corine(corinePath)
   urbanWater <- ifel(corineUnclassified %in% maskedCats, 1, 0)
   
   baseRaster <-rast(ext = ext(vect(regionGeometry))+10, res = res)

@@ -47,6 +47,8 @@ croppingGeometryLocation <- "data/external/norge_border/Noreg_polygon.shp"
 croppingGeometry <- vect(sf::read_sf(croppingGeometryLocation)) |>
   project(baseRaster)
 
+cat("\Set-up complete, beginning processing.")
+
 # Get all richness files to start
 allRichnessFiles <- list.files(modelFolderName, recursive = TRUE, full.names = TRUE, pattern = paste0("Richness.rds"))
 json_list <- list()
@@ -57,6 +59,8 @@ for (taxa in unique(focalTaxa$parentTaxa)) {
   searchTaxa <- focalTaxa$taxa[focalTaxa$parentTaxa == taxa]
   taxaRichnessFiles <- grep(paste0(searchTaxa, collapse = "|"), allRichnessFiles, value = T)
   taxaRichnessDirs <- unique(sub("^((?:[^/]*/){4}).*", "\\1", taxaRichnessFiles))
+  
+  cat("\nStarting to process",length(taxaRichnessDirs),"files for",taxa)
   
   for (i in seq_along(taxaRichnessDirs)) {
     taxaGroup <- taxaRichnessDirs[i]

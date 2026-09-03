@@ -78,7 +78,7 @@ if (exists("downloadCovFolder")){
 # And add threatenedSpecies to subGroups if it's not there
 if (!("threatenedSpecies" %in% subGroups)) {
   subGroups <- c(subGroups, "threatenedSpecies")
-  cat("Threatened species is automatically part of the pipeline don't you fucking dare dodge it")
+  cat("Threatened species is automatically part of the pipeline.")
 }
 
 ###-----------------------------###

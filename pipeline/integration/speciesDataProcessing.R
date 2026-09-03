@@ -191,7 +191,7 @@ names(processedDataNative) <- namesProcessedData
 if (maskCityData) {
   if (!file.exists("localArchive/mask100.tiff")) {
     maskedCats <-  c("Airports", "Continuous urban fabric", "Discontinuous urban fabric", "Industrial or commercial units",
-                     "Green urban areas", "Sport and leisure facilities")
+                     "Green urban areas", "Sport and leisure facilities", "Glaciers and perpetual snow")
     cityMask <- produceLandscapeMask("data/temp/CORINE/EEA.zip", maskedCats, regionGeometry, crs, res)
     # save mask
     make_path("localArchive") # ensure path exists

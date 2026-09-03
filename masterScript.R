@@ -46,7 +46,8 @@ scheduledDownload <- TRUE
 # whether to wait and automatically download GBIF data when it is ready
 waitForGbif <- FALSE
 # which categories are to be used for filtering/analysing red list species
-redListCategories <- c("VU", "EN", "CR")
+subGroups <- c("ansvarsArter", "threatenedSpecies")
+threatenedSpeciesCategories <- c("VU", "EN", "CR")
 # number of species per group in richness model:
 nSegment <- 10
 speciesOccurrenceThreshold <- 50

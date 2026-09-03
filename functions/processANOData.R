@@ -31,7 +31,7 @@ processANOData <- function(focalEndpoint, tempFolderName, datasetName, regionGeo
   
   # Now remove all events fro before start eyar
   eventTable <- eventTable[eventTable$year >= yearToStart,]
-  eventLocationsSF <- st_as_sf(eventLocations,                         
+  eventLocationsSF <- st_as_sf(eventTable,                         
                                coords = c("decimalLongitude", "decimalLatitude"),
                                crs = "+proj=longlat +ellps=WGS84")
   eventLocationsSF <- st_transform(eventLocationsSF, crs = crs)

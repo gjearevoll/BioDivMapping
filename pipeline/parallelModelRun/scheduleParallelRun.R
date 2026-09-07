@@ -11,9 +11,9 @@ library(intSDM)
 # Conditional library loading based on operating system
 if (Sys.info()["sysname"] == "Linux") {
   library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
-  setwd("Togunov")
   
   # Specify script parameters
+  args <- commandArgs(trailingOnly = TRUE)
   i <- as.numeric(args[1])  # 1 # 
   dateToUse <- args[2]  # dateAccessed#
   biasField <- args[3]  # F #

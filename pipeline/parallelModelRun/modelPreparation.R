@@ -48,11 +48,6 @@ if (!dir.exists(paste0(folderName, "/workspaces"))) {
   dir.create(paste0(folderName, "/workspaces"))
 }
 
-# create folder for out scripts
-if (!dir.exists(paste0(folderName, "/out"))) {
-  dir.create(paste0(folderName, "/out"))
-}
-
 # Use 10000m grid for practice predictions
 res <- 10
 
@@ -89,17 +84,17 @@ if ("birds" %in% focalTaxa$taxa) {
   # filter only birds imported from other datasets
   if (!"Aves" %in% focalTaxa$scientificName) {
     speciesData[["TOVData"]] <- TOVData[TOVData$simpleScientificName %in%
-              unique(bind_rows(speciesData)$simpleScientificName),]
+                                          unique(bind_rows(speciesData)$simpleScientificName),]
   } else {
     speciesData[["TOVData"]] <- TOVData
   }
-
+  
   focalTaxa$predictionDataset[focalTaxa$taxa %in% c("birds", "groundNestingBirds", "woodpeckers")] <- "TOVData"
   speciesData <- lapply(speciesData, FUN = function(x) {
     x <- x[!(x$taxa %in% c("birds", "woodpeckers", "groundNestingBirds") &
                !(x$acceptedScientificName %in% unique(speciesData$TOVData$acceptedScientificName))),]
   })
-
+  
   cat("Birds data filtered on TOV species.")
 }
 
@@ -111,11 +106,12 @@ cat("\nPrediction data and model species data successfully created. Starting to 
 # Create list of taxa run
 listSegments <- list()
 
-
-# Prepare models
-for(iter in 1:nrow(focalTaxa)){
-  predictorSpecies <- focalTaxa$predictorSpecies[iter]
-  workflowList <- modelPreparation(focalTaxa[iter, ], focalCovariates, speciesData,
+# Prepare models 
+# One iteration per taxonomic group, not per row of focalTaxa. 
+for(focalTaxon in unique(focalTaxa$taxa)){
+  focalTaxaGroup <- focalTaxa[focalTaxa$taxa == focalTaxon, ]
+  predictorSpecies <- unique(focalTaxaGroup$predictorSpecies)
+  workflowList <- modelPreparation(focalTaxaGroup, focalCovariates, speciesData,
                                    regionGeometry = regionGeometry,
                                    modelFolderName = modelFolderName,
                                    environmentalDataList = environmentalDataList,
@@ -127,11 +123,11 @@ for(iter in 1:nrow(focalTaxa)){
                                    mergeAllDatasets = TRUE,
                                    richness = TRUE, predictorSpecies = predictorSpecies)
   focalTaxaRun <- names(workflowList)
-
-
+  
+  
   cat("Finished creating workflows.")
-
-
+  
+  
   # Get bias fields
   if (file.exists(paste0(folderName, "/metadataSummary.csv"))) {
     dataTypes <- read.csv(paste0(folderName, "/metadataSummary.csv"))
@@ -139,13 +135,13 @@ for(iter in 1:nrow(focalTaxa)){
   } else {
     biasFieldList <- rep(list(NULL), length(focalTaxaRun))
   }
-
-
+  
+  
   modelOutputs <- "Richness"
-
-  listSegments[[iter]] <- focalTaxaRun
-  if (grepl("vascularPlants", focalTaxa$taxa[iter])) {saveRDS(focalTaxaRun, paste0(folderName, "/segmentList", focalTaxa$taxa[iter] ,".RDS"))}
-  save.image(file = paste0(folderName,"/workspaces/",  focalTaxa[iter, "taxa"], "workflowWorkspace.RData"))
+  
+  listSegments[[focalTaxon]] <- focalTaxaRun
+  if (grepl("vascularPlants", focalTaxon)) {saveRDS(focalTaxaRun, paste0(folderName, "/segmentList", focalTaxon ,".RDS"))}
+  save.image(file = paste0(folderName,"/workspaces/",  focalTaxon, "workflowWorkspace.RData"))
 }
 
 saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))

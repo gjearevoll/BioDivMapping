@@ -6,18 +6,33 @@
 library(intSDM)
 library(terra)
 library(dplyr)
-library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
+# Conditional library loading based on operating system
+if (Sys.info()["sysname"] == "Linux") {
+  # Load qs from cluster project directory on Linux server
+  library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R/4.5-foss-2025a")
+  
+  # Specify script parameters
+  args <- commandArgs(trailingOnly = TRUE)
+  dateAccessed <- as.character(args[1])
+  # get segment number
+  nSegment <- as.numeric(args[2])
+  
+} else if (Sys.info()["sysname"] == "Windows") {
+  # Load qs from default library on Windows
+  library(qs)
+  
+  nSegment <- 10
+}
 
 
 start <- Sys.time()
-
-# Specify script parameters
-args <- commandArgs(trailingOnly = TRUE)
-dateAccessed <- as.character(args[1])
 cat(dateAccessed)
 
-# Ensure that dateAccessed is specified
-if (!exists("dateAccessed")) stop("You need to specify the variable dateAccessed")
+# Define the folder to find our results (use most recent one created)
+if (!exists("dateAccessed")) {
+  dateAccessed <- stringr::str_remove(tail(list.files("data", "run_"), 1), "^run_")
+  warning("'dateAccessed' was not defined, using most recent run in 'data' folder.")
+}
 
 # define repo folder names
 folderName <- paste0("data/run_", dateAccessed)
@@ -26,9 +41,6 @@ tempFolderName <- paste0(folderName, "/temp")
 # load the control parameters
 readRDS(paste0(folderName,"/controlPars.RDS")) %>%
   list2env(envir = .GlobalEnv)
-
-# get segment number
-nSegment <- as.numeric(args[2])
 
 prior.range[1] <- prior.range[1] /1000
 
@@ -98,6 +110,11 @@ if ("birds" %in% focalTaxa$taxa) {
   cat("Birds data filtered on TOV species.")
 }
 
+# Save the prepared species data for the fitting script and for post-hoc analysis.
+qsave(speciesData, paste0(folderName, "/speciesDataProcessedPrepped.qs"))
+
+# save prepped focalTaxa since bird block above overwrites predictionDataset with "TOVData"
+write.csv(focalTaxa, paste0(folderName, "/focalTaxa_prepped.csv"), row.names = FALSE)
 # Define speciesData based on run type and create predictionData
 predictionData <- createPredictionData(c(res, res), regionGeometry, proj = crs)
 
@@ -141,11 +158,9 @@ for(focalTaxon in unique(focalTaxa$taxa)){
   
   listSegments[[focalTaxon]] <- focalTaxaRun
   if (grepl("vascularPlants", focalTaxon)) {saveRDS(focalTaxaRun, paste0(folderName, "/segmentList", focalTaxon ,".RDS"))}
-  save.image(file = paste0(folderName,"/workspaces/",  focalTaxon, "workflowWorkspace.RData"))
+  # Save the workflows 
+  qsave(workflowList, paste0(folderName, "/workspaces/", focalTaxon, "_workflowList.qs"))
 }
-
-saveRDS(unlist(listSegments), paste0(folderName, "/segmentList.RDS"))
-
 
 
 # Combination of response and environmental variables

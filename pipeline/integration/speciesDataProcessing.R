@@ -235,6 +235,24 @@ countedData2 <- lapply(maskedData, FUN = function(x2) {
 })
 countedData2 <- countedData2[lapply(countedData2,nrow)>0]
 
+# filter only species associated with focalTaxon
+countedData2_foo <- purrr::map(countedData2, ~{
+  for (focalTaxonName in unique(focalTaxon$taxa)) {
+    # Extract the level and associated species for the current taxa
+    taxon_info <- filter(focalTaxon, taxa == focalTaxonName)
+    # If level is "species", filter to include only the relevant species for this taxa
+    if(any(taxon_info$level == "species")){
+      if(all(taxon_info$level == "species")){
+        .x <- filter(.x, simpleScientificName %in% taxon_info$scientificName)
+      } else {
+        browser()
+        message("speciesDataProcessing.R: not sure how to filter species when some taxa are specified at different taxonomic level.")
+      }
+    }
+  }
+  return(.x)
+})
+
 qsave(countedData2, paste0(folderName, "/speciesDataProcessed.qs"))
 #saveRDS(maskedData, paste0(folderName, "/speciesDataProcessed.RDS"))
 

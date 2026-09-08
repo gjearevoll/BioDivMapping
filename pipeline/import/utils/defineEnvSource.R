@@ -207,7 +207,36 @@ if (dataSource == "geonorge") {
   rasterisedVersion <- get_cs_density(dateAccessed, regionGeometry, citizenDatasets, yearInterval, crs)
   rasterisedVersion <- if (!temporal) app(rasterisedVersion, "mean") |> 
     setNames("cs_density")
-}  
+  ### 11. ETH ###  
+} else if (dataSource == "eth") {
+  
+  if (focalParameter == "canopy_variation") {
+    canopy_height <- checkAndImportRast("canopy_height", baseRaster, dataPath, quiet = TRUE)
+    if (is.null(canopy_height)) {canopy_height <- get_canopy_height(
+      boundary         = regionGeometry,
+      dataPath          = dataPath,
+      aggregate_factor = 10,
+      resolution       = 100
+    )
+    file_path <- generateRastFileName(canopy_height, "canopy_height", dataPath)
+    writeRaster(canopy_height, filename = file_path, overwrite = TRUE)
+    }
+    sdRaster <- terra::aggregate(canopy_height, fact = 5, fun = "sd")
+    rasterisedVersion <- terra::project(sdRaster, baseRaster)
+    file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+    writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
+  } else {
+    rasterisedVersion <- get_canopy_height(
+      boundary         = regionGeometry,
+      dataPath          = dataPath,
+      aggregate_factor = 10,
+      resolution       = 100
+    )
+    file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+    writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
+    }
+  
+}
 
 ### merge with requested download area to make missing data explicit
 rasterisedVersion <- extend(rasterisedVersion, project(vect(ext(baseRaster), crs = crs(baseRaster)), rasterisedVersion), snap = "out")

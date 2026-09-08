@@ -226,6 +226,17 @@ if(!file.exists(paste0(folderName, "/focalCovariates.csv"))){
     write.csv(paste0(folderName, "/focalCovariates.csv"), row.names = FALSE)
 }
 
+###---------------------------------------------###
+### 7. Install uv_bin for covariate processing ####
+###---------------------------------------------###
+
+uv_bin <- find_uv()
+if (!nzchar(uv_bin)) {
+  warning("uv not found on this machine -- required for the 'eth' covariate source. ",
+       "Install it (see https://docs.astral.sh/uv/getting-started/installation/) ",
+       "or set it up before rerunning.")
+}
+
 ###-----------------------------###
 ### 8. save JSON ####
 ###-----------------------------###

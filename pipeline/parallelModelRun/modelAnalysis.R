@@ -14,7 +14,7 @@ if (length(args) != 0) {
   dateAccessed <- args[1]
   # Set the working directory
 }
-#dateAccessed <- "2026-04-18"
+#dateAccessed <- "2026-06-08"
 
 # Set output folders
 folderName <- paste0("data/run_", dateAccessed)
@@ -44,7 +44,7 @@ timeTakenFiles <- list.files(modelFolderName, "timeTaken", recursive = T, full.n
 
 
 # Get valid model names
-taxaLists <- lapply(taxaToCompile[1], FUN = function(x) {
+taxaLists <- lapply(taxaToCompile, FUN = function(x) {
   modelNameListTaxa <- grep(paste0("/", x), modelNameList, value = TRUE)
   
   # modelsRun
@@ -206,30 +206,31 @@ taxaLists <- lapply(taxaToCompile[1], FUN = function(x) {
   return(returnedData)
   
 })
-names(taxaLists) <- taxaToCompile[1]
+names(taxaLists) <- taxaToCompile
 
 # Compile and saved data objects
 
 # Effects lists first
-effectsLists <- lapply(taxaLists, FUN = function(x) x$effects) |> setNames(taxaToCompile[1])
+effectsLists <- lapply(taxaLists, FUN = function(x) x$effects) |> setNames(taxaToCompile)
 saveRDS(effectsLists, paste0(modelFolderName, "/covAnalysis.RDS"))
 
 # Model data object
-modelDataFull <- do.call(rbind, lapply(taxaLists, FUN = function(x) x$modelData))
-write_sf(modelDataFull, file.path(extFolderName, "speciesDataModelled.gpkg"), append = T)
+modelDataFull <- do.call(bind_rows, lapply(taxaLists, FUN = function(x) x$modelData))
+write_sf(st_zm(modelDataFull), file.path(extFolderName, "speciesDataModelled.gpkg"), append = T)
 
 # Now ssave metadata - read existing json
 json_ls <- jsonlite::fromJSON(file.path(extFolderName, "metadata.json"))
 
 # Now model diagnostics
-json_ls$step_3a <- lapply(taxaLists, FUN = function(x) x$diagnostics) |> setNames(taxaToCompile[1])
+json_ls$step_3a <- lapply(taxaLists, FUN = function(x) x$diagnostics) |> setNames(taxaToCompile)
 json_ls$step_3a$file <- file.path(extFolderName, "speciesDataModelled.gpkg")
 
 # Model description
-json_ls$step_3b <- lapply(taxaLists, FUN = function(x) x$json) |> setNames(taxaToCompile[1])
+json_ls$step_3b <- lapply(taxaLists, FUN = function(x) x$json) |> setNames(taxaToCompile)
 
 # And now write json
 # write json
 jsonlite:::write_json(json_ls,
                       file.path(extFolderName, "metadata.json"), 
                       pretty = TRUE)
+

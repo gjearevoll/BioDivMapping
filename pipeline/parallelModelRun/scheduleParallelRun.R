@@ -1,12 +1,6 @@
 # Load in all necessary parameters and environmental necessities
-
-args <- commandArgs(trailingOnly = TRUE)
-
 start <- Sys.time()
 
-i <- as.numeric(args[1])
-dateToUse <- args[2]
-biasField <- args[3]
 nThreads <- 20
 library(sf)
 library(ggplot2)
@@ -14,36 +8,63 @@ library(terra)
 library(dplyr)
 library(INLA)
 library(intSDM)
-library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
-#.libPaths(c("/cluster/projects/nn11017k/BioDivMapping/packages"))
+# Conditional library loading based on operating system
+if (Sys.info()["sysname"] == "Linux") {
+  library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
+  
+  # Specify script parameters
+  args <- commandArgs(trailingOnly = TRUE)
+  i <- as.numeric(args[1])  # 1 # 
+  dateToUse <- args[2]  # dateAccessed#
+  biasField <- args[3]  # F #
+} else if (Sys.info()["sysname"] == "Windows") {
+  # Load qs from default library on Windows
+  library(qs)
+  i <- 1 # 
+  # Define the folder to find our results (use most recent one created)
+  if (!exists("dateAccessed")) {
+    dateAccessed <- stringr::str_remove(tail(list.files("data", "run_"), 1), "^run_")
+  }
+  dateToUse <- dateAccessed  # dateAccessed#
+  biasField <- FALSE  # F #
+}
 
+sapply(list.files("functions", full.names = TRUE), source)
 
 getwd()
 
 print(Sys.info())
+
+# define folders
+folderName     <- paste0("data/run_", dateToUse)
+tempFolderName <- paste0(folderName, "/temp")
+
+# load the control parameters
+readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
+  list2env(envir = .GlobalEnv)
+
+# Import species list. The _prepped copy is written by modelPreparation.R and
+# carries the predictionDataset = "TOVData" override applied to birds,
+# groundNestingBirds and woodpeckers, which focalTaxa.csv does not have.
+focalTaxa <- read.csv(paste0(folderName, "/focalTaxa_prepped.csv"), header = T)
+
+# load spatial data
+environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
+regionGeometry        <- st_transform(readRDS(paste0(folderName, "/regionGeometry.RDS")), crs)
 
 # Load in segment number and interested group name
 segmentList <- readRDS(paste0("data/run_", dateToUse, "/segmentList.RDS"))
 
 interestedGroup <- gsub('[[:digit:]]+', '', segmentList[i])
 
-print(segmentList[i])
-
-load(paste0("data/run_", dateToUse, "/workspaces/", interestedGroup,"workflowWorkspace.RData"))
-sapply(list.files("functions", full.names = TRUE), source)
-
-
-#inla.binary.install("Ubuntu-22.04",  path = "/cluster/projects/nn11017k/R/bin/inla.binary")
+# load in workflow list
+workflowList <- qs::qread(paste0(folderName, "/workspaces/", interestedGroup, "_workflowList.qs"))
 
 focalGroup <- segmentList[i]
 workflow <- workflowList[[focalGroup]]
 print(focalGroup)
 
 rm("workflowList")
-
-# load the control parameters
-readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
-  list2env(envir = .GlobalEnv)
 
 # Find prediction dataset
 predictionDataset <- focalTaxa$predictionDataset[focalTaxa$taxa == gsub('[[:digit:]]+', '', focalGroup)]
@@ -53,6 +74,9 @@ predictionDatasetShort <- gsub(" ", "", gsub("[[:punct:]]", "", predictionDatase
 # I prefer to choose the one with the smallest data points
 datasetNames <- workflow$.__enclos_env__$private$datasetName
 datasetNames
+
+# read species data
+speciesData <- qread(paste0(folderName, "/speciesDataProcessedPrepped.qs"))
 namesSpeciesData <- names(speciesData)
 namesSpeciesDataShort <- gsub(" ", "", gsub("[[:punct:]]", "", datasetNames))
 
@@ -94,9 +118,7 @@ workflow$modelOptions(Richness = list(predictionIntercept = predictionDatasetSho
                                       speciesSpatial = "replicate"
 ))
 
-# Now add environmental covariates to the model
-environmentalDataList <- rast(paste0(tempFolderName, "/environmentalDataImported.tiff"))
-
+# project environmental covariates for the model
 environmentalDataListProj <- project(environmentalDataList, crs)
 focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= T)
 
@@ -105,7 +127,6 @@ env <- colnames(focalTaxa)[colnames(focalTaxa) %in% focalCovariates$parameters[!
 focalTaxa <- focalTaxa[,c("taxa", env)]
 focalTaxa <- focalTaxa[focalTaxa$taxa %in% interestedGroup,]
 env <- env[apply(focalTaxa[,-1], 2, any)]
-
 
 # Add quadratic variables
 if (any(focalCovariates$quadratic[focalCovariates$parameters %in% env])) {
@@ -137,6 +158,8 @@ for (e in envRenamed) {
 biasCovs <- focalCovariates$parameters[focalCovariates$bias]
 biasCovs <- biasCovs[biasCovs %in% envRenamed]
 
+# initialise biasFormula  
+biasFormula <- NULL
 if (length(biasCovs) == 0) {
   biasCovs <- NULL
 } else {
@@ -220,39 +243,39 @@ saveRDS(nThreads * timeTaken, paste0(folderName, "/modelOutputs/", focalGroup, "
 ###--------------------###
 
 # read existing json
-json_ls <- fromJSON(file.path(extFolderName, "metadata.json"))
+json_ls <- jsonlite:::fromJSON(file.path(extFolderName, "metadata.json"))
 
 # define json content
 json_ls$step_3a <- list(
-
+  
   #Information about the model
   modelInformation = list(
-  modelFramework = 'Point process',
-  modelType = 'Integrated species distribution model',
-  modelMethod = 'Integrated nested Laplace approximation',
-  statisticalMethodology = 'Bayesian',
-  RVersion = R.version.string,
-  packageCitations = c(INLA = citation('INLA')$doi,
-                       inlabru = citation('inlabru')$doi,
-                       PointedSDMs = citation('PointedSDMs')$doi,
-                       intSDM = citation('intSDM')$doi),
-  packageVersions = c(INLA = packageVersion('INLA'),
-                      inlabru = packageVersion('inlabru'),
-                      PointedSDMs = packageVersion('PointedSDMs'),
-                      intSDM = packageVersion('intSDM'))
+    modelFramework = 'Point process',
+    modelType = 'Integrated species distribution model',
+    modelMethod = 'Integrated nested Laplace approximation',
+    statisticalMethodology = 'Bayesian',
+    RVersion = R.version.string,
+    packageCitations = c(INLA = citation('INLA')$doi,
+                         inlabru = citation('inlabru')$doi,
+                         PointedSDMs = citation('PointedSDMs')$doi,
+                         intSDM = citation('intSDM')$doi),
+    packageVersions = c(INLA = packageVersion('INLA'),
+                        inlabru = packageVersion('inlabru'),
+                        PointedSDMs = packageVersion('PointedSDMs'),
+                        intSDM = packageVersion('intSDM'))
   )
   ,
   #Model outputs
   modelDefinition = list(
-  modelPriors = INLA:::inla.priors.used(richnessModel), ## Won’t work nicely for PC priors
-  inlabruComponents = richnessModel$componentsJoint,
-  modelFamilies = sapply(richnessModel$bru_info$lhoods, function(x) x$family),
-  modelLink = setNames(sapply(richnessModel$.args$control.family, function(x) x$link), richnessModel$source),
-  modelFormulas = sapply(richnessModel$bru_info$lhoods,
-                         function(x) update.formula(x$formula,
-                                                    new = formula(paste('. ~',
-                                                           paste0(x$used$effect,
-                                                                  collapse = ' + ')))))
+    modelPriors = INLA:::inla.priors.used(richnessModel), ## Won’t work nicely for PC priors
+    inlabruComponents = richnessModel$componentsJoint,
+    modelFamilies = sapply(richnessModel$bru_info$lhoods, function(x) x$family),
+    modelLink = setNames(sapply(richnessModel$.args$control.family, function(x) x$link), richnessModel$source),
+    modelFormulas = sapply(richnessModel$bru_info$lhoods,
+                           function(x) update.formula(x$formula,
+                                                      new = formula(paste('. ~',
+                                                                          paste0(x$used$effect,
+                                                                                 collapse = ' + ')))))
   )
 )
 # write json

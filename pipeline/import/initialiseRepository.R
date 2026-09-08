@@ -75,6 +75,12 @@ if (exists("downloadCovFolder")){
   downloadCovFolder <- "data/temp" 
 }
 
+# And add threatenedSpecies to subGroups if it's not there
+if (!("threatenedSpecies" %in% subGroups)) {
+  subGroups <- c(subGroups, "threatenedSpecies")
+  cat("Threatened species is automatically part of the pipeline.")
+}
+
 ###-----------------------------###
 ### 2. Save control parameters ####
 ###-----------------------------###
@@ -99,7 +105,8 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
                       scheduledDownload = scheduledDownload,
                       waitForGbif = waitForGbif,
                       myMesh = myMesh,
-                      redListCategories = redListCategories,
+                      subGroups = subGroups,
+                      threatenedSpeciesCategories = threatenedSpeciesCategories,
                       prior.range = prior.range,
                       prior.sigma = prior.sigma,
                       nSegment = nSegment,
@@ -112,15 +119,54 @@ if(file.exists(paste0(folderName,"/controlPars.RDS"))){
   saveRDS(controlPars, paste0(folderName,"/controlPars.RDS"))
 }
 
-###----------------------###
-### 3. Download redList ####
-###----------------------###
+###------------------------###
+### 3. Download subGroups ####
+###------------------------###
 
-# Download raw red list from artsdatabanken to tempFolderName for desired cats
-if (!file.exists(paste0(tempFolderName, "/redList.RDS"))) {
-  importRedList(redListCategories) |>
-    saveRDS(paste0(tempFolderName, "/redList.RDS"))  
-}  
+# Define csv with subgroups (if necessary)
+metadataSubgroups <- NA
+if (length(subGroups) > 0) {
+  subGroupList <- list()    
+  
+  # First, get threatened species if they're included
+  if ("threatenedSpecies" %in% subGroups) {
+    if (!file.exists(paste0(tempFolderName, "/threatenedSpecies.RDS"))) {
+      threatenedList <- importRedList(threatenedSpeciesCategories)$species
+      subGroupList[["threatenedSpecies"]] <- gsub(" ", "_", threatenedList)
+    }  
+  }
+  
+  # Now process the rest of the subgroups
+  for (group in subGroups[!(subGroups %in% "threatenedSpecies")]) {
+    if (!file.exists(file.path(externalFolder, paste0(group, ".csv")))) {
+      stop("External list for",group,"not provided. Please provide relevant csv file.")
+    }
+    groupDF <- read.csv(file.path(externalFolder, paste0(group, ".csv")), header = T, sep = ";")
+    if (!("species" %in% colnames(groupDF))) {
+      stop("External list for",group,"requires a column named 'species'. Please provide rename/edit columns.")
+    }
+    subGroupList[[group]] <- gsub(" ", "_", groupDF$species)
+  }
+  
+  # Join together and add columns to indicate whether or not species are present
+  subGroupSpecies <- data.frame(simpleScientificName = unique(do.call(c, subGroupList)))
+  for (group in subGroups) {
+    subGroupSpecies[,group] <- subGroupSpecies$simpleScientificName %in% subGroupList[[group]]
+  }
+  write.csv(subGroupSpecies, file.path(folderName, "subGroups.csv"))
+  
+  # Create metadata article
+  metadataSubgroups <- list(
+    location = file.path(folderName, "subGroups.csv"), 
+    groups = lapply(subGroups, FUN = function(x) {
+      nSpecies <- sum(subGroupSpecies[,x],na.rm = T)
+      list(nSpecies = nSpecies) 
+    }) |> setNames(subGroups)
+  )
+  
+}
+
+
 
 ###-----------------------###
 ### 4. Process focalTaxa ####
@@ -203,6 +249,7 @@ json_ls <- list(
                 scientificName = focalTaxon$scientificName
     ),
     speciesCategorisation = list(
+      subGroups = metadataSubgroups
       # redListCategories = redListCategories
       # polyphyletic group (one taxa modelled separately)
       # functional groups (multiple species modelled as one)

@@ -64,7 +64,7 @@ if (file.exists(dataFileName)) {
   # No need to do anything to presence only data (yet) except add individualCount column
 }else if (dataType == "presenceOnly") {
   focalData$dataType <- "PO"
-  newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year", "taxonKeyProject", "redListStatus")]
+  newDataset <- focalData[,c("acceptedScientificName", "geometry", "dataType", "taxa", "year", "taxonKeyProject", "threatenedListStatus")]
   newDataset <- st_transform(newDataset, crs)
   
 } else if (dataType == "citizenScience") {
@@ -77,8 +77,8 @@ if (file.exists(dataFileName)) {
   newDataset <- st_transform(newDataset, crs)
 }
 
-if (!("redListStatus" %in% colnames(newDataset))) {
-  newDataset$redListStatus <- focalData$redListStatus[match(newDataset$acceptedScientificName, 
+if (!("threatenedListStatus" %in% colnames(newDataset))) {
+  newDataset$threatenedListStatus <- focalData$threatenedListStatus[match(newDataset$acceptedScientificName, 
                                                                            focalData$acceptedScientificName)]
 }
 

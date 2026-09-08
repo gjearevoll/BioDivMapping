@@ -47,9 +47,9 @@ tempFolderName <- paste0(folderName, "/temp")
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
 
-# Import red list
-if (file.exists(paste0(tempFolderName, "/redList.RDS"))) {
-  redList <- readRDS(paste0(tempFolderName, "/redList.RDS"))
+# Import subgroup list
+if (file.exists(paste0(folderName, "/subGroups.csv"))) {
+  subGroupDF <- read.csv(paste0(folderName, "/subGroups.csv"))
 } else {
   stop("Please source initialiseRepository.R first.")
 }
@@ -77,20 +77,25 @@ if(file.exists(paste0(folderName, "/regionGeometry.RDS"))){
 ### 2. Filter Red list ####
 ###---------------------###
 
-# Match to accepted names
-speciesBackbones <- getGbifBackbone(redList$species)
-redList$taxaKey <- matchBackboneKeys(speciesBackbones, focalTaxon$key)
-focalTaxonCondensed <- focalTaxon[!is.na(focalTaxon$key),]
-redList$taxa <- focalTaxonCondensed$taxa[match(redList$taxaKey, focalTaxonCondensed$key)]
-redList$GBIFName <- speciesBackbones$scientificName
-
-# Add polyphyletic taxa
-polyphylaTaxaVector <-  polyphyleticSpecies$taxa[match(redList$GBIFName, polyphyleticSpecies$acceptedScientificName)]
-redList$taxa <- ifelse(redList$GBIFName %in% polyphyleticSpecies$acceptedScientificName, 
-                       polyphylaTaxaVector, redList$taxa)
-
-# Cut out NAs and save redList
-redList <- redList[!is.na(redList$taxa),]
+# If first time running this script, refine subGroup data
+if (!("inModel" %in% colnames(subGroupDF))) {
+  # Match to accepted names
+  speciesBackbones <- getGbifBackbone(subGroupDF$simpleScientificName)
+  subGroupDF$taxaKey <- matchBackboneKeys(speciesBackbones, focalTaxon$key)
+  focalTaxonCondensed <- focalTaxon[!is.na(focalTaxon$key),]
+  subGroupDF$taxa <- focalTaxonCondensed$taxa[match(subGroupDF$taxaKey, focalTaxonCondensed$key)]
+  subGroupDF$GBIFName <- speciesBackbones$scientificName
+  
+  # Add polyphyletic taxa
+  polyphylaTaxaVector <-  polyphyleticSpecies$taxa[match(subGroupDF$GBIFName, polyphyleticSpecies$acceptedScientificName)]
+  subGroupDF$taxa <- ifelse(subGroupDF$GBIFName %in% polyphyleticSpecies$acceptedScientificName, 
+                            polyphylaTaxaVector, subGroupDF$taxa)
+  
+  # Cut out NAs and save redList
+  subGroupDF$inModel <- !is.na(subGroupDF$taxa)
+  write.csv(subGroupDF, file.path(folderName, "subGroups.csv"))
+}
+  
 
 ###-----------------###
 ### 3. GBIF Import ####
@@ -152,16 +157,23 @@ metadataList <- metadataPrep(occurrences, metaSummary = TRUE)
 # be presence only data
 occurrences <- merge(occurrences, metadataList$metadata, all.x=TRUE, by = "datasetKey")
 
-# Include red list
-occurrences$redListStatus <- redList$status[match(occurrences$acceptedScientificName, redList$GBIFName)]
+# Include threatened status
+occurrences$threatenedListStatus <- subGroupDF$threatenedSpecies[match(occurrences$acceptedScientificName, subGroupDF$GBIFName)]
 
 # Get basic data summary
 datasetSummaries <- occurrences %>%
   group_by(taxa, name) %>%
   summarise(totalObs = n(),
-            totalRedListObs = sum(!is.na(redListStatus)),
+            totalRedListObs = sum(threatenedListStatus, na.rm = T),
             totalSpecies = n_distinct(acceptedScientificName),
-            totalRedListSpecies = n_distinct(acceptedScientificName[!is.na(redListStatus)]))
+            totalRedListSpecies = n_distinct(acceptedScientificName[threatenedListStatus]))
+
+# Add summary for subgroups
+subGroupSummary <- lapply(subGroups, FUN = function(x) {
+  firstGo <- occurrences %>% 
+    filter(acceptedScientificName %in% subGroupDF[subGroupDF[,x], "GBIFName"])
+  list(n_observations = nrow(firstGo), n_species = length(unique(firstGo$acceptedScientificName)))
+}) |> setNames(subGroups)
 
 
 ###----------------###
@@ -199,9 +211,10 @@ json_ls$step_1a <- list(
   datasetSummaries = list(taxa = datasetSummaries$taxa,
               dataset = datasetSummaries$name,
               n_observations = datasetSummaries$totalObs,
-              n_redlist_observations = datasetSummaries$totalRedListObs,
+              n_threatened_observations = datasetSummaries$totalRedListObs,
               n_species = datasetSummaries$totalSpecies,
-              n_redlist_species = datasetSummaries$totalRedListSpecies)
+              n_threatened_species = datasetSummaries$totalRedListSpecies),
+  subGroupSummaries = subGroupSummary
 )
 
 # write json

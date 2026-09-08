@@ -9,7 +9,7 @@ library(dplyr)
 # Conditional library loading based on operating system
 if (Sys.info()["sysname"] == "Linux") {
   # Load qs from cluster project directory on Linux server
-  library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R/4.5-foss-2025a")
+  library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
   
   # Specify script parameters
   args <- commandArgs(trailingOnly = TRUE)

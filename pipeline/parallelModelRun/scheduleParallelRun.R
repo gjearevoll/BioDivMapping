@@ -8,6 +8,7 @@ library(terra)
 library(dplyr)
 library(INLA)
 library(intSDM)
+library(fmesher)
 # Conditional library loading based on operating system
 if (Sys.info()["sysname"] == "Linux") {
   library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
@@ -240,6 +241,7 @@ saveRDS(nThreads * timeTaken, paste0(folderName, "/modelOutputs/", focalGroup, "
 ###--------------------###
 ### 2. update JSON    ####
 ###--------------------###
+cat("\nUpdating JSON")
 
 # read existing json
 json_ls <- jsonlite:::fromJSON(file.path(extFolderName, "metadata.json"))
@@ -282,3 +284,4 @@ jsonlite:::write_json(json_ls,
                       file.path(extFolderName, "metadata.json"),
                       pretty = TRUE)
 
+cat("\nCompleted scheduleParallelRun")

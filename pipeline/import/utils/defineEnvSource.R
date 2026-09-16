@@ -207,15 +207,6 @@ if (dataSource == "geonorge") {
   rasterisedVersion <- get_cs_density(dateAccessed, regionGeometry, citizenDatasets, yearInterval, crs)
   rasterisedVersion <- if (!temporal) app(rasterisedVersion, "mean") |> 
     setNames("cs_density")
-} else if (dataSource == "SatSkog") {
-  rasterisedVersion <- here(dataPath, paste0(focalParameter, ".tiff")) |> 
-    terra::rast()
-  rasterisedVersion <- ifel(is.na(rasterisedVersion), 0, rasterisedVersion)
-} else if (dataSource == "SkogRover") {
-  rasterisedVersion <- here(dataPath, paste0(focalParameter, ".tiff")) |> 
-    terra::rast()
-  # fix NA
-  rasterisedVersion <- ifel(is.na(rasterisedVersion), 0, rasterisedVersion)
 }
 
 ### merge with requested download area to make missing data explicit

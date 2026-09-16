@@ -18,3 +18,5 @@ localArchive
 /data/run*
 /Togunov_functions
 /Togunov_pipeline
+/data/external/environmentalCovariates
+/modelDevelopment

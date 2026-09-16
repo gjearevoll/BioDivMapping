@@ -207,7 +207,7 @@ if (dataSource == "geonorge") {
   rasterisedVersion <- get_cs_density(dateAccessed, regionGeometry, citizenDatasets, yearInterval, crs)
   rasterisedVersion <- if (!temporal) app(rasterisedVersion, "mean") |> 
     setNames("cs_density")
-}  
+}
 
 ### merge with requested download area to make missing data explicit
 rasterisedVersion <- extend(rasterisedVersion, project(vect(ext(baseRaster), crs = crs(baseRaster)), rasterisedVersion), snap = "out")

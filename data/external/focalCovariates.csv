@@ -1,4 +1,4 @@
-parameters,full.name,source,external,update,dataSource,asCovariate,quadratic,changeComponents,bias, categorical,temporal,reclassFile
+parameters,full.name,source,external,update,dataSource,asCovariate,quadratic,changeComponents,bias,categorical,temporal,reclassFile
 aspect,aspect,Norwegian Mapping Authority (DMT 10m),TRUE,FALSE,geonorge,TRUE,FALSE,,FALSE,FALSE,FALSE,
 easting,aspect (easting),Norwegian Mapping Authority (DMT 10m),TRUE,FALSE,geonorge,TRUE,FALSE,,FALSE,FALSE,FALSE,
 northing,aspect (northing,Norwegian Mapping Authority (DMT 10m),TRUE,FALSE,geonorge,TRUE,FALSE,,FALSE,FALSE,FALSE,
@@ -20,7 +20,7 @@ losmasse,soil coarseness,ngu,TRUE,FALSE,ngu,TRUE,FALSE,,FALSE,FALSE,FALSE,
 summer_precipitation,summer precipitation,Norwegian Meteorological Institute,TRUE,FALSE,met,TRUE,TRUE,"model = 'clinear', range = c(-10, 0)",FALSE,FALSE,FALSE,
 summer_temperature,summer temperature,Norwegian Meteorological Institute,TRUE,FALSE,met,TRUE,TRUE,"model = 'clinear', range = c(-10, 0)",FALSE,FALSE,TRUE,
 habitat_heterogeneity,habitat heterogeneity,Corine,TRUE,FALSE,corine,TRUE,FALSE,,FALSE,FALSE,FALSE,
-cs_density,citizen science sampling density,GBIF,TRUE,FALSE,gbif,TRUE,FALSE,,FALSE,FALSE,TRUE,
+cs_density,citizen science sampling density,GBIF,TRUE,TRUE,gbif,TRUE,FALSE,,TRUE,FALSE,TRUE,
 density_water,waterbody density,Norwegian Mapping Authority (N250 map data),TRUE,FALSE,geonorge,TRUE,FALSE,,FALSE,FALSE,FALSE,
 density_roads,road density,Norwegian Mapping Authority (N250 map data),TRUE,FALSE,geonorge,FALSE,FALSE,,TRUE,FALSE,FALSE,
 canopy_height,canopy height,ETH Global Sentinel-2,TRUE,FALSE,eth,TRUE,FALSE,,FALSE,FALSE,FALSE,
@@ -41,3 +41,4 @@ forest_age,forest age,Nibio (SatSkog model),TRUE,FALSE,SatSkog,TRUE,FALSE,,FALSE
 forest_size_diversity,forest size diversity,Forest Inventory and Monitoring Research Group (SkogRover),TRUE,FALSE,SkogRover,TRUE,FALSE,,FALSE,FALSE,FALSE,
 forest_naturalness,forest naturalness,Forest Inventory and Monitoring Research Group (SkogRover),TRUE,FALSE,SkogRover,TRUE,FALSE,,FALSE,FALSE,FALSE,
 forest_volume,forest volume,Forest Inventory and Monitoring Research Group (SkogRover),TRUE,FALSE,SkogRover,TRUE,FALSE,,FALSE,FALSE,FALSE,
+forest_mask,forest mask,Forest Inventory and Monitoring Research Group (SkogRover),TRUE,FALSE,SkogRover,TRUE,FALSE,,FALSE,FALSE,FALSE,

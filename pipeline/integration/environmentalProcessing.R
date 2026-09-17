@@ -199,9 +199,11 @@ for (par in catParams) {
 }
 
 fullCatList <- unlist(contList)[!is.na(unlist(contList))]
-names(fullCatList) <- gsub(" ", "_", 
-                           stringr::str_replace_all(names(fullCatList),
-                                                    "[[:punct:]]", "_")) 
+if (length(fullCatList)) {
+  names(fullCatList) <- gsub(" ", "_", 
+                             stringr::str_replace_all(names(fullCatList),
+                                                      "[[:punct:]]", "_")) 
+}
 
 parameterListCont <- parameterList[!(names(parameterList) %in% catParams)]
 parameterListCont <- c(parameterListCont, fullCatList)

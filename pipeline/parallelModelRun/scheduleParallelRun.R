@@ -8,6 +8,7 @@ library(terra)
 library(dplyr)
 library(INLA)
 library(intSDM)
+library(fmesher)
 # Conditional library loading based on operating system
 if (Sys.info()["sysname"] == "Linux") {
   library(qs, lib.loc = "/cluster/projects/nn11017k/BioDivMapping/R")
@@ -237,10 +238,10 @@ timeTaken <- end - start
 print(timeTaken)
 saveRDS(nThreads * timeTaken, paste0(folderName, "/modelOutputs/", focalGroup, "/timeTaken.RDS"))
 
-
 ###--------------------###
 ### 2. update JSON    ####
 ###--------------------###
+cat("\nUpdating JSON")
 
 # read existing json
 json_ls <- jsonlite:::fromJSON(file.path(extFolderName, "metadata.json"))
@@ -259,23 +260,23 @@ json_ls$step_3a <- list(
                          inlabru = citation('inlabru')$doi,
                          PointedSDMs = citation('PointedSDMs')$doi,
                          intSDM = citation('intSDM')$doi),
-    packageVersions = c(INLA = packageVersion('INLA'),
-                        inlabru = packageVersion('inlabru'),
-                        PointedSDMs = packageVersion('PointedSDMs'),
-                        intSDM = packageVersion('intSDM'))
+    packageVersions = c(INLA = as.character(packageVersion('INLA')),
+                        inlabru = as.character(packageVersion('inlabru')),
+                        PointedSDMs = as.character(packageVersion('PointedSDMs')),
+                        intSDM = as.character(packageVersion('intSDM')))
   )
   ,
   #Model outputs
   modelDefinition = list(
     modelPriors = INLA:::inla.priors.used(richnessModel), ## Won’t work nicely for PC priors
-    inlabruComponents = richnessModel$componentsJoint,
+    inlabruComponents = as.character(richnessModel$componentsJoint),
     modelFamilies = sapply(richnessModel$bru_info$lhoods, function(x) x$family),
     modelLink = setNames(sapply(richnessModel$.args$control.family, function(x) x$link), richnessModel$source),
-    modelFormulas = sapply(richnessModel$bru_info$lhoods,
-                           function(x) update.formula(x$formula,
-                                                      new = formula(paste('. ~',
-                                                                          paste0(x$used$effect,
-                                                                                 collapse = ' + ')))))
+    modelFormulas = as.character(sapply(richnessModel$bru_info$lhoods,
+                                        function(x) update.formula(x$formula,
+                                                                   new = formula(paste('. ~',
+                                                                                       paste0(x$used$effect,
+                                                                                              collapse = ' + '))))))
   )
 )
 # write json
@@ -283,15 +284,4 @@ jsonlite:::write_json(json_ls,
                       file.path(extFolderName, "metadata.json"),
                       pretty = TRUE)
 
-#obj_size(richnessModel)
-reducedModel <- reset_environments(richnessModel)
-qsave(reducedModel, paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.qs"))
-file.remove(paste0(folderName, "/modelOutputs/", focalGroup, "/richnessModel.rds"))
-
-print(folderName)
-print(focalGroup)
-
-end <- Sys.time()
-timeTaken <- end - start
-print(timeTaken)
-saveRDS(nThreads * timeTaken, paste0(folderName, "/modelOutputs/", focalGroup, "/timeTaken.RDS"))
+cat("\nCompleted scheduleParallelRun")

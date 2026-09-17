@@ -62,4 +62,4 @@ baseRaster <- terra::rast(extent = ext(regionGeometryBuffer), res = res, crs = p
 values(baseRaster) <- NA
 
 # save
-writeRaster(baseRaster, file.path(folderName, "baseRaster.tiff"))
+writeRaster(baseRaster, file.path(folderName, "baseRaster.tiff"), overwrite = T)

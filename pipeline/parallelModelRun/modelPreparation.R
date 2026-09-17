@@ -162,5 +162,6 @@ for(focalTaxon in unique(focalTaxa$taxa)){
   qsave(workflowList, paste0(folderName, "/workspaces/", focalTaxon, "_workflowList.qs"))
 }
 
-
+saveRDS(unlist(listSegments, use.names = FALSE), paste0(folderName, "/segmentList.RDS"))
 # Combination of response and environmental variables
+cat("\nFinished creating workflows for all taxa. Total number of species to run:", length(unlist(listSegments, use.names = FALSE)), "\n")

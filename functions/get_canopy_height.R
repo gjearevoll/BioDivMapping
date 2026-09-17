@@ -26,7 +26,7 @@ build_canopy_mosaic <- function(tile_folder, output = "canopy_height_output.tif"
   if (!is.null(boundary_file)) args <- c(args, "--boundary", boundary_file)
   
   message(sprintf("Mosaicking/clipping/reprojecting to %s ...", output))
-  run_python_script("functions/canopy_trondelag_local.py", args, uv_bin = uv_bin)
+  run_python_script("functions/canopy_mosaic.py", args, uv_bin = uv_bin)
   invisible(terra::rast(output))
 }
 

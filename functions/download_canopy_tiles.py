@@ -2,12 +2,13 @@
 """
 Compute which ETH Global Canopy Height 10m (2020) 3-degree tiles intersect a
 given boundary, and download them from ETH's libdrive share into a local
-folder — for later mosaicking with canopy_trondelag_local.py.
+folder — for later mosaicking with canopy_mosaic.py.
 
-Generalizes canopy_trondelag_download_tiles.sh (which hardcoded the 6 tiles
-covering Trøndelag) to any boundary: tiles are derived from the boundary
-geometry itself (not just its bounding box), so e.g. mainland Norway pulls in
-only the ~23 tiles that actually touch land, not the ~50 in its bbox.
+This script figures out which tiles are actually needed by looking at the
+real shape of the boundary, not just a rectangular box drawn around it — so
+e.g. mainland Norway only pulls in the ~23 tiles that actually touch land,
+rather than the ~50 tiles that would fall inside its bounding box (which
+includes a lot of open sea).
 
 Usage:
     uv run download_canopy_tiles.py --boundary /path/to/boundary.shp
@@ -25,21 +26,33 @@ import requests
 from rasterio.enums import Resampling
 from shapely.geometry import box
 
+# The public link ETH publishes its canopy height tiles from.
 LIBDRIVE_SHARE = "https://libdrive.ethz.ch/index.php/s/cO8or7iOe5dT2Rt/download"
+# ETH splits the world into square tiles, each covering 3 degrees of
+# longitude/latitude (roughly 300km x 300km near the equator, smaller
+# further north/south).
 TILE_SIZE_DEG = 3
 
 
 def tiles_intersecting(boundary_wgs84: gpd.GeoDataFrame) -> list[str]:
-    """Return ETH tile names (e.g. 'N60E006') for each 3x3-degree grid cell
-    that actually intersects the boundary geometry, not just its bbox."""
+    """Work out which of ETH's tile names (e.g. 'N60E006') actually touch
+    the boundary's real shape, not just the rectangular box around it."""
+    # Combine every shape in the boundary file into one single shape, so we
+    # only have to compare against one thing instead of many.
     geom = boundary_wgs84.union_all()
+    # The four edges of the smallest rectangle that fully contains the
+    # boundary — a quick starting point before checking individual tiles.
     minx, miny, maxx, maxy = boundary_wgs84.total_bounds
 
+    # Round the rectangle's edges outward to the nearest tile-grid lines, so
+    # we cover every tile the rectangle could possibly touch.
     lat0 = math.floor(miny / TILE_SIZE_DEG) * TILE_SIZE_DEG
     lat1 = math.floor(maxy / TILE_SIZE_DEG) * TILE_SIZE_DEG
     lon0 = math.floor(minx / TILE_SIZE_DEG) * TILE_SIZE_DEG
     lon1 = math.floor(maxx / TILE_SIZE_DEG) * TILE_SIZE_DEG
 
+    # Walk across the grid of candidate tiles one by one and keep only the
+    # ones that genuinely overlap the boundary's shape (not just its box).
     names = []
     lat = lat0
     while lat <= lat1:
@@ -47,6 +60,8 @@ def tiles_intersecting(boundary_wgs84: gpd.GeoDataFrame) -> list[str]:
         while lon <= lon1:
             cell = box(lon, lat, lon + TILE_SIZE_DEG, lat + TILE_SIZE_DEG)
             if geom.intersects(cell):
+                # ETH names tiles by the coordinates of their lower-left
+                # corner, e.g. "N60E006" = starts at 60°N, 6°E.
                 lat_prefix = "N" if lat >= 0 else "S"
                 lon_prefix = "E" if lon >= 0 else "W"
                 names.append(f"{lat_prefix}{abs(lat):02d}{lon_prefix}{abs(lon):03d}")
@@ -56,20 +71,28 @@ def tiles_intersecting(boundary_wgs84: gpd.GeoDataFrame) -> list[str]:
 
 
 def aggregate_tile(native_path: str, factor: int) -> str:
-    """Block-average `factor`x`factor` native pixels into one (e.g. factor=10
-    turns ETH's ~10m tiles into ~100m), via a decimated read — GDAL excludes
-    nodata pixels from the average as long as the source has nodata set (ETH
-    tiles do: nodata=255 on a uint8 band). Leverages the tile's internal COG
-    overviews where the decimation factor allows. Replaces the native file
-    with the aggregated one to keep disk usage down."""
+    """Shrink a tile by averaging blocks of neighbouring pixels together
+    (e.g. factor=10 turns ETH's ~10m-per-pixel tiles into ~100m-per-pixel
+    tiles). This is done so the downloaded files stay a manageable size —
+    without it, a full-country run would need to store and process far more
+    detail than the pipeline actually needs. Locations with "no data" (e.g.
+    open water) are correctly left out of the averaging rather than dragging
+    the average down. The original full-detail file is deleted afterwards
+    to save disk space, keeping only the shrunk version."""
     agg_path = native_path.replace(".tif", f"_agg{factor}x.tif")
     with rasterio.open(native_path) as src:
         new_height = max(1, src.height // factor)
         new_width = max(1, src.width // factor)
+        # Reading with a smaller "out_shape" than the file's real size makes
+        # the underlying library do the block-averaging for us as it reads,
+        # rather than us reading everything at full size and shrinking it
+        # afterwards — much faster and uses far less memory.
         data = src.read(
             out_shape=(src.count, new_height, new_width),
             resampling=Resampling.average,
         )
+        # The shrunk image needs its own "where is this pixel located on
+        # Earth" information, scaled up to match the new, larger pixel size.
         new_transform = src.transform * src.transform.scale(
             src.width / new_width, src.height / new_height
         )
@@ -79,7 +102,7 @@ def aggregate_tile(native_path: str, factor: int) -> str:
                 "height": new_height,
                 "width": new_width,
                 "transform": new_transform,
-                "compress": "deflate",
+                "compress": "deflate",  # shrink the file on disk, no quality loss
                 "predictor": 2,
             }
         )
@@ -92,12 +115,14 @@ def aggregate_tile(native_path: str, factor: int) -> str:
 def download_tile(
     name: str, out_dir: str, aggregate_factor: int, max_attempts=5, base_delay=10
 ) -> bool:
-    """Download one tile, then block-average it down by `aggregate_factor`
-    (pass 1 to keep native resolution). Returns False (without raising) on a
-    404 — some grid cells intersect the boundary bbox-wise but ETH never
-    published a tile for them (e.g. mostly-ocean cells). Retries with
-    backoff on 429s and server errors, since libdrive rate-limits
-    aggressively."""
+    """Download one tile and then shrink it by `aggregate_factor` (pass 1 to
+    keep it at full detail). Returns False (without stopping the whole run)
+    if ETH simply doesn't have a tile for this name — some grid squares
+    touch the boundary's rectangle but are mostly open ocean, and ETH never
+    published a file for them. If the download service is temporarily
+    overloaded or briefly unreachable, this waits a bit and tries again
+    rather than giving up immediately, since ETH's download service can be
+    strict about how many requests arrive in a short time."""
     fname = f"ETH_GlobalCanopyHeight_10m_2020_{name}_Map.tif"
     url = f"{LIBDRIVE_SHARE}?path=%2F3deg_cogs&files={fname}"
     out_path = os.path.join(out_dir, fname)
@@ -105,9 +130,12 @@ def download_tile(
     for attempt in range(1, max_attempts + 1):
         resp = requests.get(url, stream=True, timeout=120)
         if resp.status_code == 404:
+            # "404" means the file genuinely doesn't exist — not worth retrying.
             print(f"  {name}: no tile published (404) — skipping")
             return False
         if resp.status_code == 429 or resp.status_code >= 500:
+            # 429 = "too many requests", 500+ = a problem on ETH's server.
+            # Both are usually temporary, so wait longer each time and retry.
             if attempt == max_attempts:
                 resp.raise_for_status()
             delay = base_delay * attempt
@@ -118,6 +146,8 @@ def download_tile(
             time.sleep(delay)
             continue
         resp.raise_for_status()
+        # Save the file to disk in chunks rather than all at once, since
+        # these tiles can be large.
         with open(out_path, "wb") as f:
             for chunk in resp.iter_content(chunk_size=1024 * 1024):
                 f.write(chunk)
@@ -150,10 +180,11 @@ def main():
         type=int,
         default=10,
         help=(
-            "Block-average this many native pixels into one before saving each "
-            "tile (default 10: ETH's ~10m tiles -> ~100m). Pass 1 to keep native "
-            "resolution. The final mosaic's exact output resolution is set "
-            "separately in canopy_trondelag_local.py's --resolution."
+            "How many neighbouring pixels to average into one before saving "
+            "each tile (default 10: turns ETH's ~10m pixels into ~100m "
+            "pixels). Pass 1 to keep full detail. The final mosaic's exact "
+            "output resolution is set separately in canopy_mosaic.py's "
+            "--resolution."
         ),
     )
     args = parser.parse_args()
@@ -169,6 +200,9 @@ def main():
         print(f"  {t}")
 
     if args.dry_run:
+        # --dry-run is for checking which tiles *would* be fetched, e.g. to
+        # sanity-check a new boundary, without actually spending the time
+        # and bandwidth to download anything.
         print("\n--dry-run set, not downloading anything.")
         return
 

@@ -29,7 +29,7 @@ if (Sys.info()["sysname"] == "Linux") {
   biasField <- FALSE  # F #
 }
 
-sapply(list.files("functions", full.names = TRUE), source)
+sapply(list.files("functions", full.names = TRUE, pattern = "\\.R$"), source)
 
 getwd()
 

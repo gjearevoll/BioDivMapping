@@ -16,7 +16,7 @@ library(digest)  # create hash of raster CRS and projection for saving
 library(ncdf4)
 
 # Import local functions
-sapply(list.files("functions", full.names = TRUE), source)
+sapply(list.files("functions", full.names = TRUE, pattern = "\\.R$"), source)
 
 ###----------------------###
 ### 0. Bash preparation ####

@@ -69,7 +69,7 @@ dateAccessed <- dateToUse
 modelRun <- "richness"
 covariatesSquared <- TRUE
 # Import local functions
-sapply(list.files("functions", pattern = "\\.R$", full.names = TRUE), source)
+sapply(list.files("functions", pattern = "\\.R$", full.names = TRUE, pattern = "\\.R$"), source)
 
 # Ensure that dateAccessed is specified
 if (!exists("modelRun")) stop("You need to specify the variable modelRun")

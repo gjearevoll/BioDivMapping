@@ -9,7 +9,7 @@ library(sf)
 library(dplyr)
 
 # Import local functions
-sapply(list.files("functions", full.names = TRUE), source)
+sapply(list.files("functions", full.names = TRUE, pattern = "\\.R$"), source)
 
 ###-----------------###
 ### 1. Preparation  ###

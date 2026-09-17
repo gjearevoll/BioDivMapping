@@ -25,3 +25,8 @@ density_water,waterbody density,Norwegian Mapping Authority (N250 map data),TRUE
 density_roads,road density,Norwegian Mapping Authority (N250 map data),TRUE,FALSE,geonorge,FALSE,FALSE,,TRUE,FALSE,FALSE,
 canopy_height,canopy height,ETH Global Sentinel-2,TRUE,FALSE,eth,TRUE,FALSE,,FALSE,FALSE,FALSE,
 canopy_variation,canopy variation,ETH Global Sentinel-2,TRUE,FALSE,eth,TRUE,FALSE,,FALSE,FALSE,FALSE,
+ph_h2o,ph in water,SoilGrids,TRUE,FALSE,soil_grids,TRUE,FALSE,,FALSE,FALSE,FALSE,
+soil_organic_carbon,soil organic carbon,SoilGrids,TRUE,FALSE,soil_grids,TRUE,FALSE,,FALSE,FALSE,FALSE,
+LAI,Leaf Area Index,"Copernicus Global Land Service (CGLS), 300m 10-daily",TRUE,FALSE,biopar,TRUE,FALSE,,FALSE,FALSE,FALSE,
+FAPAR,fraction of absorbed PAR,"Copernicus Global Land Service (CGLS), 300m 10-daily",TRUE,FALSE,biopar,TRUE,FALSE,,FALSE,FALSE,FALSE,
+FCOVER,fraction of vegetation cover,"Copernicus Global Land Service (CGLS), 300m 10-daily",TRUE,FALSE,biopar,TRUE,FALSE,,FALSE,FALSE,FALSE,

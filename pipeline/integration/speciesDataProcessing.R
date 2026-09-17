@@ -13,7 +13,7 @@ library(terra)
 library(qs)
 
 # Import local functions
-sapply(list.files("functions", full.names = TRUE), source)
+sapply(list.files("functions", full.names = TRUE, pattern = "\\.R$"), source)
 
 ###----------------------###
 ### 0. Bash preparation ####

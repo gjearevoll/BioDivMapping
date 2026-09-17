@@ -15,13 +15,13 @@
 
 source("pipeline/installAllPackages.R")
 
-sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
+sapply(list.files("functions", full.names = TRUE, recursive = TRUE, pattern = "\\.R$"), source)
 
 # Before we begin, we will define all control parameters up front, which will be saved 
 # in the working folder for reproducibility.
 
 # Date of analysis from which working directory will be create/access
-dateAccessed <- "2025-10-20"
+dateAccessed <- "2026-09-03"
 
 # There are instances you want to re-initialise repository and delete some files that should be re-run
 refresh <- FALSE

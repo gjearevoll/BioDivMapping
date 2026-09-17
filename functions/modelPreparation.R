@@ -192,7 +192,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
           st_as_sf()
         
         names(mergedDatasets)[i] <- paste0("mergedDataset", uniqueDataType)
-
+        
         #Put the merged dataset together with the rest of the speciesData
         if(!is.null(unlist(speciesData[predictionDataset]))){  
           speciesData <- c(speciesData[predictionDataset], 
@@ -232,7 +232,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
       if (predictorSpecies == "NULL") {
         predictorSpecies <- names(speciesCountsPredData[1])
       }
-
+      
       
       # These are the list of species in the prediction dataset
       # So that we can have the prediction dataset and the rest of the species that 
@@ -247,8 +247,8 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
       segmentMinusOne <- nSegment - 1
       cat(paste("Splitting ", length(fullSpeciesList), "species into", ceiling(length(fullSpeciesList)/segmentMinusOne), "groups")) 
       if (length(fullSpeciesList) > 1) {
-      groupings <- factor(rep(seq(1, floor(length(fullSpeciesList)/segmentMinusOne)), segmentMinusOne))
-      segmentedList1 <- split(fullSpeciesList, groupings)
+        groupings <- factor(rep(seq(1, floor(length(fullSpeciesList)/segmentMinusOne)), segmentMinusOne))
+        segmentedList1 <- split(fullSpeciesList, groupings)
       } else {
         segmentedList1 <- list(fullSpeciesList)
       }
@@ -267,7 +267,7 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
         # y <- 
         speciesCountsAll[segmentedList[[x]]]
       })
-
+      
       names(nOccurences) <- names(segmentedList)
       names(nRecords) <- names(segmentedList)
       speciesLists[[focalTaxon]] <- segmentedList
@@ -369,18 +369,25 @@ modelPreparation <- function(focalTaxa, focalCovariates, speciesDataAll, regionG
                              speciesName = 'simpleScientificName')
     }
     
-    # Add environmental characteristics. If there is a corresponding column for the focalTaxon in the environmental covariate matrix use that,
-    # if not, use all calculated env covariates
+    # Add environmental characteristics. If there is a corresponding column for the focalTaxon in the environmental 
+    # covariate matrix use that, if not, use all calculated env covariates
     # Reduce focalTaxa to focalCovariates
     env <- colnames(focalTaxa)[colnames(focalTaxa) %in% focalCovariates$parameters[!focalCovariates$categorical]]
     focalTaxa <- focalTaxa[,c("taxa", env)]
     focalTaxa <- focalTaxa[focalTaxa$taxa %in% focalGroup,]
     env <- env[apply(focalTaxa[,-1], 2, any)]
-    quadratics <- paste0(focalCovariates$parameters[focalCovariates$quadratic & focalCovariates$parameters %in% env], "_squared")
-    env <- c(env, quadratics)
-    categoricals <- focalCovariates$parameters[focalCovariates$categorical]
-    categoricals2 <- names(environmentalDataList)[apply(sapply(categoricals, FUN = function(x) {grepl(x, names(environmentalDataList))}), 1, any)]
-    env <- c(env, categoricals2)
+    if (any(focalCovariates$quadratic[focalCovariates$parameters %in% env])) {
+      quadratics <- paste0(focalCovariates$parameters[focalCovariates$quadratic & focalCovariates$parameters %in% env], "_squared")
+      env <- c(env, quadratics)
+    }
+    
+    focalTaxaCat <- colnames(focaltaxa)[colnames(focaltaxa) %in% focalCovariates$parameters]
+    focalTaxaCat <- focalTaxaCat[as.logical(focaltaxa[1,focalTaxaCat])]
+    if (any(focalCovariates$categorical[focalCovariates$parameters %in% focalTaxaCat])) {
+      categoricals <- focalCovariates$parameters[focalCovariates$categorical]
+      categoricals2 <- names(environmentalDataList)[apply(sapply(categoricals, FUN = function(x) {grepl(x, names(environmentalDataList))}), 1, any)]
+      env <- c(env, categoricals2) 
+    }
     
     for (e in env) {
       cat(sprintf("Adding covariate '%s' to the model.\n", e))

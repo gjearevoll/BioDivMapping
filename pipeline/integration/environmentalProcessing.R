@@ -8,7 +8,7 @@ library(dplyr)
 library(digest)  # create hash of raster CRS and projection for saving
 
 # Import local functions
-sapply(list.files("functions", full.names = TRUE), source)
+sapply(list.files("functions", full.names = TRUE, pattern = "\\.R$"), source)
 
 
 ###----------------------###

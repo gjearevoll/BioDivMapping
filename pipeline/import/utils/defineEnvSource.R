@@ -207,6 +207,71 @@ if (dataSource == "geonorge") {
   rasterisedVersion <- get_cs_density(dateAccessed, regionGeometry, citizenDatasets, yearInterval, crs)
   rasterisedVersion <- if (!temporal) app(rasterisedVersion, "mean") |> 
     setNames("cs_density")
+  ### 11. ETH ###  
+} else if (dataSource == "eth") {
+  
+  if (focalParameter == "canopy_variation") {
+    canopy_height <- checkAndImportRast("canopy_height", baseRaster, dataPath, quiet = TRUE)
+    if (is.null(canopy_height)) {
+      canopy_height <- get_canopy_height(
+        boundary         = regionGeometry,
+        dataPath          = dataPath,
+        aggregate_factor = 10,
+        resolution       = 100
+      )
+      canopy_height <- ifel(is.na(canopy_height), 0, canopy_height)
+      canopy_height <- terra::mask(canopy_height, terra::vect(regionGeometry), touches = FALSE)
+      file_path <- generateRastFileName(canopy_height, "canopy_height", dataPath)
+      writeRaster(canopy_height, filename = file_path, overwrite = TRUE)
+    }
+    sdRaster <- terra::aggregate(canopy_height, fact = 5, fun = "sd")
+    rasterisedVersion <- terra::project(sdRaster, baseRaster)
+    file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+    writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
+  } else {
+    rasterisedVersion <- get_canopy_height(
+      boundary         = regionGeometry,
+      dataPath          = dataPath,
+      aggregate_factor = 10,
+      resolution       = 100
+    )
+    rasterisedVersion <- ifel(is.na(rasterisedVersion), 0, rasterisedVersion)
+    rasterisedVersion <- terra::mask(rasterisedVersion, terra::vect(regionGeometry), touches = FALSE)
+    file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+    writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
+  }
+  # 12. Data source soilgrids
+} else if (dataSource == "soil_grids") {
+  
+  soilVariableName <- ifelse(focalParameter == "ph_h2o", "phh2o", "soc")
+  rasterisedVersion <- get_soil_grids(
+    variableName = soilVariableName,
+    boundary         = regionGeometry,
+    dataPath          = dataPath,
+    resolution       = res
+  )
+  if (focalParameter == "ph_h2o") {
+    rasterisedVersion <- ifel(rasterisedVersion < 0, NA, rasterisedVersion)
+  } else {
+    rasterisedVersion <- ifel(rasterisedVersion < 0, 0, rasterisedVersion)
+    rasterisedVersion <- terra::mask(rasterisedVersion, terra::vect(regionGeometry), touches = FALSE)
+  }
+  file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+  writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
+  # BIOPAR variables
+} else if (dataSource == "biopar") {
+  
+  rasterisedVersion <- get_biopar(
+    variableName = focalParameter,
+    boundary         = regionGeometry,
+    dataPath          = dataPath,
+    resolution       = res
+  )
+  rasterisedVersion <- ifel(is.na(rasterisedVersion), 0, rasterisedVersion)
+  rasterisedVersion <- terra::mask(rasterisedVersion, terra::vect(regionGeometry), touches = FALSE)
+  file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
+  writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
+  # 
 }
 
 ### merge with requested download area to make missing data explicit

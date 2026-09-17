@@ -50,7 +50,7 @@ prior.range[1] <- prior.range[1] /1000
 cat("\nPreparing data for model run for date", dateAccessed)
 
 # Import local functions
-sapply(list.files("functions", full.names = TRUE), source)
+sapply(list.files("functions", full.names = TRUE, pattern = "\\.R$"), source)
 
 # model output folder
 modelFolderName <- paste0(folderName, "/modelOutputs")

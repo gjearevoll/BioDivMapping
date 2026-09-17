@@ -3,78 +3,49 @@
 Mosaic locally-downloaded ETH Global Canopy Height (10m, 2020) tiles, clip to
 a boundary, and save as GeoTIFF.
 
-Use this once you've downloaded the individual COG tiles you need (e.g. via
+Use this once you've downloaded the individual tiles you need (e.g. via
 download_canopy_tiles.py) into a folder — this script does everything else
-locally: mosaic -> clip -> reproject. No repeated remote range-requests, so
-none of the rate-limiting/slowness from the VRT approach applies.
+locally: stitch the tiles together into one image ("mosaic"), cut it down to
+just the shape you asked for ("clip"), and convert it to the standard map
+projection used elsewhere in the pipeline ("reproject"). Because everything
+here works from files already on disk, none of the slowness or rate-limiting
+that can happen when reading tiles directly over the internet applies.
 
 Usage:
-    uv run canopy_trondelag_local.py /path/to/tiles/folder --boundary /path/to/boundary.shp
-    uv run canopy_trondelag_local.py /path/to/tiles/folder --boundary boundary.shp -o output.tif --resolution 100
-
-If --boundary is omitted, falls back to fetching the Trøndelag fylke
-boundary (the original pilot region) from the same source as before.
+    uv run canopy_mosaic.py /path/to/tiles/folder --boundary /path/to/boundary.shp
+    uv run canopy_mosaic.py /path/to/tiles/folder --boundary boundary.shp -o output.tif --resolution 100
 
 The final output resolution is set by --resolution (default 100m) at the
 reprojection step, independent of whatever resolution the input tiles are
-in — so it doesn't matter whether tiles were aggregated on download
-(see download_canopy_tiles.py's --aggregate-factor) or are still native 10m.
+in — so it doesn't matter whether tiles were shrunk on download (see
+download_canopy_tiles.py's --aggregate-factor) or are still at full detail.
 """
 
 import argparse
 import glob
-import io
 import os
 
 import geopandas as gpd
 import rasterio
-import requests
 from rasterio.mask import mask
 from rasterio.merge import merge
 from rasterio.warp import Resampling, calculate_default_transform, reproject
 
-OUTPUT_CRS = "EPSG:25833"  # ETRS89 / UTM zone 33N — Norway standard
+OUTPUT_CRS = "EPSG:25833"  # ETRS89 / UTM zone 33N — Norway's standard map projection
 DEFAULT_OUTPUT = "canopy_height_output.tif"
 DEFAULT_RESOLUTION_M = 100  # final output pixel size, regardless of input tile resolution
 
-# Accept the usual raster tile extensions
+# Accept the usual raster tile file-name endings, both lower- and upper-case.
 TILE_GLOB_PATTERNS = ("*.tif", "*.tiff", "*.TIF", "*.TIFF")
 
 
-def get_trondelag_boundary() -> gpd.GeoDataFrame:
-    """Fetch an up-to-date Trøndelag county boundary (post-2020 Norwegian
-    regional reform — old GADM Norway files with 'Nord-/Sør-Trøndelag' won't
-    match), dissolved to a single polygon in EPSG:4326."""
-    url = (
-        "https://raw.githubusercontent.com/robhop/fylker-og-kommuner-2020/"
-        "master/Fylker-M.geojson"
-    )
-    resp = requests.get(url, timeout=60)
-    resp.raise_for_status()
-    gdf = gpd.read_file(io.BytesIO(resp.content))
-
-    name_col = "fylkesnavn" if "fylkesnavn" in gdf.columns else gdf.columns[0]
-    trondelag = gdf[
-        gdf[name_col].str.contains("Trøndelag", case=False, na=False)
-    ].copy()
-    if trondelag.empty:
-        raise RuntimeError("No feature matching 'Trøndelag' found in boundary source.")
-
-    trondelag["geometry"] = trondelag.geometry.buffer(0)
-    trondelag = trondelag.dissolve().reset_index(drop=True)
-    if trondelag.crs is None:
-        trondelag = trondelag.set_crs("EPSG:4326")
-    return trondelag
-
-
-def get_boundary(path: str | None) -> gpd.GeoDataFrame:
-    """Load a boundary from a local vector file (shapefile, GeoJSON, GPKG,
-    anything geopandas can read), dissolved to a single polygon in EPSG:4326.
-    Falls back to fetching the Trøndelag fylke boundary if no path is given."""
-    if path is None:
-        return get_trondelag_boundary()
-
+def get_boundary(path: str) -> gpd.GeoDataFrame:
+    """Load a boundary from a local vector file (shapefile, GeoJSON, GPKG —
+    anything the geopandas library can read), and combine it into one single
+    polygon shape in the standard WGS84 (latitude/longitude) map projection."""
     gdf = gpd.read_file(path)
+    # .buffer(0) is a common trick to repair minor shape glitches (like a
+    # boundary line that crosses itself) before we try to combine shapes.
     gdf["geometry"] = gdf.geometry.buffer(0)
     gdf = gdf.dissolve().reset_index(drop=True)
     if gdf.crs is None:
@@ -85,6 +56,7 @@ def get_boundary(path: str | None) -> gpd.GeoDataFrame:
 
 
 def find_tiles(folder: str) -> list[str]:
+    """List every downloaded tile file sitting in `folder`."""
     tiles = []
     for pattern in TILE_GLOB_PATTERNS:
         tiles.extend(glob.glob(os.path.join(folder, pattern)))
@@ -98,17 +70,17 @@ def find_tiles(folder: str) -> list[str]:
 
 
 def mosaic_tiles_to_file(tile_paths: list[str], bounds_native, tmp_mosaic_path: str):
-    """Merge local tiles, restricted to `bounds_native` (in the tiles' own CRS),
-    writing straight to disk via merge()'s dst_path. This makes rasterio do a
-    windowed read per source tile instead of loading each full tile into
-    memory — important since real tiles can be large."""
+    """Stitch the individual tiles together into one image, but only for the
+    area covered by `bounds_native` (given in the tiles' own map projection).
+    The result is written straight to a file on disk rather than being held
+    in memory all at once, since real tiles can add up to a lot of data."""
     srcs = [rasterio.open(p) for p in tile_paths]
     try:
         merge(
             srcs,
             bounds=bounds_native,
             dst_path=tmp_mosaic_path,
-            dst_kwds={"compress": "deflate", "predictor": 2},
+            dst_kwds={"compress": "deflate", "predictor": 2},  # shrink file size, no quality loss
         )
     finally:
         for s in srcs:
@@ -122,8 +94,12 @@ def clip_and_reproject(
     out_path: str,
     resolution_m: float,
 ) -> str:
+    """Cut the stitched-together mosaic down to just the boundary's shape,
+    then convert it into the standard map projection (and pixel size) the
+    rest of the pipeline expects."""
     geoms = [boundary_native.geometry.iloc[0].__geo_interface__]
 
+    # Step 1: clip to the boundary's shape, writing to a temporary file.
     tmp_clipped_path = out_path + ".clipped_tmp.tif"
     with rasterio.open(tmp_mosaic_path) as src:
         clipped, clipped_transform = mask(
@@ -140,7 +116,9 @@ def clip_and_reproject(
     with rasterio.open(tmp_clipped_path, "w", **clipped_meta) as dst:
         dst.write(clipped)
 
-    # Reproject the clipped result to the target CRS
+    # Step 2: reproject the clipped result into the target map projection
+    # and pixel size (this is what actually makes the output line up with
+    # the rest of the pipeline's data).
     with rasterio.open(tmp_clipped_path) as tmp_src:
         transform, width, height = calculate_default_transform(
             tmp_src.crs,
@@ -170,6 +148,11 @@ def clip_and_reproject(
                     src_crs=tmp_src.crs,
                     dst_transform=transform,
                     dst_crs=OUTPUT_CRS,
+                    # "bilinear" blends nearby pixels together when resizing,
+                    # which gives a smoother result than picking one pixel
+                    # verbatim — appropriate for a continuous measurement
+                    # like canopy height (as opposed to e.g. a land-cover
+                    # category, where blending wouldn't make sense).
                     resampling=Resampling.bilinear,
                 )
 
@@ -188,11 +171,8 @@ def main():
     )
     parser.add_argument(
         "--boundary",
-        default=None,
-        help=(
-            "Path to a boundary vector file (shapefile/GeoJSON/GPKG/...). "
-            "Defaults to fetching the Trøndelag fylke boundary."
-        ),
+        required=True,
+        help="Path to a boundary vector file (shapefile/GeoJSON/GPKG/...).",
     )
     parser.add_argument(
         "--resolution",
@@ -211,9 +191,11 @@ def main():
     for p in tile_paths:
         print(f"  {p}")
 
-    print(f"Loading boundary ({args.boundary or 'Trøndelag fylke (default)'})...")
+    print(f"Loading boundary ({args.boundary})...")
     boundary = get_boundary(args.boundary)
 
+    # The tiles are already in their own map projection (not WGS84), so
+    # convert the boundary to match before comparing the two.
     with rasterio.open(tile_paths[0]) as first_tile:
         tile_crs = first_tile.crs
     boundary_native = boundary.to_crs(tile_crs)

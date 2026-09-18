@@ -94,6 +94,30 @@ if (length(emptyParameters) > 0) {
                },
                if (length(vec) == 1) "a source" else "sources"))}
 
+# Check that any local covariates to be modelled exist in localCovFolder
+## ie TRUE in focalTaxa for an included taxon
+includedTaxa <- if ("include" %in% names(focalTaxa)) {
+  focalTaxa[focalTaxa$include %in% TRUE, , drop = FALSE]
+} else focalTaxa
+# identify modelled covs
+modelledParameters <- selectedParameters[sapply(selectedParameters, function(p)
+  p %in% names(includedTaxa) && any(includedTaxa[[p]] %in% TRUE))]
+# identify local modelled covs 
+localParameters <- modelledParameters[!parameters$external[match(modelledParameters, parameters$parameters)]]
+# identify missing local modelled covs
+missingLocal <- localParameters[!file.exists(file.path(localCovFolder, paste0(localParameters, ".tiff")))]
+if (length(missingLocal)) {
+  stop(sprintf(paste0(
+    "You are attempting to use local covariate(s) without having loaded them: %s (external = FALSE).\n",
+    "The expected local file(s) do not exist:\n  %s\n",
+    "Please create/populate the local covariate folder '%s', or set ",
+    "external = TRUE in focalCovariates.csv to download them."),
+    paste(missingLocal, collapse = ", "),
+    paste(file.path(localCovFolder, paste0(missingLocal, ".tiff")), collapse = "\n  "),
+    localCovFolder),
+    call. = FALSE, immediate. = TRUE)
+}
+
 # download environmental data
 parameterList <- list()
 covariate_meta <- list()

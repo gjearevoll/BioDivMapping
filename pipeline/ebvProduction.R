@@ -47,7 +47,7 @@ croppingGeometryLocation <- "data/external/norge_border/Noreg_polygon.shp"
 croppingGeometry <- vect(sf::read_sf(croppingGeometryLocation)) |>
   project(baseRaster)
 
-cat("\Set-up complete, beginning processing.")
+cat("\nSet-up complete, beginning processing.")
 
 # Get all richness files to start
 allRichnessFiles <- list.files(modelFolderName, recursive = TRUE, full.names = TRUE, pattern = paste0("Richness.rds"))

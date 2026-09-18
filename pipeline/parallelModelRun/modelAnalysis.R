@@ -20,11 +20,9 @@ if (length(args) != 0) {
 folderName <- paste0("data/run_", dateAccessed)
 modelFolderName <- paste0(folderName, "/modelOutputs")
 
-
 # import project control parameters into the environment
 readRDS(paste0(folderName,"/controlPars.RDS")) %>% 
   list2env(envir = .GlobalEnv)
-
 
 # Get taxa surveyed
 focalTaxa <- read.csv(paste0(folderName, "/focalTaxa.csv"), header = T)
@@ -41,7 +39,6 @@ timeTakenFiles <- list.files(modelFolderName, "timeTaken", recursive = T, full.n
 ###--------------------------###
 ### 1. Start model analyses ####
 ###--------------------------###
-
 
 # Get valid model names
 taxaLists <- lapply(taxaToCompile, FUN = function(x) {
@@ -215,7 +212,7 @@ effectsLists <- lapply(taxaLists, FUN = function(x) x$effects) |> setNames(taxaT
 saveRDS(effectsLists, paste0(modelFolderName, "/covAnalysis.RDS"))
 
 # Model data object
-modelDataFull <- do.call(bind_rows, lapply(taxaLists, FUN = function(x) x$modelData))
+modelDataFull <- do.call(dplyr::bind_rows, lapply(taxaLists, FUN = function(x) x$modelData))
 write_sf(st_zm(modelDataFull), file.path(extFolderName, "speciesDataModelled.gpkg"), append = T)
 
 # Now ssave metadata - read existing json

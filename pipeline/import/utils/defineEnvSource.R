@@ -243,7 +243,8 @@ if (dataSource == "geonorge") {
   # 12. Data source soilgrids
 } else if (dataSource == "soil_grids") {
   
-  soilVariableName <- ifelse(focalParameter == "ph_h2o", "phh2o", "soc")
+  soilVariableName <- ifelse(focalParameter == "ph_h2o", "phh2o", 
+                             ifelse(focalParameter == "soil_organic_carbon", "soc", focalParameter))
   rasterisedVersion <- get_soil_grids(
     variableName = soilVariableName,
     boundary         = regionGeometry,

@@ -77,7 +77,8 @@ if (file.exists(dataFileName)) {
   newDataset <- st_transform(newDataset, crs)
 }
 
-if (!("threatenedListStatus" %in% colnames(newDataset))) {
+# Add threatened list status if needed
+if (!("threatenedListStatus" %in% colnames(newDataset)) & !is.null(newDataset)) {
   newDataset$threatenedListStatus <- focalData$threatenedListStatus[match(newDataset$acceptedScientificName, 
                                                                            focalData$acceptedScientificName)]
 }

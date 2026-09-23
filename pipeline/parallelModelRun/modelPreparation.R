@@ -157,11 +157,11 @@ for(focalTaxon in unique(focalTaxa$taxa)){
   modelOutputs <- "Richness"
   
   listSegments[[focalTaxon]] <- focalTaxaRun
-  if (grepl("vascularPlants", focalTaxon)) {saveRDS(focalTaxaRun, paste0(folderName, "/segmentList", focalTaxon ,".RDS"))}
   # Save the workflows 
   qsave(workflowList, paste0(folderName, "/workspaces/", focalTaxon, "_workflowList.qs"))
 }
 
-saveRDS(unlist(listSegments, use.names = FALSE), paste0(folderName, "/segmentList.RDS"))
+segmentList <- list.dirs(modelFolderName, full.names = FALSE)[!(list.dirs(modelFolderName, full.names = FALSE) %in% "processedOutputs")][-1]
+saveRDS(segmentList, paste0(folderName, "/segmentList.RDS"))
 # Combination of response and environmental variables
 cat("\nFinished creating workflows for all taxa. Total number of species to run:", length(unlist(listSegments, use.names = FALSE)), "\n")

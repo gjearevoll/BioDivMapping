@@ -227,6 +227,14 @@ countedData <- do.call(rbind, lapply(maskedData, FUN = function(x) {
 
 # Identify species to keep
 speciesToKeep <- countedData[countedData$n > speciesOccurrenceThreshold,"simpleScientificName"]
+# drop species not meant to be included (not defined in focalTaxa when level == "species")
+## only executed if all imported taxa are level = "species"
+if (all(focalTaxon$level == "species")) {
+  speciesToKeep <- speciesToKeep[speciesToKeep$simpleScientificName %in% focalTaxon$scientificName,]
+} else {
+  ## not sure how to check if only appropriate species downloaded when 
+  ## higher order taxa were defined in focalTaxa.csv
+}
 nSpeciesRemoved <- nrow(countedData) - nrow(speciesToKeep)
 cat("Removing", nSpeciesRemoved,"species with too few notifications")
 countedData2 <- lapply(maskedData, FUN = function(x2) {
@@ -258,7 +266,7 @@ qsave(countedData2, paste0(folderName, "/speciesDataProcessed.qs"))
 
 
 ###--------------------------------###
-### 5. Compile into one data.frame ####
+### 7. Compile into one data.frame ####
 ###--------------------------------###
 
 # Edit data frames to have the same number of columns
@@ -278,7 +286,7 @@ write_sf(processedDataCompiled, file.path(extFolderName, "speciesDataProcessed.g
 
 
 ###--------------------###
-### 9. update JSON    ####
+### 8. update JSON    ####
 ###--------------------###
 
 finalDataSummary <- st_drop_geometry(processedDataCompiled) %>%

@@ -106,7 +106,7 @@ modelledParameters <- selectedParameters[sapply(selectedParameters, function(p)
 localParameters <- modelledParameters[!parameters$external[match(modelledParameters, parameters$parameters)]]
 # identify missing local modelled covs
 missingLocal <- localParameters[!file.exists(file.path(localCovFolder, paste0(localParameters, ".tiff")))]
-if (length(missingLocal)) {
+if (length(missingLocal[!is.na(missingLocal)])) {
   stop(sprintf(paste0(
     "You are attempting to use local covariate(s) without having loaded them: %s (external = FALSE).\n",
     "The expected local file(s) do not exist:\n  %s\n",

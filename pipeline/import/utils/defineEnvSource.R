@@ -273,6 +273,19 @@ if (dataSource == "geonorge") {
   file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
   writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
   # 
+} else if (dataSource == "osm") {
+  
+  # Define place first
+  if (level != "country") {
+    cat("\nOSM extract assumes code given is for Norwegian",level,". Does not work for boundary box yet.")
+    if (level == box) {stop()}
+    extractCodeTable <- get_klass(ifelse(level == "county",104,131))
+    place <- extractCodeTable$name[extractCodeTable$code == region]
+    cat("\nPlace defined as",place)
+  } else {place <- region}
+  rasterisedVersion <- get_osm(baseRaster, focalParameter, dataPath, place)
+  
+  
 }
 
 ### merge with requested download area to make missing data explicit

@@ -207,6 +207,7 @@ if (dataSource == "geonorge") {
   rasterisedVersion <- get_cs_density(dateAccessed, regionGeometry, citizenDatasets, yearInterval, crs)
   rasterisedVersion <- if (!temporal) app(rasterisedVersion, "mean") |> 
     setNames("cs_density")
+  
   ### 11. ETH ###  
 } else if (dataSource == "eth") {
   
@@ -240,7 +241,8 @@ if (dataSource == "geonorge") {
     file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
     writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
   }
-  # 12. Data source soilgrids
+  
+  ### 12. Soil grids ###
 } else if (dataSource == "soil_grids") {
   
   soilVariableName <- ifelse(focalParameter == "ph_h2o", "phh2o", 
@@ -259,7 +261,8 @@ if (dataSource == "geonorge") {
   }
   file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
   writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
-  # BIOPAR variables
+  
+  ### 13. Copernicus global landcover data ###
 } else if (dataSource == "biopar") {
   
   rasterisedVersion <- get_biopar(
@@ -272,7 +275,8 @@ if (dataSource == "geonorge") {
   rasterisedVersion <- terra::mask(rasterisedVersion, terra::vect(regionGeometry), touches = FALSE)
   file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath)
   writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
-  # 
+  
+  ### 14. Open Street Map Data ### 
 } else if (dataSource == "osm") {
   
   # Define place first
@@ -285,6 +289,49 @@ if (dataSource == "geonorge") {
   } else {place <- region}
   rasterisedVersion <- get_osm(baseRaster, focalParameter, dataPath, place)
   
+  
+  ### 15. Copernicus GLO-30 DEM ###
+} else if (dataSource == "copernicus") {
+  
+  elevation <- if (isTRUE(update)) NULL else checkAndImportRast("elevation", baseRaster, dataPath, quiet = TRUE)
+  # download and save if missing
+  if(is.null(elevation)){
+    # download
+    elevation <- get_copernicus(regionGeometry, dataPath)
+    # save
+    file_path <- generateRastFileName(elevation, "elevation", dataPath)
+    writeRaster(elevation, filename = file_path, overwrite = TRUE)
+  }
+  
+  # Now get the raster you're actually looking for
+  if (focalParameter == 'elevation') {
+    rasterisedVersion <- elevation
+  } else if (focalParameter %in% c("slope", "aspect")){
+    rasterisedVersion <- terra::terrain(elevation, v=focalParameter, unit='degrees', neighbors=8)
+    if (focalParameter == "aspect") {
+      # convert to radians (*pi/180) &
+      # convert from clock-wise from N to counter-clockwise from east (+ pi/2)
+      rasterisedVersion <- pi/2 - rasterisedVersion*pi/180
+    } 
+  } else if (focalParameter %in% c( "easting", "northing")) {
+    # get aspect ( skip existing version if 'update' == TRUE)
+    aspect <- if (isTRUE(update)) NULL else checkAndImportRast("aspect", baseRaster, dataPath, quiet = TRUE)
+    if(is.null(aspect)) {
+      # calculate aspect from elevation
+      aspect <- terra::terrain(elevation, v="aspect", unit='degrees', neighbors=8)
+      # convert to radians (*pi/180) &
+      # convert from clock-wise from N to counter-clockwise from east (+ pi/2)
+      aspect <- pi/2 - aspect*pi/180
+      # save for future
+      file_path <- generateRastFileName(aspect, "aspect", dataPath)
+      writeRaster(aspect, filename = file_path, overwrite = TRUE)
+    }
+    if (focalParameter == "easting") {
+      rasterisedVersion <- cos(aspect)
+    } else {  # "northing"
+      rasterisedVersion <- sin(aspect)
+    }
+  }
   
 }
 

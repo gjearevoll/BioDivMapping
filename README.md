@@ -31,3 +31,11 @@ will only work for smaller regions of Norway.
     * utils - each of the above folder contain a utils folder for processes that are one-off actions that further process our data but do not fall into the class of functions.
 - functions - contains scripts which perform actions that are either a) useful for people outside of the project or b) repeated throughout the script or workflow.
 
+## AI Declaration
+
+An agentic AI coding assistant was used to assist in adapting code to automate the downloading of
+new environmental variables. Code was written and tested on a local server with no access to any of the real
+data used, and this code was reviewed and tested locally before being uploaded onto NTNU's servers where 
+it was integrated manually into the pipeline, with all results being thoroughly compared to existing 
+covariates to ensure accuracy. The AI tool was Claude Code, Anthropic's agentic coding assistant, was used,
+primarily Claude Opus 5.5 (model ID claude-opus-5-5) and Claude Sonnet 5 (claude-sonnet-5).

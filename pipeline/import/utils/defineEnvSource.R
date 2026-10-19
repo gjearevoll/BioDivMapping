@@ -160,7 +160,7 @@ if (dataSource == "geonorge") {
     yearInterval <- if (!temporal) NA else yearInterval
     rasterisedVersion <- get_corine(temporal = temporal, yearInterval = yearInterval)  
     # save
-    file_path <- generateRastFileName(rasterisedVersion, focalParameter, dataPath, temporal = temporal)
+    file_path <- generateRastFileName(rasterisedVersion, "land_cover_corine", dataPath, temporal = temporal)
     writeRaster(rasterisedVersion, filename = file_path, overwrite = TRUE)
   }
   # calculate distance to water (if necessary)
@@ -200,6 +200,11 @@ if (dataSource == "geonorge") {
   ### 10. MET ###  
 } else if (dataSource == "met") {
   rasterisedVersion <- get_met(focalParameter, dataPath)
+  
+  ### 10b. THREDDS ###  
+} else if (dataSource == "thredds") {
+  rasterisedVersion <- get_thredds(yearInterval = 2016:2025, regionGeometry, focalParameter, 
+                                   dataPath, temporalFactor)
   
   ### 10. MET ###  
 } else if (dataSource == "gbif") {

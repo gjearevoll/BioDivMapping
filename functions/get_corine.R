@@ -70,7 +70,7 @@ get_corine <- function(zip_path = NA, output_path = NA, temporal = FALSE, yearIn
   } else {
     if(is.na(zip_path)){
       message("'zip_path' not specified, please select CORINE land cover zip file. Data can be downloaded from 'https://land.copernicus.eu/en/products/corine-land-cover'.")
-      message("Enter full path to CORINE land cover zip file:\n")
+      message("Enter full path to CORINE land cover zip file OR to pre-unzipped tiff file:\n")
       zip_path <- readline()
       zip_path <- gsub('"', '', zip_path)
     }
@@ -81,25 +81,31 @@ get_corine <- function(zip_path = NA, output_path = NA, temporal = FALSE, yearIn
       zip_path <- readline()
       zip_path <- gsub('"', '', zip_path)
     }
-
-    # unzip 
-    temp_wd <- unzip_all(zip_path)
     
-    if("Info" %in% list.dirs(temp_wd, F, F)){
-      # load
-      corine <- rast(list.files(temp_wd, ".tif$", full.names = T))
+    # unzip 
+    if (grepl("zip", zip_path)) {
       
-      # read raster legend information and relabel values
-      legend_path <- list.files(file.path(temp_wd, "Info/Legend", "Raster"), ".txt$", full.names = T,recursive = T)
-      legend <- read.delim(legend_path, sep =  ",", header = FALSE)
-      values(corine) <- legend$V6[values(corine)[,1]]
+      temp_wd <- unzip_all(zip_path)
+      
+      if("Info" %in% list.dirs(temp_wd, F, F)){
+        # load
+        corine <- rast(list.files(temp_wd, ".tif$", full.names = T))
+        
+        # read raster legend information and relabel values
+        legend_path <- list.files(file.path(temp_wd, "Info/Legend", "Raster"), ".txt$", full.names = T,recursive = T)
+        legend <- read.delim(legend_path, sep =  ",", header = FALSE)
+        values(corine) <- legend$V6[values(corine)[,1]]
+      } else {
+        corine_path <- list.files(file.path(temp_wd, list.dirs(temp_wd, F,F),
+                                            "DATA"), "\\.tif$", full.names = T)
+        # load raster
+        corine <- rast(corine_path)
+        
+        # remove commas from all category labels 
+        levels(corine)[[1]][,2] <- gsub(",", "", levels(corine)[[1]][,2])
+      }
     } else {
-      corine_path <- list.files(file.path(temp_wd, list.dirs(temp_wd, F,F),
-                                          "DATA"), "\\.tif$", full.names = T)
-      # load raster
-      corine <- rast(corine_path)
-      
-      # remove commas from all category labels 
+      corine <- rast(zip_path)
       levels(corine)[[1]][,2] <- gsub(",", "", levels(corine)[[1]][,2])
     }
   }

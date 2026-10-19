@@ -271,7 +271,7 @@ for(mod in seq_along(models)){
   if(!file.exists(path)){
     dir.create(path)
   }
-  saveRDS(spPred, file.path(path, paste0(type, ".rds")))
+  saveRDS(spPred, file.path(path, paste0("Bias.rds")))
   
 }
 

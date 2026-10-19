@@ -135,7 +135,7 @@ for (taxa in unique(focalTaxa$parentTaxa)) {
     richness <- croppedStats[[grep("probability", (names(croppedStats)))]]
     uncertainty <- croppedStats[[grep("uncertainty", (names(croppedStats)))]]
     scaledRichness <- (richness - minmax(richness)[1])/(minmax(richness)[2] - minmax(richness)[1])
-    scaledUncertainty <- uncertainty/(richness+1)
+    scaledUncertainty <- (uncertainty - minmax(uncertainty)[1])/(minmax(uncertainty)[2] - minmax(uncertainty)[1])
     
     # Lastly, if max value is significantly higher than 99.5 percentile, truncate figure
     highQuantile <- quantile(values(scaledRichness), c(0.0025, 0.9975), na.rm= T)

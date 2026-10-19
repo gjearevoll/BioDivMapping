@@ -12,7 +12,7 @@
 #' @import terra
 #' 
 #' @return A SpatRaster of a climate variable.
-
+options(timeout = 1000)
 library(osmextract)
 
 get_osm <- function(baseRaster, focalParameter, dataPath, place) {
@@ -31,17 +31,24 @@ get_osm <- function(baseRaster, focalParameter, dataPath, place) {
                    OR landuse = 'reservoir'"
     sqlQueryStreams <- "SELECT osm_id, waterway, geometry
                 FROM lines
-                WHERE waterway IN ('river','stream','canal')"
+                WHERE waterway IN ('river','canal')"
+                #WHERE waterway IN ('river','stream','canal')"
     cat("\nDownloading water bodies")
-    waterPolygons <- oe_get(place = "Norway", layer = "multipolygons", extra_tags = "water",
-                            force_vectortranslate = TRUE,
-                            query = sqlQueryPolygons,
-                            download_directory = file.path(dataPath,"water"),
-                            quiet = FALSE)
-    waterStreams <- oe_get("Norway", layer = "lines", force_vectortranslate = TRUE,
-                           query = sqlQueryStreams,
-                           download_directory = file.path(dataPath,"water"),
-                           quiet = FALSE)
+    polygonList <- list()
+    streamList <- list()
+    for (country in place) {
+      polygonList[[country]] <- oe_get(place = country, layer = "multipolygons", extra_tags = "water",
+                              force_vectortranslate = TRUE,
+                              query = sqlQueryPolygons,
+                              download_directory = file.path(dataPath,"water"),
+                              quiet = FALSE)
+      streamList[[country]] <- oe_get(country, layer = "lines", force_vectortranslate = TRUE,
+                             query = sqlQueryStreams,
+                             download_directory = file.path(dataPath,"water"),
+                             quiet = FALSE)
+    }
+    waterPolygons <- do.call(rbind, polygonList)
+    waterStreams <- do.call(rbind, streamList)
     
     cat("\nConverting water polygons to vector format")
     vectPolygons <- project(vect(waterPolygons), baseRaster)
@@ -65,13 +72,18 @@ get_osm <- function(baseRaster, focalParameter, dataPath, place) {
     sqlQuery <- sprintf("SELECT osm_id, highway, geometry FROM 'lines' WHERE highway IN (%s)", highwayList)
     
     message(sprintf("Downloading/reading OSM extract for '%s' (roads filtered server-side via SQL push-down)...", "Norway"))
-    roadsSf <- oe_get(
-      place = "Norway",
-      layer = "lines",
-      query = sqlQuery,
-      download_directory = dataPath,
-      quiet = FALSE
-    )
+    
+    roadList <- list()
+    for (country in place) {
+      roadList[[country]] <- oe_get(
+        place = country,
+        layer = "lines",
+        query = sqlQuery,
+        download_directory = dataPath,
+        quiet = FALSE
+      )
+    }
+    roadsSf <- do.call(rbind, roadList)
     cat("\nConverting roads to vector format")
     returnVector <- project(vect(roadsSf), baseRaster)
     cat("\nRasterizing roads vector")

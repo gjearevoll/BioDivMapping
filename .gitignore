@@ -8,7 +8,7 @@
 
 /ignored/*
 
-
+data/sensitive
 data/temp/*
 data/*/temp
 !data/temp/README.md

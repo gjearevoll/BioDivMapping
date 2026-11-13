@@ -43,6 +43,7 @@ timeTakenFiles <- list.files(modelFolderName, "timeTaken", recursive = T, full.n
 # Get valid model names
 taxaLists <- lapply(taxaToCompile, FUN = function(x) {
   modelNameListTaxa <- grep(paste0("/", x), modelNameList, value = TRUE)
+  if (length(modelNameListTaxa) == 0) {return(NA)}
   
   # modelsRun
   relevantWorkflows <- grep(x, segmentList, value = T)
@@ -192,9 +193,7 @@ taxaLists <- lapply(taxaToCompile, FUN = function(x) {
     average_time_run = mean(timeTakenRelevant),
     n_integration_points = nrow(speciesResponseDataTotal[speciesResponseDataTotal$pointType == "integration",]),
     n_species_points = nrow(speciesResponseDataTotal[speciesResponseDataTotal$pointType != "integration",]),
-    n_species = length(unique(speciesResponseDataTotal$speciesNameINDEX_VAR)),
     n_datasets = length(unique(speciesResponseDataTotal$dataset)) - 1,
-    n_segments = length(modelNameListTaxa),
     file_list = list(file_names = modelNameListTaxa)
   )
   
@@ -203,6 +202,10 @@ taxaLists <- lapply(taxaToCompile, FUN = function(x) {
   return(returnedData)
   
 })
+
+# Cut down to only taxa that ran successfully
+taxaToCompile <- taxaToCompile[unlist(lapply(taxaLists, length)) != 1]
+taxaLists <- taxaLists[unlist(lapply(taxaLists, length)) != 1]
 names(taxaLists) <- taxaToCompile
 
 # Compile and saved data objects

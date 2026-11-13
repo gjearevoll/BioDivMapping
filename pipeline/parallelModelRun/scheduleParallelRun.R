@@ -68,7 +68,7 @@ print(focalGroup)
 rm("workflowList")
 
 # Find prediction dataset
-predictionDataset <- focalTaxa$predictionDataset[focalTaxa$taxa == gsub('[[:digit:]]+', '', focalGroup)]
+predictionDataset <- focalTaxa$predictionDataset[grep(focalTaxa$taxa, interestedGroup)]
 predictionDatasetShort <- gsub(" ", "", gsub("[[:punct:]]", "", predictionDataset))
 
 # Choose one of the datasets within each segmentation as the prediction data
@@ -126,7 +126,7 @@ focalCovariates <- read.csv(paste0(folderName, "/focalCovariates.csv"), header= 
 print(focalCovariates$parameters)
 env <- colnames(focalTaxa)[colnames(focalTaxa) %in% focalCovariates$parameters[!focalCovariates$categorical]]
 focalTaxa <- focalTaxa[,c("taxa", env)]
-focalTaxa <- focalTaxa[focalTaxa$taxa %in% interestedGroup,]
+focalTaxa <- focalTaxa[grep(focalTaxa$taxa, interestedGroup),]
 env <- env[apply(focalTaxa[,-1], 2, any)]
 
 # Add quadratic variables

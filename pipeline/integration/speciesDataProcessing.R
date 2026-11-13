@@ -205,7 +205,7 @@ processedDataNative <- lapply(1:length(processedData), FUN = function(ds) {
   cat("Removed",startingRows - nrow(noAliens),"observations of alien species from", names(processedData)[ds],"\n")
   noAliens
 })
-names(processedDataNative) <- namesProcessedData
+names(processedDataNative) <- names(processedData)
 
 ###-------------------------###
 ### 4. Mask lake/city data ####
@@ -217,7 +217,7 @@ if (maskCityData) {
   if (!file.exists("localArchive/mask100.tiff")) {
     maskedCats <-  c("Airports", "Continuous urban fabric", "Discontinuous urban fabric", "Industrial or commercial units",
                      "Green urban areas", "Sport and leisure facilities", "Glaciers and perpetual snow")
-    cityMask <- produceLandscapeMask("data/temp/CORINE/EEA.zip", maskedCats, regionGeometry, crs, res)
+    cityMask <- produceLandscapeMask("data/temp/CORINE/EEA.zip", maskedCats, baseRaster, crs, res)
     # save mask
     make_path("localArchive") # ensure path exists
     writeRaster(cityMask, "localArchive/mask100.tiff", overwrite = TRUE)
@@ -226,7 +226,7 @@ if (maskCityData) {
   }
   cityMaskNA <- st_transform(st_as_sf(as.polygons(ifel(cityMask == 1, 1, NA))), crs= "+proj=longlat +ellps=WGS84")
   
-  maskedData <- lapply(processedData, FUN = function(x) {
+  maskedData <- lapply(processedDataNative, FUN = function(x) {
     newDatasetLongLat <- st_transform(x, crs = "+proj=longlat +ellps=WGS84")
     newDatasetMasked <- st_intersection(newDatasetLongLat, cityMaskNA)
     cat("\nDataset masked.", (nrow(x) - nrow(newDatasetMasked)), "entries removed.")
@@ -245,7 +245,7 @@ maskedData <- maskedData[lapply(maskedData,nrow)>0]
 
 countedData <- do.call(rbind, lapply(maskedData, FUN = function(x) {
   if ("individualCount" %in% colnames(x)) {
-     ds <- st_drop_geometry(x[x$individualCount > 0, "simpleScientificName"])
+    ds <- st_drop_geometry(x[x$individualCount > 0, "simpleScientificName"])
   } else {ds <- st_drop_geometry(x[,"simpleScientificName"])}
   ds
 })) %>% group_by(simpleScientificName) %>% tally()
@@ -261,7 +261,7 @@ if (all(focalTaxon$level == "species")) {
   ## higher order taxa were defined in focalTaxa.csv
 }
 nSpeciesRemoved <- nrow(countedData) - nrow(speciesToKeep)
-cat("Removing", nSpeciesRemoved,"species with too few notifications")
+cat("\nRemoving", nSpeciesRemoved,"species with too few notifications")
 countedData2 <- lapply(maskedData, FUN = function(x2) {
   ds <- x2[x2$simpleScientificName %in% speciesToKeep$simpleScientificName,]
   ds
@@ -291,7 +291,7 @@ qsave(countedData2, paste0(folderName, "/speciesDataProcessed.qs"))
 
 
 ###--------------------------------###
-### 7. Compile into one data.frame ####
+### 6. Compile into one data.frame ####
 ###--------------------------------###
 
 # Edit data frames to have the same number of columns
@@ -312,7 +312,7 @@ write_sf(processedDataCompiled, file.path(extFolderName, "speciesDataProcessed.g
 
 
 ###--------------------###
-### 8. update JSON    ####
+### 7. update JSON    ####
 ###--------------------###
 
 finalDataSummary <- st_drop_geometry(processedDataCompiled) %>%

@@ -1,6 +1,6 @@
 
-produceLandscapeMask <- function(corinePath, maskedCats, regionGeometry, crs, res) {
-  corineUnclassified <- get_corine(corinePath)
+produceLandscapeMask <- function(corinePath, maskedCats, baseRaster, crs, res) {
+  corineUnclassified <- checkAndImportRast("land_cover_corine", baseRaster, "data/temp/corine", quiet = TRUE, FALSE, yearInterval)
   urbanWater <- ifel(corineUnclassified %in% maskedCats, 1, 0)
   
   baseRaster <-rast(ext = ext(vect(regionGeometry))+10, res = res)

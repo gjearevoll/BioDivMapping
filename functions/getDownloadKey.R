@@ -31,16 +31,7 @@ getDownloadKey <- function(taxa, regionGeometry, coordUncertainty) {
   options(gbif_email=gbif_email)
   options(gbif_pwd=gbif_pwd)
   
-  if (!is.numeric(taxa)) {
-    keys <- as.integer()
-    for(i in 1:length(taxa)){
-      focalSpecies <- gsub("_", " ", taxa[i])
-      keyTable <- name_suggest(q = focalSpecies, rank='species')
-      keys[i] <- keyTable$data$key[1]
-    }
-  } else {
-    keys <- taxa
-  }
+keys <- taxa
   
   # Get taxon keys for species
   if (is.na(coordUncertainty)) {

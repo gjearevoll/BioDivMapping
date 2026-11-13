@@ -11,7 +11,7 @@ args <- commandArgs(trailingOnly = TRUE)
 dateAccessed <- as.character(args[1])
 # dateAccessed <- "2026-08-28"
 
-sapply(list.files("functions", full.names = TRUE, recursive = TRUE), source)
+sapply(list.files("functions", full.names = TRUE, pattern = "\\.R$", recursive = T), source)
 library(stringr)
 library(dplyr)
 

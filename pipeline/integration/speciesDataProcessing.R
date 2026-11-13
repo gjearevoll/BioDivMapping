@@ -168,6 +168,31 @@ processedData <- processedData[unlist(lapply(processedData,nrow)) > 0]
 # update namesProcessedData
 namesProcessedData <- names(processedData)
 
+###-------------------------###
+### 2a. Add sensitive data ####
+###-------------------------###
+
+# Check which datasets are relevant
+sensitiveNames <- read.csv("data/sensitive/sensitiveDatasets.csv")
+relevantSensitiveData <- unique(sensitiveNames$dataset[sensitiveNames$taxa %in% focalTaxon$taxa])
+if (length(relevantSensitiveData) > 0) {
+  for (sensData in relevantSensitiveData) {
+    sensDataset <- readRDS(paste0("data/sensitive/", sensData, ".RDS" ))
+    sensDataset <- st_transform(sensDataset, crs)
+    sensDataset <- sensDataset[sensDataset$taxa %in% unique(focalTaxon$taxa),c("acceptedScientificName", "individualCount", "dataType", "taxa", "year",
+                                                                               "taxonKeyProject", "threatenedListStatus", "simpleScientificName", "datasetName")]
+    sensDatasetObf <- snapToBaseRaster(sensDataset, baseRaster)
+    processedData[[sensData]] <- sensDatasetObf
+  }}
+
+# Remove non-TOV birds if necessary
+if ("birds" %in% focalTaxon$taxa) {
+  birdSpecies <- unique(processedData[["TOVData"]]$acceptedScientificName)
+  processedData <- lapply(processedData, FUN = function(x) {
+    x <- x[!(x$taxa %in% "birds" & !(x$acceptedScientificName %in% birdSpecies)),]
+  })
+}
+  
 ###------------------------------------###
 ### 3. Remove alien species from data ####
 ###------------------------------------###
@@ -282,6 +307,7 @@ processedDataCompiled <- do.call(rbind, lapply(1:length(countedData2), FUN = fun
   datasetShort$dsName <- datasetName
   datasetShort
 }))
+processedDataCompiled <- processedDataCompiled[!(processedDataCompiled$dsName %in% relevantSensitiveData),]
 write_sf(processedDataCompiled, file.path(extFolderName, "speciesDataProcessed.gpkg"), append = FALSE)
 
 

@@ -54,6 +54,7 @@ processVannmiljo <- function(focalEndpoint, tempFolderName, datasetName, regionG
                               acceptedScientificName = sapply(surveyedSpecies2, FUN = findGBIFName),
                               taxonKey = sapply(surveyedSpecies2, FUN = function(x) {taxaCheck(x, focalTaxon$key)})) %>%
     filter(!is.na(taxonKey))
+  if (nrow(speciesLegend) == 0) {return(NULL)}
   
   # Get the most recent eventID (survey) at each parentEventID (survey)
   eventIDs <- occurrence[!duplicated(occurrence[,c("eventID", "parentEventID", "year")]),c("eventID", "parentEventID", "year")]
